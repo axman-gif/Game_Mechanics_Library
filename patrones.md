@@ -1,0 +1,414 @@
+# Comprehensive Catalog of Video Game Design Patterns (2D & 3D)
+
+This document provides an exhaustive, practical reference of game programming and design patterns applicable to both 2D and 3D games. Each pattern describes its classification, dimensional relevance (2D/3D), core problem solved, architectural approach, and typical game application.
+
+> **Cross-Language & C++ Transferability Rule**:
+> Although prototypes in this repository are written in Python (`pyray`) for rapid readability, **all pattern implementations must be written in a language-agnostic, C++-transferable style**:
+> - Use plain struct-like classes (`__init__` with explicit member fields) instead of `@dataclass`, `@property`, or decorators.
+> - Use explicit `for` loops, integer indices, and pre-allocated arrays (`std::array` / `std::vector` style) instead of generators (`yield`), `lambda`, or complex list comprehensions.
+> - Avoid Python dunder/operator overloading and dynamic reflection (`getattr`/`setattr`) so any novice or C++ developer can translate the data structures and algorithms directly into C++, C#, Rust, or Zig without mental friction.
+
+---
+
+## 1. Core Architecture & Execution Patterns
+
+### 1.1 Game Loop
+- **Dimension**: 2D & 3D
+- **Problem**: Hardware runs at arbitrary refresh rates; game simulation speed must remain consistent across different computers without drifting or running too fast/slow.
+- **Solution**: A continuous loop divided into input processing, state updating (simulation), and rendering. Uses fixed delta time (`dt`) for physics/logic and variable time for rendering interpolation.
+- **Example Use Case**: Running physics at 60Hz while rendering at whatever monitor refresh rate is available (e.g., 144Hz) with smooth visual interpolation.
+
+### 1.2 Update Method
+- **Dimension**: 2D & 3D
+- **Problem**: Monolithic code blocks make it hard to manage dozens of distinct entities simultaneously.
+- **Solution**: Each entity or system implements an `update(dt)` method. The game world loops through an entity list and advances their state by `dt` seconds per frame.
+- **Example Use Case**: Updating player movements, enemy patrol timers, and bullet lifetimes independently in the main loop.
+
+### 1.3 Double Buffering
+- **Dimension**: 2D & 3D
+- **Problem**: Modifying visible state directly causes screen tearing or partial state evaluations where some entities read half-updated state.
+- **Solution**: Maintain two states (Current/Read state and Next/Write state). Write updates to the Next buffer, then swap pointers atomically at the end of the step.
+- **Example Use Case**: Cellular automata simulations (like Game of Life, world corruption grids) and GPU display framebuffers.
+
+### 1.4 Component Pattern (ECS / Entity-Component)
+- **Dimension**: 2D & 3D
+- **Problem**: Deep OOP inheritance trees (e.g., `Monster -> FlyingMonster -> FlyingShootingBoss`) lead to rigid hierarchies and the diamond problem.
+- **Solution**: Entities are flexible IDs/containers; logic and data are broken down into interchangeable components (`Transform`, `Collider`, `Health`, `MovementController`).
+- **Example Use Case**: Giving a 3D crate entity a `Health` component and `RigidBody` component without making it inherit from an `Actor` class.
+
+---
+
+## 2. Behavioral & Decoupling Patterns
+
+### 2.1 Command Pattern
+- **Dimension**: 2D & 3D
+- **Problem**: Hardcoding keyboard/mouse inputs directly into player code makes key remapping, AI control, and replays very difficult.
+- **Solution**: Encapsulate an action into a Command object (`JumpCommand`, `AttackCommand`, `MoveCommand`). Input handlers produce commands and dispatch them to actors.
+- **Example Use Case**: Input remapping, undo/redo systems in puzzle games, and recording inputs for instant match replays.
+
+### 2.2 Event Queue / Observer (Publish-Subscribe)
+- **Dimension**: 2D & 3D
+- **Problem**: Direct couplings between systems (e.g., player death code directly calling UI, sound synthesizer, analytics, and achievement systems).
+- **Solution**: Systems dispatch events to a centralized queue or broadcaster. Listener systems subscribe and react to events without the sender knowing who is listening.
+- **Example Use Case**: An enemy emitting an `EntityDied` event, triggering a sound effect, score increment, particle burst, and quest counter update simultaneously.
+
+### 2.3 State Pattern & Finite State Machine (FSM)
+- **Dimension**: 2D & 3D
+- **Problem**: Spaghetti `if/else` ladders handling complex character behavior (idle, walking, jumping, ducking, rolling, stunned).
+- **Solution**: Encapsulate each state as a distinct class or function with `enter()`, `update()`, and `exit()` hooks. The machine manages transitions.
+- **Example Use Case**: Humanoid enemy AI cycling cleanly between `PatrolState`, `PursueState`, `AttackState`, and `StunnedState`.
+
+### 2.4 Hierarchical State Machine (HSM)
+- **Dimension**: 2D & 3D
+- **Problem**: State explosion in complex entities where multiple states share common behaviors (e.g., jumping while shooting vs. jumping while reloading).
+- **Solution**: States can have parent and child states. Child states inherit behavior from parent states (e.g., `Airborne` is parent to `Jumping` and `Falling`).
+- **Example Use Case**: Player character keeping an `InAir` state active while handling upper-body weapon states independently.
+
+### 2.5 Service Locator
+- **Dimension**: 2D & 3D
+- **Problem**: Passing references to global services (Audio Engine, Resource Loader, Random Number Generator) across hundreds of constructors creates parameter clutter.
+- **Solution**: A global registry provides access to services, with the ability to substitute mock or null services during testing.
+- **Example Use Case**: Allowing any entity to call `ServiceLocator.get_audio().play_sfx("hit")` without holding a direct handle to the audio device.
+
+---
+
+## 3. Performance & Memory Management Patterns
+
+### 3.1 Object Pool
+- **Dimension**: 2D & 3D
+- **Problem**: Creating and garbage collecting hundreds of transient objects (bullets, sparks, floating text) causes frame drops and memory fragmentation.
+- **Solution**: Pre-allocate a fixed pool of objects at startup. Activate them when needed and return them to the inactive pool when finished.
+- **Example Use Case**: Reusing a pool of 200 laser projectiles and 500 explosion particles without dynamic memory allocation during gameplay.
+
+### 3.2 Flyweight
+- **Dimension**: 2D & 3D
+- **Problem**: Storing duplicate heavy data (e.g., primitive mesh vertex structures, sound sample buffers, texture sheets) inside every instance exhausts memory.
+- **Solution**: Separate intrinsic state (shared, immutable data) from extrinsic state (instance-specific data like position, rotation, health).
+- **Example Use Case**: Rendering a forest of 1,000 trees where all trees share one 3D cylinder/cone primitive definition, storing only position and scale per tree.
+
+### 3.3 Dirty Flag
+- **Dimension**: 2D & 3D
+- **Problem**: Recomputing expensive calculations (like combined 3D transformation matrices or pathfinding meshes) every frame even when objects haven't moved.
+- **Solution**: Store a boolean flag `is_dirty`. Set it to `True` when an attribute changes. Only recalculate the expensive transformation when requested if dirty.
+- **Example Use Case**: Recomputing scene graph global matrices and bounding capsules only when local translation/rotation actually alters.
+
+### 3.4 Data Locality / Cache-Friendly Arrays
+- **Dimension**: 2D & 3D
+- **Problem**: Object pointers scattered randomly in memory cause CPU cache misses during batch updates.
+- **Solution**: Store entity components in contiguous, linear arrays (struct-of-arrays or flat array-of-structs).
+- **Example Use Case**: Updating 2,000 particle positions stored sequentially in a contiguous list for maximum cache throughput.
+
+---
+
+## 4. Artificial Intelligence & Navigation Patterns
+
+### 4.1 Steering Behaviors (Reynolds Model)
+- **Dimension**: 2D & 3D
+- **Problem**: Realistic movement feels mechanical when simply snapping velocities toward the target.
+- **Solution**: Calculate steering forces (Desired Velocity minus Current Velocity):
+  - **Seek & Flee**: Direct attraction or repulsion.
+  - **Pursue & Evade**: Predicting target's future position based on velocity.
+  - **Arrive**: Decelerating smoothly as the target is approached.
+  - **Wander**: Applying slight random angular offsets to create organic wandering.
+  - **Obstacle Avoidance**: Raycasting feelers ahead to steer around barriers.
+  - **Flocking (Boids)**: Combining Separation, Alignment, and Cohesion forces.
+- **Example Use Case**: A pack of drone enemies surrounding a player without overlapping or moving in robotic straight lines.
+
+### 4.2 Behavior Tree (BT)
+- **Dimension**: 2D & 3D
+- **Problem**: State machines become unmaintainable when handling complex, modular, and reusable AI behaviors.
+- **Solution**: A hierarchical tree composed of composite nodes (`Sequence`, `Selector`), decorators, and leaf nodes (`Action`, `Condition`) returning `SUCCESS`, `FAILURE`, or `RUNNING`.
+- **Example Use Case**: Boss enemy AI prioritizing self-healing if health < 25%, else casting a spell if player is distant, else performing melee strikes.
+
+### 4.3 Spatial Pathfinding (A*, Dijkstra, BFS)
+- **Dimension**: 2D & 3D
+- **Problem**: Entities get stuck on walls and obstacles when moving toward targets.
+- **Solution**: Graph traversal algorithms that compute the shortest obstacle-free path across a grid, waypoint graph, or navigation mesh (NavMesh).
+- **Example Use Case**: Enemies finding the optimal route through a dungeon labyrinth to ambush the player.
+
+### 4.4 Blackboard Pattern
+- **Dimension**: 2D & 3D
+- **Problem**: Independent AI agents lack situational awareness and cannot coordinate group tactics (e.g., flanking or taking cover).
+- **Solution**: A centralized shared data repository ("the blackboard") where agents write observations and read squad commands.
+- **Example Use Case**: One enemy spotting the player and writing `player_spotted = True` with coordinates, alerting all nearby teammates.
+
+### 4.5 Sensory Perception & Line of Sight (LOS)
+- **Dimension**: 2D & 3D
+- **Problem**: Enemies having omniscient knowledge through walls feels unfair and breaks immersion.
+- **Solution**: Model sensory perception cones (field-of-view angle, hearing radius, light level) combined with raycasts to determine visibility.
+- **Example Use Case**: Stealth game where guards only detect the player if inside a 60-degree vision cone and unblocked by obstacles.
+
+---
+
+## 5. Collision & Physics Patterns
+
+### 5.1 Spatial Partitioning (Grid, Spatial Hash, Quadtree/Octree)
+- **Dimension**: 2D & 3D
+- **Problem**: Pairwise collision testing takes $O(N^2)$ checks; 1,000 entities require 500,000 checks per frame.
+- **Solution**: Divide game space into cells or hierarchical buckets. Entities register into their local cells, restricting collision checks to nearby entities ($O(N)$ average).
+- **Example Use Case**: 2D/3D Spatial Hash Grid querying all colliders within a 5-unit radius instantly.
+
+### 5.2 Broadphase / Narrowphase Collision Pipeline
+- **Dimension**: 2D & 3D
+- **Problem**: Detailed geometric intersection tests (capsule-capsule, rotated OBB, triangle mesh) are expensive.
+- **Solution**:
+  - **Broadphase**: Quickly filter out impossible collisions using cheap bounding shapes (AABB or spheres) or spatial grids.
+  - **Narrowphase**: Perform exact mathematical collision tests on remaining candidate pairs.
+- **Example Use Case**: Testing 500 enemies against each other with zero lag by using a spatial grid before computing rotated capsule tests.
+
+### 5.3 Capsule & Segment Collision Pattern
+- **Dimension**: 2D & 3D
+- **Problem**: Spheres don't fit elongated characters well, and boxes snag on sharp corners or slopes when rotating.
+- **Solution**: Represent characters as a line segment extruded by a radius $r$ (a capsule). Collision between two capsules reduces to computing the shortest distance between two 3D line segments. If $d \le r_1 + r_2$, a collision occurs.
+- **Example Use Case**: Rotated 3D humanoid limbs, rolling cylinders, or moving player capsules sliding effortlessly over terrain.
+
+### 5.4 Separating Axis Theorem (SAT) / Oriented Bounding Box (OBB)
+- **Dimension**: 2D & 3D
+- **Problem**: Axis-Aligned Bounding Boxes (AABB) fail when objects rotate at arbitrary angles.
+- **Solution**: Project the vertices of both convex shapes onto potential separating axes (face normals in 2D, face normals and edge cross products in 3D). If a gap exists on any axis, the objects do not collide.
+- **Example Use Case**: Precise rotated rectangular prism collisions for vehicles, laser beams, and angled platforms.
+
+### 5.5 Continuous Collision Detection (CCD) / Swept Volumes
+- **Dimension**: 2D & 3D
+- **Problem**: High-speed objects (bullets, fast arrows) pass completely through thin walls between two discrete frames (the "bullet through paper" tunneling problem).
+- **Solution**: Instead of testing static positions at $t$ and $t + \Delta t$, test the swept shape (capsule or raycast segment from start to end position).
+- **Example Use Case**: Fast-moving projectiles sweeping a line segment each frame to guarantee hitting walls regardless of frame rate.
+
+### 5.6 Kinematic Character Controller (Move-and-Slide)
+- **Dimension**: 2D & 3D
+- **Problem**: Pure physics-driven rigid bodies (forces and torques) feel floaty, bounce unpredictably, and are difficult to tune for crisp platformer or action gameplay.
+- **Solution**: Kinematically integrate desired movement, detect collisions, calculate contact normal vectors, and slide remaining movement along the contact plane.
+- **Example Use Case**: Smoothly walking up slopes, sliding along walls, and preventing characters from sticking to corners.
+
+---
+
+## 6. Procedural & Graphical Patterns
+
+### 6.1 Procedural Primitive Assembler
+- **Dimension**: 2D & 3D
+- **Problem**: Loading external 3D mesh files (.obj, .gltf) or texture sheets requires asset pipelines, file loaders, and external art tools.
+- **Solution**: Construct rich characters, enemies, and props purely through code by combining geometric primitives (spheres, cubes, cylinders, cones) with procedural articulation and colors.
+- **Example Use Case**: Assembling a humanoid enemy with a spherical head, rectangular prism torso, and cylindrical limbs that swing naturally via procedural sine waves.
+
+### 6.2 Camera Rig & Interpolated Follow Camera
+- **Dimension**: 2D & 3D
+- **Problem**: Snapping the camera rigidly to the player causes jerky visual motion, motion sickness, and jarring occlusion.
+- **Solution**: Use spring-damper or linear interpolation (`lerp`), deadzones, look-ahead offsets based on velocity, and screen shake trauma envelopes.
+- **Example Use Case**: Smooth third-person orbital camera or 2D side-scrolling camera with fluid damping and punchy impact shakes.
+
+### 6.3 Billboarding
+- **Dimension**: 3D
+- **Problem**: Rendering high-polygon 3D meshes for hundreds of small distant effects (smoke, sparks, health bars, name tags) degrades performance.
+- **Solution**: Render flat 2D quads that continuously rotate to face the active 3D camera.
+- **Example Use Case**: Floating health bars, damage numbers, and fire/particle effects in a 3D world.
+
+---
+
+## 7. Gameplay Mechanics & Progression Patterns
+
+### 7.1 Spawn Director / Wave Manager
+- **Dimension**: 2D & 3D
+- **Problem**: Spawning enemies randomly leads to dry spells or unfair overwhelming spikes.
+- **Solution**: An orchestration system monitors player performance, pacing, and active enemy counts to deliver timed, balanced waves of varying archetypes.
+- **Example Use Case**: Survival arena game increasing enemy speed and variety across successive 30-second waves.
+
+### 7.2 Ability Cooldown & Timer Pipeline
+- **Dimension**: 2D & 3D
+- **Problem**: Using boolean flags (`can_shoot = True`) leads to messy state bugs when managing dozens of skills, delays, and reloads.
+- **Solution**: Dedicated timers that decrement by `dt`. Capabilities query `timer.is_ready()` and trigger `timer.reset()`.
+- **Example Use Case**: Managing primary weapon attack rates, dash cooldowns, and temporary invulnerability flash frames.
+
+### 7.3 Status Effect / Buff-Debuff Pipeline
+- **Dimension**: 2D & 3D
+- **Problem**: Hardcoding stat modifications (poison, speed boost, freeze, burning) directly into player variables causes conflicting overwrites.
+- **Solution**: Modifiers are distinct effect objects with durations and stat multipliers applied to a base stat object dynamically.
+- **Example Use Case**: Calculating current speed as `base_speed * sum(buff_multipliers) * product(slow_multipliers)`.
+
+### 7.4 Loot Table & Weighted Random Selection
+- **Dimension**: 2D & 3D
+- **Problem**: Uniform random rolls make rare items too common or impossible to calibrate.
+- **Solution**: Define items with relative integer/float weights. Normalize weights to pick outcomes probabilistically.
+- **Example Use Case**: Enemy drop tables (Common Coin: weight 70, Health Pack: weight 25, Rare Weapon: weight 5).
+
+---
+
+## 8. User Interface & Menu Patterns
+
+### 8.1 Vertical Menu with Cursor
+- **Dimension**: 2D & 3D
+- **Problem**: Hardcoding menu navigation in monolithic if/else ladders causes boundary bugs, desynchronized audio blips, lack of analog repeat timers, and tight coupling between UI widgets and scene states.
+- **Solution**: Maintain a discrete MenuItem array with integer `selected_index`. Navigation applies modulo arithmetic (`idx = (idx + delta) % N`) or clamping. A cursor rig smoothly interpolates position via exponential spring damping (`damp`), dispatching decoupled Command tokens on confirmation.
+- **Example Use Case**: Classic arcade and RPG title, pause, and inventory screens navigated seamlessly across keyboard, mouse, and gamepads.
+
+### 8.2 Radial Menu (Weapon Wheel)
+- **Dimension**: 2D & 3D
+- **Problem**: Linear hotbars (1-9) force hands off movement keys and fail on gamepads. Selecting weapons in real-time frantic combat leads to taking unavoidable damage while browsing.
+- **Solution**: Partition a circular ring into $N$ equal angular sectors ($\Delta\theta = 2\pi / N$). Convert input vectors to polar angles via `atan2(dy, dx)` to select sector $k = \lfloor (\theta + \Delta\theta/2)/\Delta\theta \rfloor \pmod N$. Apply a central deadzone to eliminate origin jitter, and integrate Time Dilation (slowing world simulation to 10-15%) while the wheel is open.
+- **Example Use Case**: Fast-paced shooters (DOOM, GTA, Crysis) allowing instant weapon and ability switching on both analog sticks and mouse.
+
+### 8.3 Tabbed Menu (Sub-View Strategy)
+- **Dimension**: 2D & 3D
+- **Problem**: Monolithic menus attempting to fit inventory items, equipment dolls, skill trees, and character stats onto a single screen cause visual overload and control desynchronization. Full-screen scene switches incur cumbersome push/pop overhead and disconnect live feedback.
+- **Solution**: Organize UI sections into discrete sub-view strategies controlled by an integer tab index with bumper cycling (`Q`/`E` or Gamepad `LB`/`RB`). An animated tab indicator smoothly glides via exponential spring damping (`damp`). All sub-views mutate and query a single unified Character Model (`RPGCharacterModel`), ensuring live stat recalculations (base attributes + gear bonuses + passive perks) propagate across all views instantly.
+- **Example Use Case**: Classic and modern RPG menus (Persona, Final Fantasy, Elden Ring, The Witcher) categorizing Items, Equipment, Skills, and Status under responsive bumper cycling.
+
+### 8.4 Grid Inventory (Cell Matrix Storage & Combine Engine)
+- **Dimension**: 2D & 3D
+- **Problem**: Linear text inventories lack spatial immersion, visual supply assessment, and tactile management in survival games. Tightly coupling UI drag logic directly with inventory data triggers item duplication bugs, lost items on cancel, and convoluted multi-item craft state branches.
+- **Solution**: Model storage as a fixed 2D discrete cell array `slots[GRID_COLS * GRID_ROWS]` mapped via flat index `row * COLS + col`. Intermediary item movements are handled by a decoupled Hand Slot (`hand_item`, `origin_index`), guaranteeing transaction atomicity (place, swap, or snap-back on reject). Item crafting is delegated to a declarative symmetric recipe lookup table (`item_a + item_b -> result`), decoupling combination algebra from UI slot rendering.
+- **Example Use Case**: Classic survival horror inventories (Resident Evil 4 Attaché Case, Silent Hill, S.T.A.L.K.E.R., Diablo) featuring herb mixing, ammunition loading, and cell-by-cell item organization.
+
+### 8.5 Shape-Packing Inventory (Polyomino Grid Storage & Discrete Rotation)
+- **Dimension**: 2D & 3D
+- **Problem**: In survival, tactical, and RPG titles (such as Diablo, Resident Evil 4, Escape from Tarkov, and Backpack Hero), inventory items possess irregular, multi-cell geometric footprints (1x1, 1x2, 2x2, 2x3, L, T, and Z polyomino shapes). Naive implementations that treat multi-cell items as floating sprites or loose lists suffer from boundary clipping, ghost data corruption (where only the root cell is updated while orphan cells remain locked), overlap bugs upon 90° rotation, and convoluted item-swapping logic.
+- **Solution**:
+  1. **Polyomino Mask Representation & Discrete 90° Clockwise Rotation**: Model shapes as an array of relative 2D cell offsets `[(col, row)]`. Compute 90° clockwise rotation via `(col', row') = (-row, col)` followed by translation normalization (`col_norm = col' - min(col')`, `row_norm = row' - min(row')`), precomputing all 4 discrete orientations into static fixed-size arrays in C++.
+  2. **Flat Spatial Matrix Storage**: Store occupancy in a flat 1D contiguous array `int grid[GRID_ROWS * GRID_COLS]` stamped with unique `instance_id` values (or `-1` for empty slots), enabling $O(K)$ constant-time multi-cell collision and bounds testing.
+  3. **Atomic Placement & Single-Item Swap**: If a candidate placement overlaps cells belonging to *exactly one* other item in the container, execute an atomic swap (the existing item is evicted directly into the decoupled Hand Slot).
+  4. **First-Fit Decreasing (FFD) Bin-Packing Heuristic**: Sort unplaced items by cell area descending to solve 2D polyomino packing across positions and rotations in real time.
+  5. **Adjacency Synergy Pipeline**: Inspect orthogonal neighbor cells (Up, Down, Left, Right) to dynamically apply placement synergies (e.g. Weapons adjacent to Relics gain +25% ATK; Shields adjacent to Helmets gain +20% DEF).
+- **Example Use Case**: Backpack Hero, Escape from Tarkov, Diablo II/IV, Resident Evil 4, and Deus Ex grid inventory management.
+
+### 8.6 Weight-Based Inventory & Dynamic Encumbrance Physics
+- **Dimension**: 2D & 3D
+- **Problem**: Infinite carry capacity in RPGs, survival games, and immersive sims removes survival tension and economic constraints. Conversely, naive encumbrance implementations introduce jarring binary lockouts (`if weight > max: cannot_move()`) scattered through character controllers, causing frustrating stutter, exploits, or unresponsiveness.
+- **Solution**:
+  1. **Decoupled Mass Aggregation**: Aggregate total carried weight $W_{\text{current}} = \sum (\text{count} \times \text{unit\_weight})$ in an independent pipeline, supporting both positive mass (ores, armor, anvils) and negative mass modifiers (magical feather charms).
+  2. **Continuous & Tiered Speed Evaluation**: Map encumbrance ratio $R = W / W_{\max}$ into discrete tiers (Light $\le 50\%$, Medium $\le 75\%$, Heavy $\le 100\%$, Overencumbered $\le 150\%$, Crushed $> 150\%$) controlling smooth velocity attenuation curves, stamina drain multipliers ($1.0\times \to 2.5\times$), and sprint lockouts.
+  3. **Companion Storage & Offloading**: Integrate companion beast storage (Pack Mule with high cargo limits and leash follow steering) and a greedy Quick-Offload heuristic that sorts items by weight descending to restore player mobility instantly.
+- **Example Use Case**: The Elder Scrolls (Skyrim, Oblivion), Fallout, Death Stranding, Dark Souls / Elden Ring (Equip Load), and Baldur's Gate 3 encumbrance systems.
+
+### 8.7 Equipment Slots (Paper Doll Architecture & Live Stat Pipeline)
+- **Dimension**: 2D & 3D
+- **Problem**: In RPGs, action games, and MMOs (World of Warcraft, Diablo, Dark Souls, Baldur's Gate), equipment cannot be stored as an arbitrary flat list. Items belong to specific anatomical body slots (Head, Chest, Hands, Legs, Feet, Main Hand, Off Hand, Rings, Amulet). Naive implementations mutate player stats directly in-place upon equip/unequip, which causes permanent stat drift, item duplication, or negative values when items are swapped, broken, or subjected to temporary buffs. Furthermore, naive systems fail to enforce physical slot constraints (e.g. wielding a shield while holding a Two-Handed Greathammer) or calculate multi-item set synergies cleanly.
+- **Solution**:
+  1. **Anatomical Slot Matrix**: Structure equipment slots as a typed, fixed-capacity array (`EquipmentItem* slots[10]`) mapped to explicit anatomical constants (`SLOT_HEAD`, `SLOT_AMULET`, `SLOT_CHEST`, `SLOT_MAIN_HAND`, `SLOT_OFF_HAND`, `SLOT_HANDS`, `SLOT_LEGS`, `SLOT_FEET`, `SLOT_RING_1`, `SLOT_RING_2`). Validate item compatibility before committing transactions.
+  2. **Two-Handed Mutual Exclusion**: Enforce physical constraints: equipping a Two-Handed (2H) weapon in `SLOT_MAIN_HAND` automatically clears and locks `SLOT_OFF_HAND` (evicting any shield back to inventory). Equipping an off-hand item automatically clears or swaps out the two-handed weapon.
+  3. **Pure Derived Stat Pipeline**: Base character attributes (`HP`, `ATK`, `DEF`, `CRIT`, `SPD`) remain immutable. Derived combat stats are computed by a pure functional pipeline:
+     $$\text{Effective Stat} = (\text{Base Stat} + \sum \text{Gear Flat} + \text{Set Bonus Flat}) \times (1.0 + \text{Set Percent})$$
+     Unequipping any piece of gear restores exact base stats with zero floating-point or integer drift.
+  4. **Multi-Tier Set Synergy Engine**: Items tag an archetype set identifier ("Vanguard", "Assassin", "Archmage"). The pipeline tallies equipped set pieces and unlocks tiered bonuses (e.g., 2-Piece: +25 DEF; 4-Piece: +25% DEF and Holy Bastion Aegis aura) with visual mannequin particle effects.
+  5. **Procedural Paper Doll Mannequin**: Visually render procedural 2D primitives for every equipped piece directly onto an articulated humanoid silhouette, providing instant visual feedback.
+- **Example Use Case**: World of Warcraft, Diablo II/IV, Dark Souls / Elden Ring, Baldur's Gate 3, and Path of Exile equipment systems.
+
+### 8.8 Stat Comparison Tooltip (Side-by-Side Gear Evaluation & Delta Pipeline)
+- **Dimension**: 2D & 3D
+- **Problem**: In loot-heavy games and RPGs (Diablo, Borderlands, Destiny, World of Warcraft, Cyberpunk 2077), players collect hundreds of weapons and armor pieces. Forcing players to memorize stats and repeatedly toggle between inventory screens to evaluate potential upgrades causes severe cognitive fatigue, decision paralysis, and frequent gear mistakes. Naive implementations show only isolated candidate stats, recompute diff strings every frame causing memory churn, or fail to clamp tooltips within screen viewports, causing text clipping and cursor occlusion.
+- **Solution**:
+  1. **Side-by-Side Dual Tooltip Architecture**: Hovering or focusing an inventory item dynamically resolves its target equipment slot. The UI simultaneously renders paired tooltip cards: `[CURRENTLY EQUIPPED]` (Left) and `[INVENTORY CANDIDATE]` (Right), providing an immediate 1-to-1 baseline.
+  2. **Delta Contrast Pipeline**: For every primary and secondary attribute ($ATK, DEF, HP, CRIT, SPD, \text{Power Score}$):
+     $$\Delta = \text{Candidate Stat} - \text{Equipped Stat}$$
+     Renders directional, color-coded visual contrast markers:
+     - $\Delta > 0$: Bright Green Up Arrow (`▲ +X`) for upgrades.
+     - $\Delta < 0$: Radiant Red Down Arrow (`▼ -X`) for downgrades.
+     - $\Delta == 0$: Muted Tag (`= 0`) for neutral / identical stats.
+  3. **Smart Viewport Bounds Clamping**: Evaluates composite card extents and dynamically flips horizontal and vertical anchor axes near screen margins, ensuring comparison windows never clip off-screen or obscure the hovered cursor cell.
+  4. **Multi-Slot Comparison Resolution**: For multi-slot items (e.g. Ring 1 vs Ring 2), automatically targets the slot yielding the greatest relative upgrade while enabling manual cycling (`[Alt]` / Gamepad `Y`).
+  5. **Weighted Composite Gear Rating**: Synthesizes a composite item power rating and percentage delta ($\Delta \text{Power}\%$) for instant high-level appraisal at a glance.
+### 8.9 Shop Economy & Transaction Pipeline (Merchant Stall)
+- **Dimension**: 2D & 3D
+- **Problem**: In RPGs, action adventures, and survival economies (The Legend of Zelda, Diablo, Skyrim, Pokemon, Stardew Valley), trading items with NPC merchants naively by directly mutating currency and inventory lists leads to critical vulnerabilities: currency underflow (negative gold), item duplication glitches, bag overflow beyond capacity limits, and infinite money arbitrage loops (when sell-back prices match or exceed purchase prices). Lacking bulk quantity controls forces players into repetitive single-item click spam.
+- **Solution**:
+  1. **Two-Sided Ledger & Explicit Price Margins**: Both Merchant and Player maintain explicit stock pools and currency reserves. Base values are scaled by rigid multipliers:
+     $$\text{Buy Unit Price} = \text{round}(\text{Base Value} \times M_{\text{buy}})$$
+     $$\text{Sell Unit Price} = \text{round}(\text{Base Value} \times M_{\text{sell}})$$
+     Enforcing $M_{\text{sell}} < M_{\text{buy}}$ (e.g. $0.50\times$ vs $1.00\times$) guarantees economic friction, rendering infinite arbitrage mathematically impossible.
+  2. **3-Stage Atomic Transaction Pipeline**: Every trade is processed through three isolated steps:
+     - **Stage 1 (Precondition Verification)**: Validates $\text{stock} \ge Q$, $\text{funds} \ge \text{cost}$ (Player Gold on buy, Merchant Gold on sell), and ensures player bag slot count does not exceed capacity $\text{MAX\_SLOTS}$.
+     - **Stage 2 (Cost Calculation)**: Multiplies verified quantity by unit price and evaluates balance deltas before committing.
+     - **Stage 3 (Atomic Commit)**: Simultaneously debits/credits double-entry currency ledgers and transfers item counts in an all-or-nothing step, preventing partial desynchronization.
+  3. **Interactive Bulk Quantity Selector & Dynamic Clamping**: Stepper and preset quick controls (`[1]`, `[5]`, `[MAX]`) dynamically clamp candidate trade quantities to $\min(\text{stock}, \lfloor\text{funds} / \text{unit\_price}\rfloor, \text{capacity\_limit})$.
+  4. **Dynamic Haggling / Reputation Modifiers**: Charisma or reputation perks adjust multipliers dynamically (e.g. $-15\%$ buy discount, $+15\%$ sell bonus) while maintaining the anti-arbitrage margin $M_{\text{sell}} < M_{\text{buy}}$.
+  5. **Audit Ledger & Double-Entry Accounting**: Immutable transaction records log timestamps, quantities, unit prices, and post-trade balances for history verification, telemetry, and anti-cheat replay validation.
+- **Example Use Case**: The Legend of Zelda (Beedle's Shop), Skyrim/Oblivion merchant barter systems, Pokemon Pokemart, Diablo merchant transactions, and Stardew Valley Pierre's General Store.
+
+### 8.10 Crafting Recipes & Dependency Graph Architecture (Workbench)
+- **Dimension**: 2D & 3D
+- **Problem**: In crafting and survival games (Minecraft, Terraria, Monster Hunter, Skyrim, World of Warcraft), players combine raw materials into finished equipment, tools, and potions. Hardcoding recipe logic with nested ad-hoc `if/else` checks causes item duplication bugs, partial material consumption on failure, and confusing UI states where players cannot tell what ingredients are missing or evaluate multi-tier prerequisite craft chains (e.g. Oak Log $\to$ Timber Planks $\to$ Bow; Iron Ore $\to$ Iron Ingot $\to$ Steel Sword).
+- **Solution**:
+  1. **Declarative Recipe Struct & Directed Acyclic Graph (DAG)**: Model recipes as immutable structs `CraftingRecipe` linking input `IngredientSlot[K]` requirements (pairs of `item_id` and `required_count`) to target outputs (`result_item_id`, `result_count`). Chained dependencies naturally form a DAG where raw goods feed intermediate components, which feed finished equipment.
+  2. **Dynamic Affordability & Deficit Evaluation**:
+     $$\text{Max Craftable} = \min_{i \in \text{ingredients}} \left\lfloor \frac{\text{owned}[i.\text{item\_id}]}{i.\text{required\_count}} \right\rfloor$$
+     The UI evaluates recipes in real time into distinct visual states: **Ready** (bright green badge with craftable batch count) vs **Locked / Missing** (greyed-out slot highlighting exact material deficits like `Iron Ingot: 1 / 3`).
+  3. **Atomic 3-Stage Crafting Transaction**:
+     - *Precondition Check*: Verifies $100\%$ of all ingredient requirements are satisfied in a single scan before mutating state.
+     - *Atomic Deduction*: Simultaneously decrements all input materials by $\text{Qty} \times \text{required\_count}$.
+     - *Atomic Grant*: Produces and credits $\text{Qty} \times \text{result\_count}$ of the output item to inventory.
+  4. **Recursive Sub-Crafting Engine**: Automatically traverses the recipe DAG in topological order to synthesize missing intermediate components (e.g. smelting Ore into Ingots) if the player owns the necessary root raw materials.
+- **Example Use Case**: Minecraft crafting table, Terraria crafting stations, Monster Hunter blacksmith equipment forging, and Skyrim alchemy & smithing workbenches.
+
+### 8.11 Skill Tree & Directed Graph Validation (Skill Web)
+- **Dimension**: 2D & 3D
+- **Problem**: In RPGs, action games, and MMOs (Path of Exile, Diablo II/IV, Final Fantasy X Sphere Grid, World of Warcraft, Skyrim), character progression relies on complex, branching skill trees and webs. Managing unlocks with loose boolean flags causes illegal unlocks, state corruption, and severe refund exploits (e.g. allocating Root $\to$ Branch $\to$ Keystone, then refunding the Root while keeping the Keystone active). Furthermore, without structured Directed Acyclic Graph (DAG) reachability validation, implementing multi-parent hybrid prerequisites or mutually exclusive archetypes quickly collapses into brittle spaghetti.
+- **Solution**:
+  1. **DAG Node Topology**: Model perks as an explicit adjacency graph of `SkillNode` structs linking parent prerequisite node IDs (`prerequisites[K]`), maximum rank capacity (`max_points`), and branch archetypes.
+  2. **4-State Visual Lifecycle**: Every node dynamically computes its active state:
+     - `LOCKED`: Missing parent prerequisites (dim slate, lock glyph).
+     - `AVAILABLE`: Prerequisites satisfied, skill points in purse (pulsing green/gold halo).
+     - `INVESTED`: At least 1 point allocated (active branch theme color).
+     - `MAXED`: Maximum rank capacity reached (radiant golden border and energy glint).
+  3. **DAG Orphan Protection (Anti-Refund Exploit Algorithm)**:
+     When the player attempts to refund a point from an invested node, the engine executes a virtual simulation:
+     - Tentatively decrements the target node's points.
+     - Runs a Breadth-First Search (BFS) reachability traversal from the Origin Root node(s).
+     - If ANY other currently invested node loses its valid path to the Roots, the refund is **REJECTED** atomically, preventing orphaned perk exploits.
+  4. **Pure Derived Stat Pipeline**:
+     $$\text{Stat} = \text{Base Value} + \sum_{\text{node} \in \text{Allocated}} (\text{node.current\_points} \times \text{node.bonus})$$
+     Attributes (HP, ATK, DEF, SPD, CRIT) are completely derived on-demand from allocated node ranks, eliminating floating-point drift or save-file stat leakage.
+  5. **Mutual Exclusion Archetypes**: Keystone masteries tag conflicting node IDs (`conflict_node_id`), dynamically locking out opposing specializations (e.g. Berserker Offense vs Titan Defense).
+- **Example Use Case**: Path of Exile passive skill tree, Diablo II skill trees, Final Fantasy X Sphere Grid, and Grim Dawn constellation devotions.
+
+### 8.12 Minimap & Compass Navigation Architecture
+- **Dimension**: 3D & 2D
+- **Problem**: In 3D open worlds, dungeon crawlers, and action games (Skyrim, The Witcher 3, Halo, Battlefield, Horizon Zero Dawn, Zelda: Breath of the Wild), limited screen field-of-view (60°–90°) creates tunnel vision and severe spatial disorientation. Players lose track of where they are relative to world landmarks, active mission objectives, and cardinal directions. Furthermore, naive 2D HUD overlays that lack proper coordinate transformation mathematics, heading rotation, or edge-pinning result in blips vanishing abruptly off-screen or pointing in inverted, misleading directions when the camera turns.
+- **Solution**:
+  1. **Coordinate Transformation Pipeline (World Space $\to$ Radar Space)**:
+     - World Delta: $\Delta x = P_{\text{target}.x} - P_{\text{player}.x}$, $\Delta z = P_{\text{target}.z} - P_{\text{player}.z}$.
+     - *Heading-Up Mode (Rotating Radar)*: Rotates world delta by negative camera heading $-\psi$:
+       $$\begin{bmatrix} r_x \\ r_y \end{bmatrix} = \begin{bmatrix} \cos(-\psi) & -\sin(-\psi) \\ \sin(-\psi) & \cos(-\psi) \end{bmatrix} \begin{bmatrix} \Delta x \\ \Delta z \end{bmatrix}$$
+       Aligns the radar so the player's forward line-of-sight always points straight up ($-Y$ in screen space).
+     - *North-Up Mode (Fixed Radar)*: World North remains fixed straight up; player marker rotates by $\psi$.
+     - Linear Scaling: $(p_x, p_y) = (r_x, r_y) \times (R_{\text{radar}} / \text{Range}_{\text{world}})$.
+  2. **Edge-Pinning & Boundary Clamping**:
+     When distance in radar pixels exceeds maximum radius $d_{\text{px}} > R - \text{margin}$:
+     $$\vec{P}_{\text{clamped}} = \vec{C}_{\text{radar}} + \frac{\vec{p}}{d_{\text{px}}} \times (R - \text{margin})$$
+     Draws an outward-pointing chevron arrow along the circular perimeter so the player always knows which direction to turn to locate distant objectives without map clutter.
+  3. **360° Seamless Compass Strip / Heading Tape**:
+     - Computes true target bearing $\beta = \text{atan2}(\Delta x, -\Delta z)$ and camera forward heading $\psi = \text{atan2}(f_x, -f_z)$.
+     - Evaluates angular difference normalized to $[-\pi, \pi]$: $\Delta\alpha = \text{wrap\_angle}(\beta - \psi)$.
+     - Maps visible objectives ($|\Delta\alpha| \le \text{FOV}_{\text{compass}} / 2$) onto a horizontal tape:
+       $$X_{\text{screen}} = X_{\text{center}} + \left(\frac{\Delta\alpha}{\text{FOV}_{\text{compass}} / 2}\right) \times \frac{W_{\text{tape}}}{2}$$
+     - Smooth edge-fade alpha gradient prevents popping as cardinal ticks (N, NE, E, SE, S, SW, W, NW) and POIs enter and leave the visible strip.
+- **Example Use Case**: The Elder Scrolls V: Skyrim compass tape, The Witcher 3 rotating minimap with objective edge-clamping, Horizon Zero Dawn navigation bar, and Halo motion tracker radar.
+
+---
+
+## Summary Matrix
+
+| Pattern Name | Core Category | 2D / 3D | Primary Benefit |
+| :--- | :--- | :--- | :--- |
+| **Game Loop** | Core Execution | Both | Deterministic simulation across hardware |
+| **Component Pattern (ECS)** | Architecture | Both | Flexibility without deep inheritance |
+| **Command Pattern** | Input & Decoupling | Both | Remapping, undo/redo, replay capability |
+| **State Machine (FSM / HSM)** | Behavior | Both | Clean transitions, eliminates `if/else` spaghetti |
+| **Object Pool** | Performance | Both | Zero garbage collection spikes during action |
+| **Spatial Partitioning** | Physics & Math | Both | Drops collision checks from $O(N^2)$ to $O(N)$ |
+| **Steering Behaviors** | Game AI | Both | Organic, fluid, realistic movement |
+| **Rotated Capsule Collision** | Collision | Both | Smooth character hulls with zero corner snags |
+| **Separating Axis Theorem (SAT)**| Collision | Both | Exact rotated shape intersection |
+| **Procedural Primitive Assembler**| Graphics / Visuals| Both | Rich models without external asset files |
+| **Camera Rig** | Presentation | Both | Fluid, punchy visuals with damping and shake |
+| **Event Queue** | Decoupling | Both | Decouples audio, UI, and gameplay logic |
+| **Vertical Menu with Cursor** | User Interface | Both | Mathematical wrap-around, damped cursor, decoupled command dispatch |
+| **Radial Menu (Weapon Wheel)**| User Interface | Both | 360° sector selection, center deadzone hysteresis, matrix time dilation |
+| **Tabbed Menu (Sub-View Strategy)**| User Interface | Both | Modular sub-view layouts, bumper cycling, animated indicator, unified stat pipeline |
+| **Grid Inventory (Attaché Case)**| User Interface | Both | Fixed 2D cell storage, atomic hand slot state machine, declarative recipe engine |
+| **Shape-Packing Inventory (Tetris Backpack)**| User Interface | Both | Multi-cell polyomino footprint storage, 90° rotation math, atomic swap, FFD auto-pack |
+| **Weight-Based Inventory (Overloaded Mule)**| User Interface | Both | Mass aggregation pipeline, continuous velocity curve, encumbrance tiers, mule offload |
+| **Equipment Slots (Paper Doll)**| User Interface | Both | Anatomical slot matrix, 2H mutual exclusion, pure derived stat pipeline, set synergies |
+| **Stat Comparison Tooltip (Gear Compare)**| User Interface | Both | Side-by-side dual cards, green/red delta contrast pipeline, smart viewport clamping |
+| **Shop Economy & Transaction Pipeline (Merchant Stall)**| User Interface & Economy| Both | Atomic 3-stage trade pipeline, sell-back markdown anti-arbitrage, bulk quantity clamping, double-entry ledger |
+| **Crafting Recipes & Dependency Graph (Workbench)**| User Interface & Progression| Both | Declarative recipe DAG, dynamic greyed-out ingredient gating, atomic deduction, recursive sub-crafting |
+| **Skill Tree & Directed Graph Validation (Skill Web)**| User Interface & Progression| Both | DAG reachability validation, 4-state node lifecycle, anti-refund orphan protection, pure derived stats |
+| **Minimap & Compass Navigation Architecture**| User Interface & Presentation| Both | Heading-Up vs North-Up rotation math, out-of-range edge pinning, 360° seamless compass strip tape |
+

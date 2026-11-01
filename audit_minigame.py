@@ -1,0 +1,98 @@
+# -*- coding: utf-8 -*-
+"""
+Deterministic Gatekeeper & AST Auditor for Loop Engineering (audit_minigame.py)
+Checks:
+1. Mandatory template headers, imports, and 5-block anatomy from AGENTS.md.
+2. Strict C++-transferable AST rules (zero comprehensions, lambdas, decorators, generators, or walrus operators).
+3. Headless execution verification (--smoke-test) with zero bytecode generation (-B).
+"""
+import sys
+import os
+import ast
+import subprocess
+
+sys.dont_write_bytecode = True
+
+REQUIRED_STRINGS = [
+    "sys.dont_write_bytecode = True",
+    "from pyray import *",
+    "from assets import *",
+    "from utils import *",
+    "BLOCK 1: CORE PATTERN IMPLEMENTATION",
+    "BLOCK 2: WORLD SIMULATION & ENTITIES",
+    "BLOCK 3: TELEMETRY & X-RAY DEBUG OVERLAY",
+    "BLOCK 4: MAIN GAME LOOP & AUTOMATED SMOKE TEST",
+    "draw_gamepad_status_badge",
+    "draw_ui_settings_bar",
+    "--smoke-test"
+]
+
+def check_ast_cpp_rules(filepath, source):
+    try:
+        tree = ast.parse(source, filename=filepath)
+    except SyntaxError as e:
+        return [f"Line {e.lineno}: SyntaxError: {e.msg}"]
+
+    errors = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp)):
+            errors.append(f"Line {node.lineno}: Comprehension/Generator expression forbidden (Rule 4: use explicit C++-style for loops).")
+        elif isinstance(node, ast.Lambda):
+            errors.append(f"Line {node.lineno}: 'lambda' forbidden (Rule 4).")
+        elif isinstance(node, (ast.Yield, ast.YieldFrom, ast.AsyncFunctionDef, ast.Await)):
+            errors.append(f"Line {node.lineno}: Generator 'yield' or 'async/await' forbidden (Rule 4).")
+        elif isinstance(node, ast.NamedExpr):
+            errors.append(f"Line {node.lineno}: Walrus operator (:=) forbidden (Rule 4).")
+        elif isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            if node.decorator_list:
+                errors.append(f"Line {node.lineno}: Decorators (@) forbidden (Rule 4).")
+            if isinstance(node, ast.FunctionDef) and node.name.startswith("__") and node.name != "__init__":
+                errors.append(f"Line {node.lineno}: Dunder method '{node.name}' forbidden (only __init__ is allowed).")
+    return errors
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python -B audit_minigame.py minigames/<script_name>.py")
+        sys.exit(1)
+
+    filepath = sys.argv[1]
+    if not os.path.exists(filepath):
+        print(f"[FAIL] File not found: {filepath}")
+        sys.exit(1)
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        source = f.read()
+
+    # 1. Check mandatory AGENTS.md structural requirements
+    missing = []
+    for req in REQUIRED_STRINGS:
+        if req not in source:
+            missing.append(req)
+    if missing:
+        print(f"[FAIL] {filepath} - Missing mandatory AGENTS.md elements:")
+        for m in missing:
+            print(f"  - {m}")
+        sys.exit(1)
+
+    # 2. Check AST for C++ Transferability (Rule 4)
+    ast_errors = check_ast_cpp_rules(filepath, source)
+    if ast_errors:
+        print(f"[FAIL] {filepath} - Rule 4 (C++ Transferable Code) violations detected:")
+        for err in ast_errors[:15]:
+            print(f"  - {err}")
+        sys.exit(1)
+
+    # 3. Run headless Raylib smoke test (catches CFFI float/int and Color errors)
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    res = subprocess.run([sys.executable, "-B", filepath, "--smoke-test"], capture_output=True, text=True, env=env)
+    if res.returncode != 0:
+        print(f"[FAIL] {filepath} - Runtime crash during --smoke-test:\n{res.stderr}\n{res.stdout}")
+        sys.exit(1)
+
+    print(f"[PASS] {filepath} passed Template + AST C++ Check + Raylib Smoke Test (0 errors).")
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+
