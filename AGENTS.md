@@ -22,7 +22,7 @@ The graphics and audio are intentionally built using **procedural primitives** (
      - `3.7 Puzzle, Stealth & Other`
 2. **Check Existing Visual & Audio Assets**: Review [`assets.md`](assets.md) to reuse existing 3D models (`assets/models_3d/`), 2D primitive renderers (`assets/sprites_2d/`), and procedural audio synthesizers (`assets/audio/`). **NEVER rewrite or duplicate these assets.**
 3. **Check Existing Utilities & Math**: Review [`utils.md`](utils.md) to reuse non-native collision routines (rotated 3D/2D capsules, SAT OBB), spatial hash grids (`SpatialGrid2D`/`3D`), AI pursuit/pathfinding algorithms (A*, BFS, seek, lead intercept), math dampening/shake tools, and the global UI/Font/Window manager (`utils/ui_settings.py`). **NEVER rewrite these utilities** (unless a single-pattern lab is specifically teaching that algorithm, in which case expose its step-by-step state visually).
-4. **Reference Game Design Patterns**: Consult [`patrones.md`](patrones.md) to document and explain the design patterns demonstrated.
+4. **Reference Game Design Patterns**: Consult [`patterns.md`](patterns.md) to document and explain the design patterns demonstrated.
 
 ### Batch Size & Scope Limits (Quality Guardrail)
 To prevent output truncation, skipped comments, or degraded code quality:
@@ -63,7 +63,7 @@ Every minigame script must follow a strict 5-block anatomy so learners can locat
 <Prototype Title> - <Target Design Pattern(s)>
 ==============================================
 Section          : <3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, or 3.7>
-Pattern Category : <Category from patrones.md>
+Pattern Category : <Category from patterns.md>
 Dimension        : <2D or 3D>
 
 Problem Solved:
@@ -199,7 +199,7 @@ Because this repository exists to **teach** game design patterns:
 - All code, comments, and markdown documents must be written in **clear, readable English**.
 - Include thorough comments explaining *why* equations work (e.g., shortest segment distance, Reynolds steering, DDA raycast, spring damping) and brief notes on how the data structures map to C++.
 - Whenever you create or modify:
-  - A minigame $\rightarrow$ Update [`minigames.md`](minigames.md) (and [`patrones.md`](patrones.md) if adding a new pattern).
+  - A minigame $\rightarrow$ Update [`minigames.md`](minigames.md) (and [`patterns.md`](patterns.md) if adding a new pattern).
   - An asset $\rightarrow$ Update [`assets.md`](assets.md).
   - A utility $\rightarrow$ Update [`utils.md`](utils.md).
 
@@ -217,7 +217,7 @@ Every minigame script MUST be classified under its designated section from `mini
 2. **Sync `minigames.md`**:
    - Mark the item in its planned 3.x section with a `(built)` suffix.
    - Add an entry in Section 2 (Active Minigames Registry) specifying its Section designation (e.g., `Section 3.1: Menus & UI`).
-3. **Sync `patrones.md`**: Ensure the demonstrated pattern is documented under its category and registered in the Summary Matrix.
+3. **Sync `patterns.md`**: Ensure the demonstrated pattern is documented under its category and registered in the Summary Matrix.
 4. **Dual Smoke Test**: Run both `python -B minigames/<script_name>.py --smoke-test` AND `python -B launcher.py --smoke-test` to verify zero regressions in the prototype and the launcher dropdown system.
 
 ---
@@ -248,7 +248,7 @@ Every minigame script MUST be classified under its designated section from `mini
 ├── README.md                  <-- Beginner onboarding & usage instructions
 ├── config.json                <-- Persisted UI preferences (font, font size, window size)
 ├── launcher.py                <-- Interactive Pattern Encyclopedia & Minigame Hub
-├── patrones.md                <-- Exhaustive catalog of 2D & 3D game design patterns
+├── patterns.md                <-- Exhaustive catalog of 2D & 3D game design patterns
 ├── assets.md                  <-- Registry of all 3D models, 2D sprites, and synth audio
 ├── utils.md                   <-- Registry of collisions, spatial grids, AI, math & UI
 ├── minigames.md               <-- Registry and status of all standalone minigames

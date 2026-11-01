@@ -35,7 +35,7 @@ This document is the official registry and tracking board for all experimental m
 
 ## 2. Active Minigames Registry
 
-| Section | Minigame File | Dim | Design Patterns Demonstrated (from `patrones.md`) | Assets & Utils Used | Status |
+| Section | Minigame File | Dim | Design Patterns Demonstrated (from `patterns.md`) | Assets & Utils Used | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **3.0** | [`minigames/space_swarm.py`](minigames/space_swarm.py) | 2D | Object Pool, Spatial Partitioning (`SpatialGrid2D`), Camera Rig (`TraumaShake`), State Machine (FSM), Wave Director | `draw_flying_drone_2d`, `SoundLibrary`, `SynthMusicPlayer`, `SpatialGrid2D`, `TraumaShake`, `get_dual_move_2d` | Built |
 | **3.0** | [`minigames/mecha_colosseum.py`](minigames/mecha_colosseum.py) | 3D | Behavior Trees, Kinematic Character Controller, Audio Synthesis, Object Pool, Camera Rig | `draw_quadruped_beast_3d`, `draw_turret_boss_3d`, `SoundLibrary`, `SynthMusicPlayer`, `TraumaShake`, `closest_point_on_segment_2d`, `get_dual_move_2d` | Built |
@@ -76,7 +76,7 @@ The five prototypes above mix several patterns. The catalog below follows the pr
 Rules for using this catalog:
 - **Batch Limit**: Build **1 to 2 prototypes per prompt** (max 3 if simple 2D in the same section) so every file receives full pedagogical comments, an interactive `[Tab]` X-Ray overlay, and an `[F1]` comparison toggle.
 - **Reuse First**: Pick a row, then check `assets.md` and `utils.md` before writing anything (reuse, do not duplicate).
-- **Sync `patrones.md`**: If a pattern name is missing from `patrones.md`, add it there in the same task.
+- **Sync `patterns.md`**: If a pattern name is missing from `patterns.md`, add it there in the same task.
 - **Keep the Pattern Visible**: Implement the pattern's core logic inside the `BLOCK 1: CORE PATTERN IMPLEMENTATION` section of the minigame (with an `[F1]` on/off toggle and `[Tab]` debug overlay) instead of hiding it inside `utils/`.
 - **Smoke Test & Register**: Run `python -B minigames/<script_name>.py --smoke-test`, register it in Section 2, and mark its row below with a `(built)` suffix on its Concept Name.
 
