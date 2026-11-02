@@ -24,10 +24,38 @@ The graphics and audio are intentionally built using **procedural primitives** (
 3. **Check Existing Utilities & Math**: Review [`utils.md`](utils.md) to reuse non-native collision routines (rotated 3D/2D capsules, SAT OBB), spatial hash grids (`SpatialGrid2D`/`3D`), AI pursuit/pathfinding algorithms (A*, BFS, seek, lead intercept), math dampening/shake tools, and the global UI/Font/Window manager (`utils/ui_settings.py`). **NEVER rewrite these utilities** (unless a single-pattern lab is specifically teaching that algorithm, in which case expose its step-by-step state visually).
 4. **Reference Game Design Patterns**: Consult [`patterns.md`](patterns.md) to document and explain the design patterns demonstrated.
 
-### Batch Size & Scope Limits (Quality Guardrail)
+### 1.1 Ambiguity Gate & Mandatory Specification Check
+Before writing or modifying any code, the agent **MUST** evaluate the clarity, target section, and scope of the prompt:
+- **Mandatory Specificity**: The user must explicitly specify:
+  1. The exact catalog section (`Section 3.x`) or target prototype name(s) from `minigames.md`.
+  2. The exact quantity of tasks/scripts to be executed in this request.
+- **Ambiguity Halt**: If the request is generic, open-ended (e.g., "make some minigames", "fix bugs in minigames", "advance on the list"), or requests multiple tasks without using the `/goal` or `/plan` slash command:
+  - **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.**
+  - The agent must ask the user to clarify:
+    1. Which specific section or prototype(s) from `minigames.md` they want to target.
+    2. How many scripts to process in this session.
+    3. Suggest using `/goal` for autonomous multi-script execution or `/plan` for phased implementation.
+
+### 1.2 Script Sizing & Pedagogical Quality Invariants
+To maximize token economy, maintain deep architectural pedagogy, and ensure zero runtime defects:
+- **Strict Size Limits**:
+  - **Usual Target Range**: **1,200 to 2,000 lines** per minigame script.
+  - **Hard Ceiling**: **2,000 lines maximum**. Under NO circumstances may any minigame script exceed 2,000 lines.
+- **Pedagogical Quality Invariants (Non-Negotiable within Line Budget)**:
+  - Even within the 1,200–2,000 line target, the agent must NEVER compress code, truncate functions, or omit comments to fit arbitrary limits.
+  - Every script MUST provide:
+    1. Novice-friendly comments explaining *why* equations work and their direct C++ equivalent (memory layout, explicit indices, struct fields).
+    2. The full 5-block anatomy (Imports, Block 1 Core Pattern, Block 2 Entities/Simulation, Block 3 Telemetry X-Ray Overlay, Block 4 Dual Input Loop & Smoke Test).
+    3. Complete simultaneous Keyboard/Mouse + Gamepad parity (no mouse-only or key-only actions).
+    4. Safe HUD layout (keeping `x = 450..980, y = 14..48` clear for the global dropdown bar).
+    5. Full state reset on `[R]` / Gamepad Start, zero CFFI type casting errors, and clamped Color channels (`0..255`).
+
+### 1.3 Batch Size & Scope Limits (Quality Guardrail)
 To prevent output truncation, skipped comments, or degraded code quality:
-- **Full Multi-Pattern Minigames** (600–900 lines, combining 4+ patterns like `minigames/3.0_core_prototypes/space_swarm.py`): Build **at most 1 prototype per prompt**.
-- **Focused Single-Pattern Labs** (250–450 lines, from Extended Catalog sections 3.1–3.7 in `minigames.md`): Build **1 to 2 prototypes per prompt** (maximum 3 only if explicitly requested by the user and within the same 2D category).
+- **Standard Single-Turn Request**: Build strictly **1 prototype per prompt/cycle** (target 1,200–2,000 lines, maximum 2,000 lines). Complete the file, run verification via `audit_minigame.py`, update documentation, and halt.
+- **Autonomous Multi-Script Sessions (`/goal` or `/plan`)**:
+  - The agent may process batches of **up to 5 scripts per session**.
+  - **Strict Sequential Processing Invariant**: The agent MUST process scripts strictly **one at a time** (generate script $N \rightarrow$ verify with `audit_minigame.py` $\rightarrow$ update documentation $\rightarrow$ advance to script $N+1$). It must NEVER attempt to generate or modify multiple scripts in a single tool call or message.
 - **Focused Lab Scope**: Single-pattern labs must start **immediately in the interactive gameplay/sandbox state** (skip title screens unless the pattern itself is a menu/scene-stack pattern) so 100% of the code focuses on experiencing and inspecting the target pattern.
 
 ---
@@ -187,13 +215,18 @@ Because this repository exists to **teach** game design patterns:
 1. **`[Tab]` X-Ray Inspector Overlay (Default ON in Single-Pattern Labs)**: Every minigame must render a clean telemetry panel or world-space debug visualization showing the pattern's inner workings in real time (e.g., active vs. free slots in an Object Pool, active node in a Behavior Tree/FSM, spatial grid cell outlines and query counts, trajectory/raycast vectors, or timing window bars).
 2. **`[F1]` Live Pattern Toggle / Parameter Tuning**: Whenever a pattern improves performance, feel, or architecture (e.g., Coyote Time, Object Pool, Spatial Grid, Hit-Stop, Auto-Aim, Camera Damping, Recoil), allow pressing `[F1]` (or `1`/`2`/`3`) to toggle the pattern `ON/OFF` or adjust its parameters live so the learner can immediately feel the difference.
 
-### Rule 6: Mandatory Non-Blocking Verification (`--smoke-test`)
+### Rule 6: Mandatory Non-Blocking Verification & Strict 1-Retry Policy
 - **NEVER** execute `python -B minigames/<subfolder>/<script>.py` without `--smoke-test` from an agent tool call, because the Raylib window will stay open indefinitely and hang the terminal.
-- After creating or editing any minigame, you **MUST** verify it by running:
+- After creating or editing any minigame, you **MUST** verify it using the automated gatekeeper:
   ```bash
-  python -B minigames/<subfolder>/<script_name>.py --smoke-test
+  $env:PYTHONDONTWRITEBYTECODE="1"
+  python -B audit_minigame.py minigames/<subfolder>/<script_name>.py
   ```
-- This executes 3 full `update()` and `draw()` frames and closes cleanly, catching 100% of syntax errors, missing imports, and `pyray` CFFI type mismatches.
+  *(This executes template checks, C++-transferable AST rules, and 3 full Raylib `update()`/`draw()` frames to catch 100% of syntax errors, missing imports, and CFFI type mismatches).*
+- **Strict 1-Retry Policy for Bug Fixes**:
+  - If `audit_minigame.py` or `--smoke-test` fails (AST rule violation, syntax error, pyray CFFI type crash, missing imports, or logic defect), the agent is permitted **AT MOST ONE (1) retry pass** to correct all identified issues.
+  - **Line Cap Preservation**: The corrected file MUST STILL remain strictly under the **2,000-line hard ceiling** (and target the 1,200–2,000 line range).
+  - **Terminal Stop on Second Failure**: If the script still fails after the single retry attempt, the agent **MUST STOP IMMEDIATELY**, log the exact error and line numbers to the user, and request human guidance rather than attempting further automated loops.
 
 ### Rule 7: Immediate Documentation Updates & Novice-Friendly English
 - All code, comments, and markdown documents must be written in **clear, readable English**.

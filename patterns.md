@@ -420,6 +420,39 @@ This document provides an exhaustive, practical reference of game programming an
      - Smooth edge-fade alpha gradient prevents popping as cardinal ticks (N, NE, E, SE, S, SW, W, NW) and POIs enter and leave the visible strip.
 - **Example Use Case**: The Elder Scrolls V: Skyrim compass tape, The Witcher 3 rotating minimap with objective edge-clamping, Horizon Zero Dawn navigation bar, and Halo motion tracker radar.
 
+### 8.13 Menu Stack (Push/Pop Modal State Machine)
+- **Dimension**: 2D & 3D
+- **Problem**: Multi-tier game interfaces (Pause $\to$ Options $\to$ Audio/Display/Gameplay $\to$ Confirmation Modals) managed via monolithic state flags and loose if/else ladders suffer from navigation leaks, lost cursor memory across parent screens, broken back-button handling, and accidental input bleeding into underlying gameplay.
+- **Solution**:
+  1. **LIFO Stack Container (`std::vector<MenuFrame>`)**: Menu screens exist as distinct state frames stored in a Last-In, First-Out stack. The topmost frame receives exclusive focus for input and updates, while suspended frames preserve their selection indices and scroll offsets intact underneath.
+  2. **Atomic Push/Pop Navigation**: Pushing transitions to child views seamlessly; popping removes the top frame and restores the exact parent state without coupling child views to parents.
+  3. **Modal Dialog Interception**: Destructive prompts (e.g. 'Reset Defaults', 'Quit to Title') push an interceptor modal on top, freezing all underlying operations until confirmed or dismissed.
+  4. **Dynamic Breadcrumb Trail**: The stack automatically walks frames from root (index 0) to top to generate breadcrumb paths (`PAUSE > OPTIONS > AUDIO`), enabling direct random-access popping.
+  5. **Damped Visual Transitions**: Frame offsets and opacities smoothly glide into place via exponential damping (`damp`), giving tactile polish.
+- **Example Use Case**: AAA and indie pause/settings hierarchies (Dark Souls, Monster Hunter, Halo, Celeste) navigating complex submenus and modal confirmation alerts.
+
+### 8.14 Context Menu (Floating Contextual Action Dispatcher & Smart Viewport Anchor)
+- **Dimension**: 2D & 3D
+- **Problem**: In RPGs, RTS titles, and simulation games (World of Warcraft, Baldur's Gate 3, StarCraft, The Sims), interacting with world entities via a single generic button ('Press E') is ambiguous and restrictive for complex entities (e.g. Chest: Unlock, Smash, Disarm Trap, Inspect). Conversely, naive floating context menus open at unmanaged cursor coordinates, clipping outside viewport boundaries when triggered near screen edges, breaking nested submenu cascades, and tightly coupling UI widgets to game entities.
+- **Solution**:
+  1. **Contextual Action Provider Interface**: Entities implement a declarative action query `get_context_actions(player, distance)` producing a dynamic array of `ContextAction` tokens with availability flags and requirement tooltips.
+  2. **Smart Viewport Clamping & Cascade Flipping**: The menu measures its bounding box $(W, H)$. If opening at $(X, Y)$ penetrates screen margins, the anchor automatically flips horizontally ($X - W$) or vertically ($Y - H$). Nested cascading submenus inherit this flipped orientation vector so multi-tier options never bleed past screen borders.
+  3. **Decoupled Command Dispatch**: Selecting a menu item emits an immutable `ContextCommand` token rather than mutating entity state inside the UI draw call, processed cleanly on the next simulation tick.
+  4. **Dual Layout Strategy (List vs Radial Wheel)**: Supports both classic desktop vertical cascading lists and modern 360° radial action wheels optimized for gamepads.
+- **Example Use Case**: World of Warcraft right-click unit menus, Baldur's Gate 3 environmental context interactions, and RTS command menus.
+
+### 8.15 Quick Slot Bar (Hotbar Architecture & 2-Tier Cooldown Synchronization)
+- **Dimension**: 2D & 3D
+- **Problem**: In fast-paced ARPGs, MMOs, survival titles, and sandbox builders (World of Warcraft, Minecraft, Diablo, Terraria, Valheim), players need instant access to 8–10 abilities, items, and weapons without opening full-screen inventories. Naive hotbars suffer from button-mashing race conditions, lack of Global Cooldown (GCD) pacing (allowing players to spam 5 items in the exact same frame), missing visual recharge wipes (leaving players guessing when an item is ready), and rigid key mappings that fail on gamepads.
+- **Solution**:
+  1. **Contiguous Slot Array (`std::array<HotbarSlot, N>`)**: Pre-allocates $N = 8$ fixed slots storing bound `item_id`, count, independent cooldown timer, and elastic bounce scale.
+  2. **Two-Tier Cooldown Synchronization**:
+     - *Global Cooldown (GCD)*: A short shared lockout window (e.g. 0.75s) triggered on any major ability use, pacing combat rhythm and preventing macro burst exploits.
+     - *Per-Item Cooldown*: Independent timers rendered as downward vertical wipes ($h_{\text{wipe}} = H_{\text{slot}} \times (t_{\text{cd}} / t_{\max})$) with live numeric labels.
+  3. **Simultaneous Dual Input Multiplexing**: Number keys [1..8], mouse scroll wheel, and gamepad bumpers [LB]/[RB] seamlessly cycle the active slot, while a damped cursor indicator smoothly glides between slots.
+  4. **Backpack Tray Rebinding**: Decoupled item drag/assignment allowing players to re-bind quick slots dynamically during gameplay.
+- **Example Use Case**: World of Warcraft action bars, Minecraft item hotbar, Diablo skill bar, and Terraria quick-access dock.
+
 ---
 
 ## 9. Combat & Weapon Systems Patterns
@@ -540,6 +573,9 @@ This document provides an exhaustive, practical reference of game programming an
 | **Crafting Recipes & Dependency Graph (Workbench)**| User Interface & Progression| Both | Declarative recipe DAG, dynamic greyed-out ingredient gating, atomic deduction, recursive sub-crafting |
 | **Skill Tree & Directed Graph Validation (Skill Web)**| User Interface & Progression| Both | DAG reachability validation, 4-state node lifecycle, anti-refund orphan protection, pure derived stats |
 | **Minimap & Compass Navigation Architecture**| User Interface & Presentation| Both | Heading-Up vs North-Up rotation math, out-of-range edge pinning, 360° seamless compass strip tape |
+| **Menu Stack (Push/Pop Modal State Machine)**| User Interface & State Management| Both | LIFO frame stack, modal dialog interception, breadcrumbs, zero-state-leak child navigation |
+| **Context Menu (Floating Contextual Action Dispatcher)**| User Interface & Commands| Both | Smart viewport edge clamping, dynamic entity action queries, submenu cascade, radial wheel mode |
+| **Quick Slot Bar (Hotbar Architecture & 2-Tier Cooldowns)**| User Interface & Combat Actions| Both | Contiguous slot array, Global Cooldown (GCD) synchronization, tactile vertical wipes, bumper navigation |
 | **Hitscan (Instant Raycast)**| Combat & Weapons| Both | Zero flight latency, instant line-of-sight raycasts, contrasting with swept CCD travel projectiles |
 | **Waypoint Patrol (Circuit & Ping-Pong)**| Artificial Intelligence & Navigation| Both | Graph route progression, arrival hysteresis, dwell/observation sweeps, vision cone perception |
 | **Weighted Loot Table & Rarity Tiers (CDF)**| Progression & Economy| Both | O(log N) CDF sampling, dynamic Magic Find scaling, Law of Large Numbers empirical convergence |
