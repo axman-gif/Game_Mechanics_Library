@@ -26,7 +26,7 @@ The graphics and audio are intentionally built using **procedural primitives** (
 
 ### Batch Size & Scope Limits (Quality Guardrail)
 To prevent output truncation, skipped comments, or degraded code quality:
-- **Full Multi-Pattern Minigames** (600–900 lines, combining 4+ patterns like `minigames/space_swarm.py`): Build **at most 1 prototype per prompt**.
+- **Full Multi-Pattern Minigames** (600–900 lines, combining 4+ patterns like `minigames/3.0_core_prototypes/space_swarm.py`): Build **at most 1 prototype per prompt**.
 - **Focused Single-Pattern Labs** (250–450 lines, from Extended Catalog sections 3.1–3.7 in `minigames.md`): Build **1 to 2 prototypes per prompt** (maximum 3 only if explicitly requested by the user and within the same 2D category).
 - **Focused Lab Scope**: Single-pattern labs must start **immediately in the interactive gameplay/sandbox state** (skip title screens unless the pattern itself is a menu/scene-stack pattern) so 100% of the code focuses on experiencing and inspecting the target pattern.
 
@@ -44,7 +44,7 @@ To prevent output truncation, skipped comments, or degraded code quality:
   ```
 
 ### Rule 2: Mandatory `from pyray import *` followed by `from utils import *`
-- Every minigame inside `minigames/` must be a **single, self-contained Python script** (e.g., `minigames/space_swarm.py`).
+- Every minigame inside `minigames/` must be a **single, self-contained Python script** located inside its designated 3.x category subfolder (e.g., `minigames/3.0_core_prototypes/space_swarm.py` or `minigames/3.1_menus_ui/weapon_wheel.py`).
 - In **EVERY** script, you **MUST** import in this exact order:
   ```python
   from pyray import *
@@ -52,7 +52,7 @@ To prevent output truncation, skipped comments, or degraded code quality:
   from utils import *
   ```
 - Importing `from utils import *` after `from pyray import *` automatically enables the repository's **Global Top-Bar Settings Dropdowns** (`Font`, `Font Size [Ctrl +/-]`, and `Window Size / Fullscreen [F11]`) backed by `config.json`. Keep the top-bar region `x = 450..980, y = 14..48` free of HUD text so the dropdown bar (`draw_ui_settings_bar(450, 16)`) never overlaps your HUD.
-- Every minigame must be directly executable from the terminal (`python -B minigames/<script_name>.py`) and discoverable via the root [`launcher.py`](launcher.py).
+- Every minigame must be directly executable from the terminal (`python -B minigames/<subfolder>/<script_name>.py`) and discoverable via the root [`launcher.py`](launcher.py).
 
 ### Rule 3: Mandatory 5-Block Pedagogical Anatomy & Template
 Every minigame script must follow a strict 5-block anatomy so learners can locate the pattern implementation immediately and automated tests can verify it without hanging:
@@ -90,7 +90,7 @@ import random
 sys.dont_write_bytecode = True
 
 # 2. Add repository root to search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 # 3. Mandatory Raylib & modular imports
 from pyray import *
@@ -188,10 +188,10 @@ Because this repository exists to **teach** game design patterns:
 2. **`[F1]` Live Pattern Toggle / Parameter Tuning**: Whenever a pattern improves performance, feel, or architecture (e.g., Coyote Time, Object Pool, Spatial Grid, Hit-Stop, Auto-Aim, Camera Damping, Recoil), allow pressing `[F1]` (or `1`/`2`/`3`) to toggle the pattern `ON/OFF` or adjust its parameters live so the learner can immediately feel the difference.
 
 ### Rule 6: Mandatory Non-Blocking Verification (`--smoke-test`)
-- **NEVER** execute `python -B minigames/<script>.py` without `--smoke-test` from an agent tool call, because the Raylib window will stay open indefinitely and hang the terminal.
+- **NEVER** execute `python -B minigames/<subfolder>/<script>.py` without `--smoke-test` from an agent tool call, because the Raylib window will stay open indefinitely and hang the terminal.
 - After creating or editing any minigame, you **MUST** verify it by running:
   ```bash
-  python -B minigames/<script_name>.py --smoke-test
+  python -B minigames/<subfolder>/<script_name>.py --smoke-test
   ```
 - This executes 3 full `update()` and `draw()` frames and closes cleanly, catching 100% of syntax errors, missing imports, and `pyray` CFFI type mismatches.
 
@@ -218,7 +218,7 @@ Every minigame script MUST be classified under its designated section from `mini
    - Mark the item in its planned 3.x section with a `(built)` suffix.
    - Add an entry in Section 2 (Active Minigames Registry) specifying its Section designation (e.g., `Section 3.1: Menus & UI`).
 3. **Sync `patterns.md`**: Ensure the demonstrated pattern is documented under its category and registered in the Summary Matrix.
-4. **Dual Smoke Test**: Run both `python -B minigames/<script_name>.py --smoke-test` AND `python -B launcher.py --smoke-test` to verify zero regressions in the prototype and the launcher dropdown system.
+4. **Dual Smoke Test**: Run both `python -B minigames/<subfolder>/<script_name>.py --smoke-test` AND `python -B launcher.py --smoke-test` to verify zero regressions in the prototype and the launcher dropdown system.
 
 ---
 
@@ -266,7 +266,13 @@ Every minigame script MUST be classified under its designated section from `mini
 │   ├── ui_settings.py         <-- Global Font, Font Size (Ctrl+/-), Window (F11) & config.json manager
 │   └── gamepad_input.py       <-- Simultaneous Keyboard/Mouse + Gamepad hot-plug & radial deadzone
 │
-└── minigames/                 <-- Standalone single-file minigames & pattern labs
-    ├── space_swarm.py         <-- 2D Bullet Hell & Swarm Survival (Object Pool, Spatial Grid, Trauma Shake)
-    └── mecha_colosseum.py     <-- 3D Boss Arena (Behavior Trees, Kinematic Slide Controller, Audio Synth)
+└── minigames/                 <-- Categorized single-file minigames & pattern labs
+    ├── 3.0_core_prototypes/   <-- Full multi-pattern prototypes (Space Swarm, Mecha Colosseum, Drone Defense)
+    ├── 3.1_menus_ui/          <-- Tactile UI and inventory labs (Title Screen, Weapon Wheel, Attaché Case, etc.)
+    ├── 3.2_combat_weapons/    <-- Combat mechanics (Hitscan, Ballistics, Recoil, Ammo, Parry)
+    ├── 3.3_enemies_ai/        <-- AI patterns (Patrols, Alert FSM, Flow Fields, Boss Phases)
+    ├── 3.4_progression_economy/<-- RPG loops (Loot tables, Crafting, XP curves, Shops)
+    ├── 3.5_world_exploration/ <-- Procedural generation (Voxel chunks, Caves, BSP Dungeons)
+    ├── 3.6_movement_camera/   <-- Kinematic movement feel (Coyote time, Jump buffer, Dash, Grapple)
+    └── 3.7_puzzle_stealth/    <-- Logic & systemic mechanics (Push blocks, Vision cones, Undo/Redo)
 ```

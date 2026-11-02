@@ -6,13 +6,13 @@ This document is the official registry and tracking board for all experimental m
 
 ## 1. Golden Architecture Rules for Minigames
 
-1. **Single File Requirement**: Every minigame in `minigames/` must be a **single, standalone Python script** (e.g., `minigames/space_swarm.py`). It must be runnable on its own via `python -B minigames/<script_name>.py` and testable headlessly via `python -B minigames/<script_name>.py --smoke-test`.
+1. **Single File Requirement**: Every minigame in `minigames/` must be a **single, standalone Python script** located inside its designated 3.x category subfolder (e.g., `minigames/3.0_core_prototypes/space_swarm.py` or `minigames/3.1_menus_ui/weapon_wheel.py`). It must be runnable on its own via `python -B minigames/<subfolder>/<script_name>.py` and testable headlessly via `python -B minigames/<subfolder>/<script_name>.py --smoke-test`.
 2. **Modular Imports Allowed**: Each minigame script must enforce zero bytecode and import from `assets` and `utils`:
    ```python
    import sys
    import os
    sys.dont_write_bytecode = True
-   sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+   sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
    from pyray import *
    from assets import *
@@ -26,10 +26,10 @@ This document is the official registry and tracking board for all experimental m
    - **Forbidden**: Decorators (`@dataclass`, `@property`, `@staticmethod`), generators (`yield`), coroutines (`async`/`await`), magic dunder methods (other than `__init__`), `lambda`/`map`/`filter`, walrus operators (`:=`), or per-frame list comprehensions.
    - **Required**: Plain struct-like classes with explicit `__init__` fields, pre-allocated fixed arrays, integer indices/counters, and explicit `for` loops with `if/else` branches.
 5. **Two Prototype Scales (Do Not Overengineer Single-Pattern Labs)**:
-   - **Multi-Pattern Minigames (Section 3)**: 600–900 lines combining 4+ patterns into a full arcade loop (**max 1 per prompt**).
+   - **Multi-Pattern Minigames (Section 3.0)**: 600–900 lines combining 4+ patterns into a full arcade loop (**max 1 per prompt**).
    - **Single-Pattern Labs (Sections 3.1–3.7)**: 250–450 lines focused on **1 pattern in isolation**, starting immediately in the interactive sandbox without menu boilerplate (**1 to 2 per prompt**).
 6. **Simultaneous Keyboard/Mouse & Gamepad Controls**: Every minigame must support Keyboard/Mouse and Gamepad simultaneously via `utils/gamepad_input.py` (`get_dual_move_2d`, `get_dual_look_2d`, `is_dual_*`, `draw_gamepad_status_badge`), activating gamepad input automatically whenever a controller is detected without disabling Keyboard/Mouse.
-7. **Registration & Smoke Test Mandatory**: Every time a new minigame is created, verify it with `python -B minigames/<script_name>.py --smoke-test` and log it in Section 2 below. Also launch `python -B launcher.py` from the repository root to browse all built prototypes interactively.
+7. **Registration & Smoke Test Mandatory**: Every time a new minigame is created, verify it with `python -B minigames/<subfolder>/<script_name>.py --smoke-test` and log it in Section 2 below. Also launch `python -B launcher.py` from the repository root to browse all built prototypes interactively.
 
 ---
 
@@ -37,21 +37,27 @@ This document is the official registry and tracking board for all experimental m
 
 | Section | Minigame File | Dim | Design Patterns Demonstrated (from `patterns.md`) | Assets & Utils Used | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **3.0** | [`minigames/space_swarm.py`](minigames/space_swarm.py) | 2D | Object Pool, Spatial Partitioning (`SpatialGrid2D`), Camera Rig (`TraumaShake`), State Machine (FSM), Wave Director | `draw_flying_drone_2d`, `SoundLibrary`, `SynthMusicPlayer`, `SpatialGrid2D`, `TraumaShake`, `get_dual_move_2d` | Built |
-| **3.0** | [`minigames/mecha_colosseum.py`](minigames/mecha_colosseum.py) | 3D | Behavior Trees, Kinematic Character Controller, Audio Synthesis, Object Pool, Camera Rig | `draw_quadruped_beast_3d`, `draw_turret_boss_3d`, `SoundLibrary`, `SynthMusicPlayer`, `TraumaShake`, `closest_point_on_segment_2d`, `get_dual_move_2d` | Built |
-| **3.0** | [`minigames/drone_defense_3d.py`](minigames/drone_defense_3d.py) | 3D | Rotated Capsule Collisions, State Machine (FSM), Camera Rig (`TraumaShake`), Object Pool | `draw_drone_enemy_3d`, `draw_humanoid_enemy_3d`, `draw_turret_boss_3d`, `SoundLibrary`, `Capsule3D`, `check_collision_capsules_3d`, `closest_points_between_segments_3d`, `TraumaShake`, `get_dual_look_2d` | Built |
-| **3.1** | [`minigames/title_screen_cursor.py`](minigames/title_screen_cursor.py) | 2D | Vertical Menu with Cursor, Command Pattern / Action Dispatcher, Damped Cursor Rig | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge` | Built |
-| **3.1** | [`minigames/weapon_wheel.py`](minigames/weapon_wheel.py) | 2D | Radial Menu, Sector Partitioning, Time Dilation (Bullet-Time), Deadzone Hysteresis | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `normalize_2d`, `draw_ring`, `get_dual_move_2d` | Built |
-| **3.1** | [`minigames/tabbed_status_menu.py`](minigames/tabbed_status_menu.py) | 2D | Tabbed Menu (Sub-View Strategy), Animated Indicator Rig, Dynamic Stat Calculation Pipeline | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge` | Built |
-| **3.1** | [`minigames/attache_case.py`](minigames/attache_case.py) | 2D | Grid Inventory (Fixed-Matrix Cell Storage), Decoupled Hand Slot State Machine, Declarative Recipe Combine Engine | `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge` | Built |
-| **3.1** | [`minigames/tetris_backpack.py`](minigames/tetris_backpack.py) | 2D | Shape-Packing Inventory (Polyomino Grid Storage), Discrete 90° Clockwise Rotation, First-Fit Decreasing Auto-Pack Solver, Adjacency Synergy Pipeline | `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/overloaded_mule.py`](minigames/overloaded_mule.py) | 2D | Weight-Based Inventory & Dynamic Encumbrance Physics, Tiered Movement Modulator, Companion Pack Mule Offload, Leash Steering | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/paper_doll.py`](minigames/paper_doll.py) | 2D | Equipment Slots (Paper Doll Architecture), Two-Handed Mutual Exclusion, Pure Derived Stat Pipeline, Multi-Tier Set Synergy Engine | `SoundLibrary`, `damp`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/gear_compare.py`](minigames/gear_compare.py) | 2D | Stat Comparison Tooltip, Side-by-Side Dual Cards, Delta Contrast Pipeline, Smart Viewport Clamping | `SoundLibrary`, `damp`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/merchant_stall.py`](minigames/merchant_stall.py) | 2D | Shop Buy/Sell Screen, Atomic Transaction Pipeline, Sell-Back Markdown & Arbitrage Prevention, Bulk Quantity Stepper | `draw_humanoid_enemy_2d`, `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/workbench.py`](minigames/workbench.py) | 2D | Crafting Recipes (Dependency Graph DAG), Dynamic Ingredient Gating, Atomic Deduction Pipeline, Recursive Sub-Crafting | `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/skill_web.py`](minigames/skill_web.py) | 2D | Skill Tree & Web (DAG Reachability), 4-State Visual Lifecycle, Anti-Refund Orphan Protection, Pure Derived Stats | `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
-| **3.1** | [`minigames/minimap_compass.py`](minigames/minimap_compass.py) | 3D | Minimap and Compass Navigation Architecture, Heading-Up vs North-Up Projections, Edge-Pinning Clamping, 360° Compass Strip Tape | `draw_humanoid_enemy_3d`, `draw_drone_enemy_3d`, `SoundLibrary`, `damp`, `damp_v3`, `get_dual_move_2d`, `get_dual_look_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.0** | [`minigames/3.0_core_prototypes/space_swarm.py`](minigames/3.0_core_prototypes/space_swarm.py) | 2D | Object Pool, Spatial Partitioning (`SpatialGrid2D`), Camera Rig (`TraumaShake`), State Machine (FSM), Wave Director | `draw_flying_drone_2d`, `SoundLibrary`, `SynthMusicPlayer`, `SpatialGrid2D`, `TraumaShake`, `get_dual_move_2d` | Built |
+| **3.0** | [`minigames/3.0_core_prototypes/mecha_colosseum.py`](minigames/3.0_core_prototypes/mecha_colosseum.py) | 3D | Behavior Trees, Kinematic Character Controller, Audio Synthesis, Object Pool, Camera Rig | `draw_quadruped_beast_3d`, `draw_turret_boss_3d`, `SoundLibrary`, `SynthMusicPlayer`, `TraumaShake`, `closest_point_on_segment_2d`, `get_dual_move_2d` | Built |
+| **3.0** | [`minigames/3.0_core_prototypes/drone_defense_3d.py`](minigames/3.0_core_prototypes/drone_defense_3d.py) | 3D | Rotated Capsule Collisions, State Machine (FSM), Camera Rig (`TraumaShake`), Object Pool | `draw_drone_enemy_3d`, `draw_humanoid_enemy_3d`, `draw_turret_boss_3d`, `SoundLibrary`, `Capsule3D`, `check_collision_capsules_3d`, `closest_points_between_segments_3d`, `TraumaShake`, `get_dual_look_2d` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/title_screen_cursor.py`](minigames/3.1_menus_ui/title_screen_cursor.py) | 2D | Vertical Menu with Cursor, Command Pattern / Action Dispatcher, Damped Cursor Rig | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/weapon_wheel.py`](minigames/3.1_menus_ui/weapon_wheel.py) | 2D | Radial Menu, Sector Partitioning, Time Dilation (Bullet-Time), Deadzone Hysteresis | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `normalize_2d`, `draw_ring`, `get_dual_move_2d` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/tabbed_status_menu.py`](minigames/3.1_menus_ui/tabbed_status_menu.py) | 2D | Tabbed Menu (Sub-View Strategy), Animated Indicator Rig, Dynamic Stat Calculation Pipeline | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/attache_case.py`](minigames/3.1_menus_ui/attache_case.py) | 2D | Grid Inventory (Fixed-Matrix Cell Storage), Decoupled Hand Slot State Machine, Declarative Recipe Combine Engine | `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/tetris_backpack.py`](minigames/3.1_menus_ui/tetris_backpack.py) | 2D | Shape-Packing Inventory (Polyomino Grid Storage), Discrete 90° Clockwise Rotation, First-Fit Decreasing Auto-Pack Solver, Adjacency Synergy Pipeline | `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/overloaded_mule.py`](minigames/3.1_menus_ui/overloaded_mule.py) | 2D | Weight-Based Inventory & Dynamic Encumbrance Physics, Tiered Movement Modulator, Companion Pack Mule Offload, Leash Steering | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/paper_doll.py`](minigames/3.1_menus_ui/paper_doll.py) | 2D | Equipment Slots (Paper Doll Architecture), Two-Handed Mutual Exclusion, Pure Derived Stat Pipeline, Multi-Tier Set Synergy Engine | `SoundLibrary`, `damp`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/gear_compare.py`](minigames/3.1_menus_ui/gear_compare.py) | 2D | Stat Comparison Tooltip, Side-by-Side Dual Cards, Delta Contrast Pipeline, Smart Viewport Clamping | `SoundLibrary`, `damp`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/merchant_stall.py`](minigames/3.1_menus_ui/merchant_stall.py) | 2D | Shop Buy/Sell Screen, Atomic Transaction Pipeline, Sell-Back Markdown & Arbitrage Prevention, Bulk Quantity Stepper | `draw_humanoid_enemy_2d`, `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/workbench.py`](minigames/3.1_menus_ui/workbench.py) | 2D | Crafting Recipes (Dependency Graph DAG), Dynamic Ingredient Gating, Atomic Deduction Pipeline, Recursive Sub-Crafting | `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/skill_web.py`](minigames/3.1_menus_ui/skill_web.py) | 2D | Skill Tree & Web (DAG Reachability), 4-State Visual Lifecycle, Anti-Refund Orphan Protection, Pure Derived Stats | `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.1** | [`minigames/3.1_menus_ui/minimap_compass.py`](minigames/3.1_menus_ui/minimap_compass.py) | 3D | Minimap and Compass Navigation Architecture, Heading-Up vs North-Up Projections, Edge-Pinning Clamping, 360° Compass Strip Tape | `draw_humanoid_enemy_3d`, `draw_drone_enemy_3d`, `SoundLibrary`, `damp`, `damp_v3`, `get_dual_move_2d`, `get_dual_look_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.2** | [`minigames/3.2_combat_weapons/hitscan_range.py`](minigames/3.2_combat_weapons/hitscan_range.py) | 3D | Hitscan (Instant Raycast), Slab AABB & Ray-Sphere Intersection, Swept CCD Projectile Comparison, Lead Intercept Math | `draw_drone_enemy_3d`, `SoundLibrary`, `get_dual_move_2d`, `get_dual_look_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.3** | [`minigames/3.3_enemies_ai/guard_route.py`](minigames/3.3_enemies_ai/guard_route.py) | 2D | Waypoint Patrol (Circuit & Ping-Pong), Multi-Phase Arrival Hysteresis, Dwell & Observation Scans, Vision Cone Perception | `draw_humanoid_enemy_2d`, `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.4** | [`minigames/3.4_progression_economy/loot_pinata.py`](minigames/3.4_progression_economy/loot_pinata.py) | 2D | Weighted Loot Table (CDF Sampling), 5 Rarity Tiers, Magic Find (MF) Luck Scaling, Law of Large Numbers Histogram | `draw_humanoid_enemy_2d`, `SoundLibrary`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.5** | [`minigames/3.5_world_exploration/voxel_sandbox.py`](minigames/3.5_world_exploration/voxel_sandbox.py) | 3D | Voxel Place & Break World, Amanatides-Woo DDA Raymarching, Hidden-Face Occlusion Culling, Kinematic Voxel AABB Controller | `SoundLibrary`, `damp`, `get_dual_move_2d`, `get_dual_look_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.6** | [`minigames/3.6_movement_camera/platformer_feel.py`](minigames/3.6_movement_camera/platformer_feel.py) | 2D | Coyote Time, Jump Buffering, Variable Jump Height Cutoff, Apex Float, Corner Nudge / Ledge Assist, Input Timeline Tape | `SoundLibrary`, `damp`, `approach`, `get_dual_move_2d`, `is_dual_jump_pressed`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
+| **3.7** | [`minigames/3.7_puzzle_stealth/crate_pusher.py`](minigames/3.7_puzzle_stealth/crate_pusher.py) | 2D | Push-Block Puzzle (Sokoban), Command Pattern (Reversible Undo/Redo Stack), Heuristic Deadlock Detection, Discrete-to-Visual Damped Kinematics | `draw_humanoid_enemy_2d`, `SoundLibrary`, `damp`, `get_dual_move_2d`, `draw_gamepad_status_badge`, `draw_ui_settings_bar` | Built |
 
 ---
 
@@ -78,7 +84,7 @@ Rules for using this catalog:
 - **Reuse First**: Pick a row, then check `assets.md` and `utils.md` before writing anything (reuse, do not duplicate).
 - **Sync `patterns.md`**: If a pattern name is missing from `patterns.md`, add it there in the same task.
 - **Keep the Pattern Visible**: Implement the pattern's core logic inside the `BLOCK 1: CORE PATTERN IMPLEMENTATION` section of the minigame (with an `[F1]` on/off toggle and `[Tab]` debug overlay) instead of hiding it inside `utils/`.
-- **Smoke Test & Register**: Run `python -B minigames/<script_name>.py --smoke-test`, register it in Section 2, and mark its row below with a `(built)` suffix on its Concept Name.
+- **Smoke Test & Register**: Run `python -B minigames/<subfolder>/<script_name>.py --smoke-test`, register it in Section 2, and mark its row below with a `(built)` suffix on its Concept Name.
 
 #### 3.1 Menus & UI
 
@@ -119,7 +125,7 @@ Rules for using this catalog:
 
 | Concept Name | Dimension | Target Patterns | Description |
 | :--- | :--- | :--- | :--- |
-| **Hitscan Range** | 3D | Hitscan | Instant ray weapon with tracer line and impact spark; a toggle switches to slow projectiles for comparison. |
+| **Hitscan Range (built)** | 3D | Hitscan | Instant ray weapon with tracer line and impact spark; a toggle switches to slow projectiles for comparison. |
 | **Cannon Lab** | 2D | Ballistic Projectile | Gravity-arc cannon with angle and power controls and a dotted trajectory preview. |
 | **Shotgun Alley** | 2D | Spread Cone | Each shot fires several pellets in a random cone; the spread widens with distance. |
 | **Recoil Range** | 3D | Recoil and Bloom | Automatic weapon whose crosshair kicks up and whose spread grows while firing, then recovers. |
@@ -149,7 +155,7 @@ Rules for using this catalog:
 
 | Concept Name | Dimension | Target Patterns | Description |
 | :--- | :--- | :--- | :--- |
-| **Guard Route** | 2D | Waypoint Patrol | Enemies walk loops between waypoints, pausing to look around at each stop. |
+| **Guard Route (built)** | 2D | Waypoint Patrol | Enemies walk loops between waypoints, pausing to look around at each stop. |
 | **Alert Ladder** | 2D | Alert-Level State Machine | A guard goes Idle, Suspicious, Alerted, Searching and back to Idle, with a visible alert meter. |
 | **Flow Field Horde** | 2D | Flow Field / Dijkstra Map | Hundreds of enemies follow one shared distance map toward the player through a maze. |
 | **Boid Birds** | 2D | Flocking (Boids) | Separation, alignment and cohesion with sliders to tune each force live. |
@@ -177,7 +183,7 @@ Rules for using this catalog:
 
 | Concept Name | Dimension | Target Patterns | Description |
 | :--- | :--- | :--- | :--- |
-| **Loot Piñata** | 2D | Loot Table with Rarity Tiers | Dummies drop items with rarity colors by weight; a live histogram shows the real drop rates. |
+| **Loot Piñata (built)** | 2D | Loot Table with Rarity Tiers | Dummies drop items with rarity colors by weight; a live histogram shows the real drop rates. |
 | **Level-Up Curve** | 2D | XP and Level Curve | XP orbs fill a bar; compare linear and exponential level thresholds. |
 | **Herb Mixer** | 2D | Item Combination | Combine herbs or ammo following a rule table (green + red = strong heal). |
 | **Scrap Economy** | 2D | Buy/Sell Economy Loop | Sell loot and buy upgrades; prices move with supply and demand. |
@@ -197,7 +203,7 @@ Rules for using this catalog:
 
 | Concept Name | Dimension | Target Patterns | Description |
 | :--- | :--- | :--- | :--- |
-| **Voxel Sandbox** | 3D | Voxel Place and Break World | Place and mine cubes in a small chunked world, with a block hotbar. |
+| **Voxel Sandbox (built)** | 3D | Voxel Place and Break World | Place and mine cubes in a small chunked world, with a block hotbar. |
 | **Noise Terrain** | 3D | Procedural Noise Terrain | Hills and valleys generated from layered noise with sliders for scale and octaves. |
 | **Cave Automata** | 2D | Cellular Automata Generation | Random fill smoothed by neighbor rules into cave shapes, stepped one iteration at a time. |
 | **Room-and-Corridor Dungeon** | 2D | Procedural Dungeon (BSP Rooms) | The map is split into rooms and connected by corridors; a key regenerates it. |
@@ -218,7 +224,7 @@ Rules for using this catalog:
 
 | Concept Name | Dimension | Target Patterns | Description |
 | :--- | :--- | :--- | :--- |
-| **Platformer Feel** | 2D | Coyote Time, Jump Buffer and Variable Jump | A debug panel lets you toggle each forgiveness trick and feel the difference. |
+| **Platformer Feel (built)** | 2D | Coyote Time, Jump Buffer and Variable Jump | A debug panel lets you toggle each forgiveness trick and feel the difference. |
 | **Dash Gauntlet** | 2D | Dash with Cooldown and I-Frames | A dash with a cooldown ring and brief invulnerability through hazards. |
 | **Grid Walker** | 2D | Grid-Based Movement | Step-by-step 4-direction and 8-direction movement with smooth tweening between tiles. |
 | **Camera Modes** | 3D | First/Third-Person Switching | A key switches between first-person and third-person views of the same character. |
@@ -238,7 +244,7 @@ Rules for using this catalog:
 
 | Concept Name | Dimension | Target Patterns | Description |
 | :--- | :--- | :--- | :--- |
-| **Crate Pusher** | 2D | Push-Block Puzzle (Sokoban) | Push crates onto targets on a grid; rules are simple but levels get hard. |
+| **Crate Pusher (built)** | 2D | Push-Block Puzzle (Sokoban) | Push crates onto targets on a grid; rules are simple but levels get hard. |
 | **Cone Stealth** | 2D | Vision Cone and Noise Detection | Guards see inside a cone and hear running; the player sneaks or hides. |
 | **Tower Defense** | 2D | Tower Targeting Priority | Towers choose first, last, strongest or nearest target; the priority can be switched live. |
 | **QTE Sequence** | 2D | Quick-Time Event | Prompts appear with a timer; a wrong or late press fails the sequence. |

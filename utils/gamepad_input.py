@@ -145,7 +145,12 @@ def apply_radial_deadzone(raw_x: float, raw_y: float, deadzone: float = 0.18) ->
     return Vector2(nx, ny)
 
 
-def get_gamepad_left_stick(deadzone: float = 0.18, include_dpad: bool = True) -> Vector2:
+def get_gamepad_left_stick(
+    deadzone: float = 0.18,
+    include_dpad: bool = True,
+    include_dpad_x: bool = True,
+    include_dpad_y: bool = True,
+) -> Vector2:
     """
     Returns the 2D movement vector from the active Gamepad's Left Analog Stick
     (and optionally D-Pad buttons), or (0, 0) if no gamepad is connected.
@@ -161,14 +166,16 @@ def get_gamepad_left_stick(deadzone: float = 0.18, include_dpad: bool = True) ->
     if include_dpad:
         dx = 0.0
         dy = 0.0
-        if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_LEFT):
-            dx -= 1.0
-        if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_RIGHT):
-            dx += 1.0
-        if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_UP):
-            dy -= 1.0
-        if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_DOWN):
-            dy += 1.0
+        if include_dpad_x:
+            if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_LEFT):
+                dx -= 1.0
+            if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_RIGHT):
+                dx += 1.0
+        if include_dpad_y:
+            if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_UP):
+                dy -= 1.0
+            if is_gamepad_button_down(pad_id, GAMEPAD_BUTTON_LEFT_FACE_DOWN):
+                dy += 1.0
 
         if abs(dx) > 0.0 or abs(dy) > 0.0:
             vec.x += dx
@@ -220,7 +227,13 @@ def is_gamepad_trigger_down(is_right_trigger: bool = True, threshold: float = 0.
 # 3. SIMULTANEOUS DUAL INPUT (KEYBOARD/MOUSE + GAMEPAD COMBINED)
 # ==============================================================================
 
-def get_dual_move_2d(deadzone: float = 0.18, use_arrow_keys: bool = True) -> Vector2:
+def get_dual_move_2d(
+    deadzone: float = 0.18,
+    use_arrow_keys: bool = True,
+    include_dpad: bool = True,
+    include_dpad_x: bool = True,
+    include_dpad_y: bool = True,
+) -> Vector2:
     """
     Simultaneously polls Keyboard (WASD + optional Arrow Keys) AND Gamepad
     (Left Stick + D-Pad). Either or both can be used at the same time.
@@ -242,7 +255,12 @@ def get_dual_move_2d(deadzone: float = 0.18, use_arrow_keys: bool = True) -> Vec
         kb_x /= kb_mag
         kb_y /= kb_mag
 
-    pad_vec = get_gamepad_left_stick(deadzone=deadzone, include_dpad=True)
+    pad_vec = get_gamepad_left_stick(
+        deadzone=deadzone,
+        include_dpad=include_dpad,
+        include_dpad_x=include_dpad_x,
+        include_dpad_y=include_dpad_y,
+    )
 
     out_x = kb_x + pad_vec.x
     out_y = kb_y + pad_vec.y

@@ -138,6 +138,26 @@ This document provides an exhaustive, practical reference of game programming an
 - **Solution**: Model sensory perception cones (field-of-view angle, hearing radius, light level) combined with raycasts to determine visibility.
 - **Example Use Case**: Stealth game where guards only detect the player if inside a 60-degree vision cone and unblocked by obstacles.
 
+### 4.6 Waypoint Patrol & Observation Scan Systems
+- **Dimension**: 2D & 3D
+- **Problem**: In stealth and action games (Metal Gear Solid, Commandos, Hitman, Thief, Dishonored), autonomous enemy guards must move with believable purpose. Without structured waypoint patrolling, enemies either stand frozen or wander randomly, creating erratic, unreadable patterns that break stealth gameplay. Furthermore, naive waypoint systems suffer from destination jitter (failing arrival hysteresis), snap headings unnaturally without angular acceleration, and lack inspection dwell pauses to monitor doorways, blind spots, and corridors.
+- **Solution**:
+  1. **Waypoint Sequence & Traversal Modes**:
+     Model routes as an ordered sequence of nodes `Waypoint[N]` containing continuous coordinates, dwell durations, and target sector inspection angles. Traversal is governed by discrete graph rules:
+     - *Loop / Circuit Mode*: Progresses sequentially, wrapping around from terminal node $N-1$ directly back to origin $0$:
+       $$\text{next\_idx} = (\text{idx} + 1) \pmod N$$
+     - *Ping-Pong / Patrol-Reversal Mode*: Bounces between endpoints ($0 \to 1 \to \dots \to N-1 \to N-2 \to \dots \to 0$):
+       $$\text{next\_idx} = \text{idx} + \text{dir}, \quad \text{reversing dir at bounds } [0, N-1]$$
+  2. **Multi-Phase Node State Machine (Advance $\to$ Arrive $\to$ Dwell/Scan $\to$ Depart)**:
+     - `STATE_MOVING`: Agent steers toward current waypoint position using distance vector calculation; orientation follows velocity vector.
+     - `STATE_WAITING`: Upon reaching the arrival radius ($\|P - W\| \le r_{\text{arrival}}$), position is clamped to eliminate destination oscillation (hysteresis). An observation scan sequence cycles through specified inspection angles with dwell timers.
+     - `STATE_ALERT / INVESTIGATING`: When a sensory vision cone or noise trigger is breached, the agent suspends the patrol route to face the disturbance, returning to the nearest waypoint once suspicion clears.
+  3. **Continuous Angular Damping**:
+     Interpolates orientation along the shortest circular arc by wrapping angular delta $\Delta\theta \in [-\pi, \pi]$:
+     $$\Delta\theta = \text{atan2}(\sin(\theta_{\text{target}} - \theta_{\text{current}}), \cos(\theta_{\text{target}} - \theta_{\text{current}}))$$
+     $$\theta_{\text{next}} = \theta_{\text{current}} + \text{clamp}(\Delta\theta, -\omega_{\max}\Delta t, +\omega_{\max}\Delta t)$$
+- **Example Use Case**: Metal Gear Solid guard patrols with flashlight sweeps, Commandos sentry routes, Hitman NPC perimeter loops, and Dishonored watchmen checking hallways and alcoves.
+
 ---
 
 ## 5. Collision & Physics Patterns
@@ -224,11 +244,30 @@ This document provides an exhaustive, practical reference of game programming an
 - **Solution**: Modifiers are distinct effect objects with durations and stat multipliers applied to a base stat object dynamically.
 - **Example Use Case**: Calculating current speed as `base_speed * sum(buff_multipliers) * product(slow_multipliers)`.
 
-### 7.4 Loot Table & Weighted Random Selection
+### 7.4 Loot Table & Weighted Random Selection (CDF Sampling)
 - **Dimension**: 2D & 3D
-- **Problem**: Uniform random rolls make rare items too common or impossible to calibrate.
-- **Solution**: Define items with relative integer/float weights. Normalize weights to pick outcomes probabilistically.
-- **Example Use Case**: Enemy drop tables (Common Coin: weight 70, Health Pack: weight 25, Rare Weapon: weight 5).
+- **Problem**: In action RPGs, MMOs, and looter-shooters (Diablo, Borderlands, Destiny, Path of Exile, Monster Hunter, WoW), naive drop mechanics written with hardcoded `if/else` ladders or unweighted `randint()` calls cause severe probability skew, make fine-tuning drop rates across hundreds of items nightmarish, and prevent dynamic Magic Find / Luck scaling. Furthermore, players frequently misinterpret short-term drop streaks as bugs (the Gambler's Fallacy) without understanding empirical variance versus theoretical expectations.
+- **Solution**:
+  1. **Cumulative Distribution Function (CDF) Sampling**:
+     Model droppable items with explicit, immutable base weights $w_i$. Total table weight is $W = \sum w_i$. The theoretical probability is:
+     $$P_i = \frac{w_i}{W}$$
+     Precompute the monotonic cumulative weight prefix array:
+     $$\text{CDF}[k] = \sum_{j=0}^k w_j$$
+     Sampling picks a uniform float $R \in [0, W)$ and locates the smallest index $k$ such that $R < \text{CDF}[k]$ via linear scan or binary search ($O(\log N)$).
+  2. **Tiered Rarity Architecture (5-Tier Standard)**:
+     - *Common* (Grey/White, ~60%): Scrap materials, basic vendor trash.
+     - *Uncommon* (Green, ~25%): Potions, refined crafting ingots.
+     - *Rare* (Blue, ~10%): Enchanted equipment, spell foci.
+     - *Epic* (Purple, ~4%): Ancient relics, boss weapons.
+     - *Legendary* (Gold/Orange, ~1%): Mythic artifacts with bespoke perks.
+  3. **Dynamic Magic Find (MF) & Luck Modulation**:
+     Scales high-tier entry weights dynamically while compressing junk items:
+     $$w_i' = w_i \times (1 + \text{MF} \times \text{tier\_boost}_i)$$
+     Rebuilding the CDF on stat change allows live tuning of loot drop quality without modifying base item definitions.
+  4. **Law of Large Numbers & Empirical Histogram Validation**:
+     Tracking empirical drop tallies ($N_{\text{actual}}$) and displaying real-time dual-bar histograms reveals that while small sample sizes ($N < 30$) exhibit high variance and streakiness, large sample runs ($N > 500$) converge smoothly onto theoretical probabilities:
+     $$\lim_{N \to \infty} \frac{N_{\text{tier}}}{N} = P_{\text{theory}}(\text{tier})$$
+- **Example Use Case**: Diablo boss drop fountains, Borderlands loot chest explosions, Path of Exile currency drops, and Monster Hunter carves.
 
 ---
 
@@ -383,6 +422,96 @@ This document provides an exhaustive, practical reference of game programming an
 
 ---
 
+## 9. Combat & Weapon Systems Patterns
+
+### 9.1 Hitscan Weapon Architecture (Instant Raycasting vs Travel Projectiles)
+- **Dimension**: 3D & 2D
+- **Problem**: In 3D action games and shooters (Counter-Strike, Quake, Halo, Overwatch, Call of Duty, Battlefield), combat systems must balance responsiveness, physical believability, and computational expense. Simulating all weapons with discrete physical projectiles forces high-speed bullet entities to travel over multiple ticks, incurring networking synchronization overhead and making responsive point-and-click weapons (snipers, revolvers, lasers) feel laggy. Conversely, naively using hitscan for every weapon breaks immersion for slow ordnance (grenades, rockets, arrows), eliminates the high-skill mechanic of predictive leading on moving targets, and causes fast projectiles to tunnel through thin colliders without Continuous Collision Detection (CCD).
+- **Solution**:
+  1. **Instant Raycast Pipeline**:
+     A mathematical ray $\vec{R}(t) = \vec{O} + t\hat{D}$ ($t \in [0, d_{\max}]$) is evaluated against all candidate colliders in the exact frame of trigger pull.
+     - *Ray-Sphere Intersection*: Solves quadratic equation $\|\vec{O} + t\hat{D} - \vec{C}\|^2 = r^2$ for target center $\vec{C}$ and radius $r$.
+     - *Ray-AABB Slab Method*: Evaluates intersection intervals on $X, Y, Z$ slabs $[(B_{\min, i} - O_i) / D_i, (B_{\max, i} - O_i) / D_i]$.
+     - Finds the minimum positive parameter $t_{\min} = \min_i \{ t_i \mid t_i \ge 0 \}$.
+     - Yields effective velocity $v = \infty$, travel latency $t_{\text{impact}} = 0.00\text{ ms}$, instant tracer beam lines, and immediate surface-normal spark bursts.
+  2. **Travel Projectile & Swept Segment CCD Pipeline**:
+     Spawns physical projectile entities advancing frame-by-frame with velocity $\vec{V} = v \cdot \hat{D}$. Flight time to target is $t_{\text{impact}} = d / v$. To prevent the classic "bullet-through-paper" tunneling exploit, the engine executes Continuous Collision Detection (CCD) by sweeping a raycast segment from $\vec{P}_{\text{prev}}$ to $\vec{P}_{\text{curr}}$ each frame:
+     $$\vec{S} = \vec{P}_{\text{curr}} - \vec{P}_{\text{prev}}, \quad \Delta s = \|\vec{S}\|, \quad \hat{D}_{\text{sweep}} = \frac{\vec{S}}{\Delta s}$$
+  3. **Lead Intercept Vector Math**:
+     Over flight time $t_{\text{impact}} = d / v$, a target moving with velocity $\vec{V}_{\text{target}}$ travels distance:
+     $$\Delta \vec{x}_{\text{lead}} = \vec{V}_{\text{target}} \cdot \frac{d}{v_{\text{proj}}}$$
+     - *Hitscan*: $v \to \infty \implies \Delta\vec{x}_{\text{lead}} = \vec{0}$ (Zero lead aim required; crosshair on target guarantees hit).
+     - *Projectile*: Player must lead aim ahead by $\Delta\vec{x}_{\text{lead}}$, firing at predicted point $\vec{P}_{\text{lead}} = \vec{P}_{\text{target}} + \Delta\vec{x}_{\text{lead}}$.
+- **Example Use Case**: Counter-Strike (AWP/AK-47 instant hitscan) vs Battlefield (bullet drop and lead travel projectiles), Quake (Railgun hitscan vs Rocket Launcher projectiles), and Overwatch (Widowmaker hitscan vs Hanzo/Pharah projectiles).
+
+---
+
+## 10. World & Exploration Patterns
+
+### 10.1 Voxel Sandbox: Voxel Place and Break World (Fast 3D DDA & Occlusion Culling)
+- **Dimension**: 3D & 2D
+- **Problem**: In 3D voxel sandbox engines (Minecraft, Teardown, Infiniminer, Voxel Tycoon), representing and interacting with thousands of cubic blocks presents severe performance bottlenecks. Naively treating every block as a separate scene entity or testing rays against thousands of AABBs is $O(N)$ and causes framerate stutter. Furthermore, step-marching rays with fixed distances either misses thin geometry or samples erroneous coordinates, while rendering buried underground blocks results in massive overdraw and wasted GPU vertex throughput.
+- **Solution**:
+  1. **Chunked 3D Dense Array Storage**:
+     Organizes world blocks into spatial chunks with flat 1D indexed arrays:
+     $$\text{idx}(x, y, z) = x + y \cdot W + z \cdot (W \times H)$$
+     Guarantees $O(1)$ random access, zero pointer chasing, and compact memory layout.
+  2. **Amanatides & Woo 3D Digital Differential Analyzer (DDA) Fast Voxel Traversal**:
+     Casts a mathematical ray $\vec{R}(t) = \vec{O} + t\hat{D}$ through the voxel grid, stepping from one block boundary to the next along the ray in $O(\text{distance})$ time. By comparing $t_{\max x}, t_{\max y}, t_{\max z}$, it determines the exact voxel coordinates $(vx, vy, vz)$ and the hit face normal $\hat{n} \in \{(\pm 1, 0, 0), (0, \pm 1, 0), (0, 0, \pm 1)\}$, yielding both the mined block coordinate and the adjacent coordinate for new block placement without ray tunneling.
+  3. **Hidden-Face Occlusion Culling**:
+     Blocks entirely surrounded by 6 solid neighbors ($+X, -X, +Y, -Y, +Z, -Z$) cannot be seen by the camera. Culling hidden subterranean blocks reduces rendered geometry by $80\%\text{--}90\%$, maintaining 60 FPS while preserving complete subterranean volume for mining and exploration.
+  4. **Atomic Mining & Placement Transaction Engine**:
+     Validates placement against player bounding hulls to prevent self-entombment, with progressive durability mining cycles and debris particle feedback.
+- **Example Use Case**: Minecraft voxel world, Teardown destructible voxel physics, 7 Days to Die terrain voxel grids, and Cube World voxel exploration.
+
+---
+
+## 11. Movement & Camera Patterns
+
+### 11.1 Platformer Kinematic Feel & Jump Forgiveness (Coyote Time, Jump Buffering, Variable Jump, Apex Hang & Corner Nudge)
+- **Dimension**: 2D & 3D
+- **Problem**: Pure Newtonian physics simulations in platformers (rigid gravity $v_y += g \cdot dt$, jump impulse applied only when strictly touching the ground) feel stiff, unresponsive, and unfair to human players. Visual reaction latency causes players to press jump $16\text{--}50\text{ ms}$ after running off a cliff ledge, resulting in a dropped input and a plunge into a pit. Similarly, pressing jump $30\text{--}100\text{ ms}$ before touching a platform is discarded by strict physics. Furthermore, fixed jump impulses prevent micro-hops under low hazards, constant gravity produces floaty/sluggish parabolic arcs, and clipping a ceiling corner by a few pixels kills all vertical momentum with a frustrating head bump.
+- **Solution**:
+  1. **Coyote Time (Hang-Time Forgiveness)**:
+     Maintains a grace timer $t_{\text{coyote}} = 120\text{ ms}$ starting the exact frame the character steps off a platform into air. If the jump input arrives while $t_{\text{coyote}} > 0$, the engine executes a full jump as if the player were still on solid ground, eliminating "I pressed jump!" deaths.
+  2. **Jump Buffering (Pre-Input Queue)**:
+     Stores jump inputs in an input memory buffer $t_{\text{buffer}} = 140\text{ ms}$ while airborne. If the character lands while $t_{\text{buffer}} > 0$, the jump executes on the exact touchdown frame, enabling smooth, uninterrupted bunny-hopping rhythm.
+  3. **Variable Jump Height (Early Cutoff)**:
+     When the player releases the jump button early during ascent ($v_y < 0$), upward velocity is immediately scaled down ($v_y \leftarrow \max(v_y \times 0.48, v_{\min})$). This lets tapping the key execute a low micro-hop while holding it executes a full high arc.
+  4. **Apex Float & Asymmetric Gravity**:
+     Splits gravity into three asymmetrical phases: light rising gravity ($g_{\text{up}} = 1500$), apex float gravity ($g_{\text{apex}} = 750$ when $|v_y| < 95\text{ px/s}$ paired with a $1.25\times$ horizontal agility boost for hang-time control at the crest), and heavy falling gravity ($g_{\text{down}} = 2200$) for snappy, non-floaty descents.
+  5. **Corner Nudge / Ledge Assist**:
+     When the character's head clips an overhead ceiling corner by $\le 10\text{ px}$, the physics engine shifts the character horizontally around the corner, preserving upward momentum without head-bonking.
+- **Example Use Case**: *Celeste* (Maddy Thorson's celebrated forgiveness suite), *Super Mario World*, *Super Meat Boy*, *Hollow Knight*, and *Shovel Knight*.
+
+---
+
+## 12. Puzzle, Stealth & Systemic Patterns
+
+### 12.1 Push-Block Puzzle & Sokoban Mechanics (Discrete Turn Transactions, Command Undo/Redo & Heuristic Deadlock Detection)
+- **Dimension**: 2D & 3D
+- **Problem**: In puzzle and systemic titles (*Sokoban*, *Baba Is You*, *Stephen's Sausage Roll*, *Portal*, *The Talos Principle*), naively mutating game state directly on button press prevents reversible gameplay (undo/redo), leaves no replay log, and easily desynchronizes multi-block push transactions. Furthermore, because Sokoban generalized across arbitrary dimensions is mathematically PSPACE-complete and NP-hard, players frequently suffer silent unrecoverable deadlocks (pushing a crate into a permanent corner with no goal), wasting minutes on a mathematically unsolvable board with zero feedback.
+- **Solution**:
+  1. **Discrete Turn Transaction & Multi-Entity Push Physics**:
+     Model the puzzle world as a static cell matrix ($C_{\text{width}} \times C_{\text{height}}$) populated by discrete entities (Player, Crates). When the player steps into direction $\vec{d} = (\Delta x, \Delta y)$:
+     - If cell $\vec{p} + \vec{d}$ is floor/target $\implies$ step is accepted.
+     - If cell $\vec{p} + \vec{d}$ has a crate $C$, inspect cell $\vec{p} + 2\vec{d}$. If that cell is unobstructed (neither wall nor another crate), execute an atomic push: move $C$ to $\vec{p} + 2\vec{d}$ and move the player to $\vec{p} + \vec{d}$.
+     - If blocked by a wall or two consecutive crates $\implies$ reject the turn transaction entirely.
+  2. **Command Pattern & Reversible History Stack (Undo/Redo)**:
+     Encapsulate every successful turn into an immutable `MoveCommand` struct:
+     $$\text{cmd} = (\text{from}_p, \text{to}_p, \text{crate\_idx}, \text{from}_c, \text{to}_c)$$
+     Pushing onto an `undo_stack` allows instantaneous reversal on demand: popping the command restores the player's prior position and pulls the affected crate backward in $O(1)$ time. A `redo_stack` maintains linear forward traversal until an alternate branching action is committed.
+  3. **Algorithmic Deadlock Detection Heuristics**:
+     Detect unrecoverable board states without expensive exhaustive state-space search:
+     - *Corner Deadlock*: A crate at $(x, y)$ that does not rest on a target tile is permanently deadlocked if any two orthogonal neighbors are walls (e.g. $\text{Wall}_{\text{up}} \land \text{Wall}_{\text{left}}$). It can never receive an orthogonal push force again.
+     - *2x2 Dead Cluster*: Any $2 \times 2$ block of cells entirely occupied by solid walls and crates containing at least one non-target crate forms an immobile deadlock cluster.
+     Real-time telemetry tags deadlocked crates with crimson warning glyphs, allowing learners to inspect puzzle constraint solving live.
+  4. **Discrete-to-Visual Damped Kinematics**:
+     While logical turns resolve instantaneously on the discrete grid, visual entity positions $(v_x, v_y)$ damp continuously toward discrete grid pixel targets via exponential smoothing ($v \leftarrow \text{damp}(v, v_{\text{target}}, \lambda, dt)$), delivering satisfying tactile game feel.
+- **Example Use Case**: *Sokoban*, *Baba Is You*, *Stephen's Sausage Roll*, *Helltaker*, *Patrick's Parabox*, and *Adventures of Lolo*.
+
+---
+
 ## Summary Matrix
 
 | Pattern Name | Core Category | 2D / 3D | Primary Benefit |
@@ -411,4 +540,10 @@ This document provides an exhaustive, practical reference of game programming an
 | **Crafting Recipes & Dependency Graph (Workbench)**| User Interface & Progression| Both | Declarative recipe DAG, dynamic greyed-out ingredient gating, atomic deduction, recursive sub-crafting |
 | **Skill Tree & Directed Graph Validation (Skill Web)**| User Interface & Progression| Both | DAG reachability validation, 4-state node lifecycle, anti-refund orphan protection, pure derived stats |
 | **Minimap & Compass Navigation Architecture**| User Interface & Presentation| Both | Heading-Up vs North-Up rotation math, out-of-range edge pinning, 360° seamless compass strip tape |
+| **Hitscan (Instant Raycast)**| Combat & Weapons| Both | Zero flight latency, instant line-of-sight raycasts, contrasting with swept CCD travel projectiles |
+| **Waypoint Patrol (Circuit & Ping-Pong)**| Artificial Intelligence & Navigation| Both | Graph route progression, arrival hysteresis, dwell/observation sweeps, vision cone perception |
+| **Weighted Loot Table & Rarity Tiers (CDF)**| Progression & Economy| Both | O(log N) CDF sampling, dynamic Magic Find scaling, Law of Large Numbers empirical convergence |
+| **Voxel Place and Break World (DDA & Culling)**| World & Exploration| 3D | Fast Amanatides-Woo DDA raymarching, 85%+ hidden-face occlusion culling, block hotbar |
+| **Platformer Kinematic Feel & Jump Forgiveness**| Movement & Camera| 2D | Coyote time, jump buffering, variable jump cutoff, apex float, and corner nudging |
+| **Push-Block Puzzle & Command Undo/Redo (Crate Pusher)**| Logic, Puzzle & Systemic Patterns| 2D | Discrete turn transactions, Command pattern undo/redo stack, real-time corner & 2x2 deadlock heuristics, visual damping |
 

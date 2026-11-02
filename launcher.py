@@ -154,8 +154,8 @@ def wrap_docstring_lines(raw_lines: List[str], max_chars: int = 82) -> List[str]
     return wrapped
 
 
-def extract_section_from_docstring(raw_doc: str, fname: str) -> tuple:
-    """Extracts (section_id, section_name) from AST docstrings or known taxonomy mapping."""
+def extract_section_from_docstring(raw_doc: str, fname: str, parent_folder: str = "") -> tuple:
+    """Extracts (section_id, section_name) from AST docstrings, parent folder, or known taxonomy mapping."""
     for line in raw_doc.splitlines():
         clean = line.strip().lower()
         if clean.startswith("section"):
@@ -166,6 +166,12 @@ def extract_section_from_docstring(raw_doc: str, fname: str) -> tuple:
                     if sec["id"] != CAT_ALL:
                         if sec["id"] in val or sec["name"].lower() in val.lower():
                             return (sec["id"], sec["name"])
+
+    # Check parent folder (e.g. 3.0_core_prototypes, 3.1_menus_ui)
+    if parent_folder:
+        for sec in CATALOG_SECTIONS:
+            if sec["id"] != CAT_ALL and (parent_folder.startswith(sec["id"]) or sec["id"] in parent_folder):
+                return (sec["id"], sec["name"])
 
     # Fallback known mapping
     known_map = {
@@ -183,6 +189,7 @@ def extract_section_from_docstring(raw_doc: str, fname: str) -> tuple:
         "merchant_stall.py": ("3.1", "3.1 Menus & UI"),
         "workbench.py": ("3.1", "3.1 Menus & UI"),
         "skill_web.py": ("3.1", "3.1 Menus & UI"),
+        "minimap_compass.py": ("3.1", "3.1 Menus & UI"),
     }
     if fname in known_map:
         return known_map[fname]
@@ -192,22 +199,29 @@ def extract_section_from_docstring(raw_doc: str, fname: str) -> tuple:
 
 def scan_minigames(minigames_dir: str) -> List[Dict[str, str]]:
     """
-    Scans `minigames/` for standalone `.py` scripts and extracts their module
-    docstring, 3.x catalog section, and line count using `ast` without executing the scripts.
+    Scans `minigames/` and its subdirectories for standalone `.py` scripts and extracts their
+    module docstring, 3.x catalog section, and line count using `ast` without executing the scripts.
     """
     entries: List[Dict[str, str]] = []
     if not os.path.isdir(minigames_dir):
         return entries
 
-    filenames = sorted(
-        f for f in os.listdir(minigames_dir)
-        if f.endswith(".py") and not f.startswith("_")
-    )
+    file_list = []
+    for root, dirs, files in os.walk(minigames_dir):
+        dirs.sort()
+        for fname in sorted(files):
+            if fname.endswith(".py") and not fname.startswith("_"):
+                full_path = os.path.join(root, fname)
+                rel_path = os.path.relpath(full_path, minigames_dir).replace("\\", "/")
+                parent_dir = os.path.basename(root)
+                file_list.append((fname, full_path, rel_path, parent_dir))
 
-    for fname in filenames:
-        full_path = os.path.join(minigames_dir, fname)
+    # Sort files deterministically: first by section/parent_dir, then by filename
+    file_list.sort(key=lambda item: (item[3], item[0]))
+
+    for fname, full_path, rel_path, parent_dir in file_list:
         try:
-            with open(full_path, "r", encoding="utf-8") as fp:
+            with open(full_path, "r", encoding="utf-8-sig") as fp:
                 source = fp.read()
             line_count = len(source.splitlines())
             tree = ast.parse(source, filename=fname)
@@ -225,10 +239,11 @@ def scan_minigames(minigames_dir: str) -> List[Dict[str, str]]:
             body_lines = doc_lines[1:]
 
         wrapped_body = wrap_docstring_lines(body_lines, max_chars=82)
-        sec_id, sec_name = extract_section_from_docstring(raw_doc, fname)
+        sec_id, sec_name = extract_section_from_docstring(raw_doc, fname, parent_dir)
 
         entries.append({
             "filename": fname,
+            "rel_path": rel_path,
             "path": full_path,
             "title": title,
             "section_id": sec_id,
@@ -686,7 +701,8 @@ class PatternHubLauncher:
             draw_rectangle_lines(right_x + 22, right_y + 44, 100, 20, COLOR_ACCENT)
             draw_text(f"Section {cur['section_id']}", right_x + 28, right_y + 48, 11, COLOR_ACCENT)
 
-            meta = f"minigames/{cur['filename']} ({cur['lines']}L)  |  Smoke: {cur['smoke_status']}"
+            rel_display = cur.get("rel_path", cur["filename"])
+            meta = f"minigames/{rel_display} ({cur['lines']}L)  |  Smoke: {cur['smoke_status']}"
             draw_text(meta, right_x + 132, right_y + 47, 13, COLOR_TEXT_MAIN)
             draw_text("[R-Stick / Wheel] Scroll Doc", right_x + right_w - 232, right_y + 47, 12, Color(160, 185, 220, 255))
             draw_line(right_x, right_y + 72, right_x + right_w, right_y + 72, COLOR_PANEL_BORDER)

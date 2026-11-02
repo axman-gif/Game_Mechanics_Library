@@ -66,7 +66,7 @@ from typing import List, Dict, Tuple, Optional
 sys.dont_write_bytecode = True
 
 # 2. Add repository root to search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 # 3. Mandatory Raylib & modular workspace imports
 from pyray import *

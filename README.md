@@ -146,19 +146,19 @@ Within the launcher:
 Every minigame is completely standalone. You can run any script straight from your terminal:
 ```bash
 # 2D Bullet Hell (Object Pool, Spatial Partitioning, Trauma Shake)
-python -B minigames/space_swarm.py
+python -B minigames/3.0_core_prototypes/space_swarm.py
 
 # 3D Boss Arena (Behavior Trees, Kinematic Controller, Procedural Audio)
-python -B minigames/mecha_colosseum.py
+python -B minigames/3.0_core_prototypes/mecha_colosseum.py
 
 # 3D Turret Defense (Rotated Capsule Collisions, State Machine)
-python -B minigames/drone_defense_3d.py
+python -B minigames/3.0_core_prototypes/drone_defense_3d.py
 
 # 2D Resident Evil Style Grid Inventory (Fixed Matrix, Recipe Crafting)
-python -B minigames/attache_case.py
+python -B minigames/3.1_menus_ui/attache_case.py
 
 # 2D Radial Weapon Wheel (Time Dilation, Sector Partitioning)
-python -B minigames/weapon_wheel.py
+python -B minigames/3.1_menus_ui/weapon_wheel.py
 ```
 
 ---
@@ -195,21 +195,21 @@ All prototypes feature unified controls with simultaneous Keyboard/Mouse and Gam
 
 | Section | Minigame File | Dim | Main Pattern(s) Demonstrated | What You Learn |
 | :---: | :--- | :---: | :--- | :--- |
-| **3.0** | [`space_swarm.py`](minigames/space_swarm.py) | **2D** | **Object Pool** & **Spatial Grid 2D** | How to handle 600+ active bullets and swarming enemies with zero garbage-collection lag and $O(1)$ collision lookups. |
-| **3.0** | [`mecha_colosseum.py`](minigames/mecha_colosseum.py) | **3D** | **Behavior Trees** & **Kinematic Controller** | Hierarchical AI decision making (Selectors, Sequences, Conditions) for boss fights, paired with swept sphere sliding physics. |
-| **3.0** | [`drone_defense_3d.py`](minigames/drone_defense_3d.py) | **3D** | **Rotated Capsule Collisions** & **FSM** | Accurate 3D hit detection between tumbling articulated drones and turrets using segment-to-segment distance formulas. |
-| **3.1** | [`title_screen_cursor.py`](minigames/title_screen_cursor.py) | **2D** | **Command Pattern** & **Damped Cursor** | Building snappy game menus with decoupled action dispatchers and smooth spring-damped selection cursors. |
-| **3.1** | [`weapon_wheel.py`](minigames/weapon_wheel.py) | **2D** | **Radial Menu** & **Bullet-Time Dilation** | Partitioning circular screen space with angle math, deadzone hysteresis, and slow-motion time dilation. |
-| **3.1** | [`tabbed_status_menu.py`](minigames/tabbed_status_menu.py) | **2D** | **Tabbed Menu (Sub-View Strategy)** | Multi-page RPG character sheets with sliding category indicators and pure derived stat calculation pipelines. |
-| **3.1** | [`attache_case.py`](minigames/attache_case.py) | **2D** | **Grid Inventory** (Resident Evil Style) | 2D matrix cell occupancy, item swap mechanics, decoupling the floating hand cursor, and crafting item combinations. |
-| **3.1** | [`tetris_backpack.py`](minigames/tetris_backpack.py) | **2D** | **Shape-Packing Polyomino Inventory** | Irregular item blocks (L, T, I shapes), discrete 90° clockwise rotation tests, and automated packing solvers. |
-| **3.1** | [`overloaded_mule.py`](minigames/overloaded_mule.py) | **2D** | **Encumbrance Physics** & **Pack Companion** | Weight limits affecting player movement speed, tier thresholds, and steering leash logic for an AI pack mule. |
-| **3.1** | [`paper_doll.py`](minigames/paper_doll.py) | **2D** | **Equipment Slots** & **Set Synergies** | Slot-based gear systems, two-handed weapon exclusions, derived defense stats, and multi-piece set bonus triggers. |
-| **3.1** | [`gear_compare.py`](minigames/gear_compare.py) | **2D** | **Stat Comparison Tooltips** | Side-by-side comparison cards with automatic delta highlights (+green / -red) and smart viewport clamping. |
-| **3.1** | [`merchant_stall.py`](minigames/merchant_stall.py) | **2D** | **Shop Buy/Sell & Arbitrage Prevention** | Atomic transactions, sell-back depreciation math, currency counters, and bulk quantity stepper widgets. |
-| **3.1** | [`workbench.py`](minigames/workbench.py) | **2D** | **Crafting Recipes (DAG Dependency Graph)** | Recipe dependency trees, recursive ingredient verification, inventory consumption, and craft queues. |
-| **3.1** | [`skill_web.py`](minigames/skill_web.py) | **2D** | **Skill Tree (DAG Reachability)** | Node unlock graphs, dependency checking, point allocations, and anti-refund orphan node protection. |
-| **3.1** | [`minimap_compass.py`](minigames/minimap_compass.py) | **3D** | **Minimap & 360° Compass Tape** | Transforming 3D world coordinates to 2D radar coordinates (North-Up vs Heading-Up) and horizon compass strips. |
+| **3.0** | [`space_swarm.py`](minigames/3.0_core_prototypes/space_swarm.py) | **2D** | **Object Pool** & **Spatial Grid 2D** | How to handle 600+ active bullets and swarming enemies with zero garbage-collection lag and $O(1)$ collision lookups. |
+| **3.0** | [`mecha_colosseum.py`](minigames/3.0_core_prototypes/mecha_colosseum.py) | **3D** | **Behavior Trees** & **Kinematic Controller** | Hierarchical AI decision making (Selectors, Sequences, Conditions) for boss fights, paired with swept sphere sliding physics. |
+| **3.0** | [`drone_defense_3d.py`](minigames/3.0_core_prototypes/drone_defense_3d.py) | **3D** | **Rotated Capsule Collisions** & **FSM** | Accurate 3D hit detection between tumbling articulated drones and turrets using segment-to-segment distance formulas. |
+| **3.1** | [`title_screen_cursor.py`](minigames/3.1_menus_ui/title_screen_cursor.py) | **2D** | **Command Pattern** & **Damped Cursor** | Building snappy game menus with decoupled action dispatchers and smooth spring-damped selection cursors. |
+| **3.1** | [`weapon_wheel.py`](minigames/3.1_menus_ui/weapon_wheel.py) | **2D** | **Radial Menu** & **Bullet-Time Dilation** | Partitioning circular screen space with angle math, deadzone hysteresis, and slow-motion time dilation. |
+| **3.1** | [`tabbed_status_menu.py`](minigames/3.1_menus_ui/tabbed_status_menu.py) | **2D** | **Tabbed Menu (Sub-View Strategy)** | Multi-page RPG character sheets with sliding category indicators and pure derived stat calculation pipelines. |
+| **3.1** | [`attache_case.py`](minigames/3.1_menus_ui/attache_case.py) | **2D** | **Grid Inventory** (Resident Evil Style) | 2D matrix cell occupancy, item swap mechanics, decoupling the floating hand cursor, and crafting item combinations. |
+| **3.1** | [`tetris_backpack.py`](minigames/3.1_menus_ui/tetris_backpack.py) | **2D** | **Shape-Packing Polyomino Inventory** | Irregular item blocks (L, T, I shapes), discrete 90° clockwise rotation tests, and automated packing solvers. |
+| **3.1** | [`overloaded_mule.py`](minigames/3.1_menus_ui/overloaded_mule.py) | **2D** | **Encumbrance Physics** & **Pack Companion** | Weight limits affecting player movement speed, tier thresholds, and steering leash logic for an AI pack mule. |
+| **3.1** | [`paper_doll.py`](minigames/3.1_menus_ui/paper_doll.py) | **2D** | **Equipment Slots** & **Set Synergies** | Slot-based gear systems, two-handed weapon exclusions, derived defense stats, and multi-piece set bonus triggers. |
+| **3.1** | [`gear_compare.py`](minigames/3.1_menus_ui/gear_compare.py) | **2D** | **Stat Comparison Tooltips** | Side-by-side comparison cards with automatic delta highlights (+green / -red) and smart viewport clamping. |
+| **3.1** | [`merchant_stall.py`](minigames/3.1_menus_ui/merchant_stall.py) | **2D** | **Shop Buy/Sell & Arbitrage Prevention** | Atomic transactions, sell-back depreciation math, currency counters, and bulk quantity stepper widgets. |
+| **3.1** | [`workbench.py`](minigames/3.1_menus_ui/workbench.py) | **2D** | **Crafting Recipes (DAG Dependency Graph)** | Recipe dependency trees, recursive ingredient verification, inventory consumption, and craft queues. |
+| **3.1** | [`skill_web.py`](minigames/3.1_menus_ui/skill_web.py) | **2D** | **Skill Tree (DAG Reachability)** | Node unlock graphs, dependency checking, point allocations, and anti-refund orphan node protection. |
+| **3.1** | [`minimap_compass.py`](minigames/3.1_menus_ui/minimap_compass.py) | **3D** | **Minimap & 360° Compass Tape** | Transforming 3D world coordinates to 2D radar coordinates (North-Up vs Heading-Up) and horizon compass strips. |
 
 ---
 
@@ -343,19 +343,19 @@ Dentro del lanzador podrás:
 Cada minijuego es un archivo independiente. Puedes ejecutar el que desees directamente desde la terminal:
 ```bash
 # Bullet Hell 2D (Object Pool, Rejilla Espacial 2D, Temblor de Pantalla)
-python -B minigames/space_swarm.py
+python -B minigames/3.0_core_prototypes/space_swarm.py
 
 # Arena de Jefes 3D (Árboles de Comportamiento, Físicas Kinemáticas, Audio Sintetizado)
-python -B minigames/mecha_colosseum.py
+python -B minigames/3.0_core_prototypes/mecha_colosseum.py
 
 # Defensa con Torreta 3D (Colisiones entre Cápsulas Rotadas, Máquina de Estados)
-python -B minigames/drone_defense_3d.py
+python -B minigames/3.0_core_prototypes/drone_defense_3d.py
 
 # Inventario Estilo Resident Evil 4 (Matriz de Celdas Fijas, Combinación de Recetas)
-python -B minigames/attache_case.py
+python -B minigames/3.1_menus_ui/attache_case.py
 
 # Rueda Radial de Armas (Tiempo Bala, Partición de Sectores Angulares)
-python -B minigames/weapon_wheel.py
+python -B minigames/3.1_menus_ui/weapon_wheel.py
 ```
 
 ---
@@ -392,19 +392,19 @@ Todos los minijuegos responden a un esquema unificado de controles que combina t
 
 | Sección | Archivo | Dim | Patrón(es) de Diseño Demostrados | Lo Que Aprenderás |
 | :---: | :--- | :---: | :--- | :--- |
-| **3.0** | [`space_swarm.py`](minigames/space_swarm.py) | **2D** | **Object Pool** y **Spatial Grid 2D** | Administrar cientos de proyectiles sin pausas por recolección de basura y con colisiones en tiempo $O(1)$. |
-| **3.0** | [`mecha_colosseum.py`](minigames/mecha_colosseum.py) | **3D** | **Behavior Trees** y **Controlador Kinemático** | Árboles de decisión de IA (selectores, secuencias, condiciones) y deslizamiento sobre planos de colisión. |
-| **3.0** | [`drone_defense_3d.py`](minigames/drone_defense_3d.py) | **3D** | **Colisiones de Cápsulas Rotadas** y **FSM** | Detección precisa de impactos en 3D entre drones articulados y torretas mediante distancias segmento a segmento. |
-| **3.1** | [`title_screen_cursor.py`](minigames/title_screen_cursor.py) | **2D** | **Command Pattern** y **Cursor Amortiguado** | Arquitectura de menús desacoplada con despachadores de comandos y movimiento elástico del cursor. |
-| **3.1** | [`weapon_wheel.py`](minigames/weapon_wheel.py) | **2D** | **Menú Radial** y **Tiempo Bala (*Bullet-Time*)** | Partición angular de la pantalla con trigonometría, histeresis de zona muerta y dilatación temporal suave. |
-| **3.1** | [`tabbed_status_menu.py`](minigames/tabbed_status_menu.py) | **2D** | **Menú por Pestañas (Sub-View Strategy)** | Menús estilo RPG con indicador animado y tubería pura de cálculo de estadísticas derivadas. |
-| **3.1** | [`attache_case.py`](minigames/attache_case.py) | **2D** | **Inventario por Rejilla** (Estilo RE4) | Matriz fija de celdas, intercambio de objetos, desacople del cursor en mano y recetas de combinación. |
-| **3.1** | [`tetris_backpack.py`](minigames/tetris_backpack.py) | **2D** | **Inventario por Bloques (Poliominós)** | Piezas de inventario con formas irregulares, rotación discreta a 90° y empaquetador automático de objetos. |
-| **3.1** | [`overloaded_mule.py`](minigames/overloaded_mule.py) | **2D** | **Físicas de Sobrecarga** y **Mula de Carga** | Límites de peso que modulan la velocidad, umbrales de penalización y dirección por correa para una mula aliada. |
-| **3.1** | [`paper_doll.py`](minigames/paper_doll.py) | **2D** | **Ranuras de Equipo (*Paper Doll*)** | Exclusión mutua de armas a dos manos, cálculo de armadura derivada y activación de bonificadores por set. |
-| **3.1** | [`gear_compare.py`](minigames/gear_compare.py) | **2D** | **Ventanas de Comparación de Equipo** | Tarjetas enfrentadas con cálculo automático de diferencias (+verde / -rojo) y anclaje inteligente en pantalla. |
-| **3.1** | [`merchant_stall.py`](minigames/merchant_stall.py) | **2D** | **Tienda de Compra/Venta y Arbitraje** | Transacciones atómicas, descuento por reventa para evitar arbitraje, monedero de oro y selector de cantidades. |
-| **3.1** | [`workbench.py`](minigames/workbench.py) | **2D** | **Mesa de Crafteo (Grafo DAG)** | Árboles de recetas con dependencias, comprobación recursiva de materiales y deducción atómica de inventario. |
+| **3.0** | [`space_swarm.py`](minigames/3.0_core_prototypes/space_swarm.py) | **2D** | **Object Pool** y **Spatial Grid 2D** | Administrar cientos de proyectiles sin pausas por recolección de basura y con colisiones en tiempo $O(1)$. |
+| **3.0** | [`mecha_colosseum.py`](minigames/3.0_core_prototypes/mecha_colosseum.py) | **3D** | **Behavior Trees** y **Controlador Kinemático** | Árboles de decisión de IA (selectores, secuencias, condiciones) y deslizamiento sobre planos de colisión. |
+| **3.0** | [`drone_defense_3d.py`](minigames/3.0_core_prototypes/drone_defense_3d.py) | **3D** | **Colisiones de Cápsulas Rotadas** y **FSM** | Detección precisa de impactos en 3D entre drones articulados y torretas mediante distancias segmento a segmento. |
+| **3.1** | [`title_screen_cursor.py`](minigames/3.1_menus_ui/title_screen_cursor.py) | **2D** | **Command Pattern** y **Cursor Amortiguado** | Arquitectura de menús desacoplada con despachadores de comandos y movimiento elástico del cursor. |
+| **3.1** | [`weapon_wheel.py`](minigames/3.1_menus_ui/weapon_wheel.py) | **2D** | **Menú Radial** y **Tiempo Bala (*Bullet-Time*)** | Partición angular de la pantalla con trigonometría, histeresis de zona muerta y dilatación temporal suave. |
+| **3.1** | [`tabbed_status_menu.py`](minigames/3.1_menus_ui/tabbed_status_menu.py) | **2D** | **Menú por Pestañas (Sub-View Strategy)** | Menús estilo RPG con indicador animado y tubería pura de cálculo de estadísticas derivadas. |
+| **3.1** | [`attache_case.py`](minigames/3.1_menus_ui/attache_case.py) | **2D** | **Inventario por Rejilla** (Estilo RE4) | Matriz fija de celdas, intercambio de objetos, desacople del cursor en mano y recetas de combinación. |
+| **3.1** | [`tetris_backpack.py`](minigames/3.1_menus_ui/tetris_backpack.py) | **2D** | **Inventario por Bloques (Poliominós)** | Piezas de inventario con formas irregulares, rotación discreta a 90° y empaquetador automático de objetos. |
+| **3.1** | [`overloaded_mule.py`](minigames/3.1_menus_ui/overloaded_mule.py) | **2D** | **Físicas de Sobrecarga** y **Mula de Carga** | Límites de peso que modulan la velocidad, umbrales de penalización y dirección por correa para una mula aliada. |
+| **3.1** | [`paper_doll.py`](minigames/3.1_menus_ui/paper_doll.py) | **2D** | **Ranuras de Equipo (*Paper Doll*)** | Exclusión mutua de armas a dos manos, cálculo de armadura derivada y activación de bonificadores por set. |
+| **3.1** | [`gear_compare.py`](minigames/3.1_menus_ui/gear_compare.py) | **2D** | **Ventanas de Comparación de Equipo** | Tarjetas enfrentadas con cálculo automático de diferencias (+verde / -rojo) y anclaje inteligente en pantalla. |
+| **3.1** | [`merchant_stall.py`](minigames/3.1_menus_ui/merchant_stall.py) | **2D** | **Tienda de Compra/Venta y Arbitraje** | Transacciones atómicas, descuento por reventa para evitar arbitraje, monedero de oro y selector de cantidades. |
+| **3.1** | [`workbench.py`](minigames/3.1_menus_ui/workbench.py) | **2D** | **Mesa de Crafteo (Grafo DAG)** | Árboles de recetas con dependencias, comprobación recursiva de materiales y deducción atómica de inventario. |
 | **3.1** | [`skill_web.py`](minigames/skill_web.py) | **2D** | **Árbol de Habilidades (Alcanzabilidad DAG)** | Grafo de nodos interconectados con requisitos previos, gasto de puntos y bloqueo contra reembolsos huérfanos. |
 | **3.1** | [`minimap_compass.py`](minigames/minimap_compass.py) | **3D** | **Minimapa y Brújula de Cinta 360°** | Transformación de coordenadas del mundo 3D a radar 2D (Norte fijo vs Rumbo del jugador) y brújula de horizonte. |
 
@@ -464,22 +464,30 @@ Game_Mechanics_Library/
 │   ├── ui_settings.py         #    Barra superior con dropdowns de fuentes, tamaños (Ctrl +/-) y F11
 │   └── gamepad_input.py       #    Mapeo simultáneo de Teclado/Ratón y Mando con zona muerta radial
 │
-└── minigames/                 # 🎮 Prototipos y laboratorios de aprendizaje autónomos
-    ├── space_swarm.py         #    Bullet Hell 2D (Object Pool, SpatialGrid2D, TraumaShake)
-    ├── mecha_colosseum.py     #    Arena 3D de Jefes (Behavior Trees, Kinematic Controller, Synth)
-    ├── drone_defense_3d.py    #    Torreta 3D (Colisiones de Cápsulas Rotadas, FSM)
-    ├── attache_case.py        #    Inventario por Rejilla estilo Resident Evil 4
-    ├── tetris_backpack.py     #    Inventario por Bloques Poliominós
-    ├── overloaded_mule.py     #    Físicas de Sobrecarga e Inventario por Peso
-    ├── paper_doll.py          #    Ranuras de Equipo y Bonificadores de Set
-    ├── gear_compare.py        #    Comparador de Atributos Frente a Frente
-    ├── merchant_stall.py      #    Tienda de Compra/Venta y Prevención de Arbitraje
-    ├── workbench.py           #    Mesa de Crafteo y Grafos de Dependencias
-    ├── skill_web.py           #    Árbol de Habilidades y Desbloqueos en Red
-    ├── tabbed_status_menu.py  #    Menú de Pestañas con Navegación de Subvistas
-    ├── weapon_wheel.py        #    Rueda Radial de Armas con Ralentización Temporal
-    ├── title_screen_cursor.py #    Pantalla de Título con Cursor Amortiguado
-    └── minimap_compass.py     #    Minimapa y Brújula de Cinta 360° en 3D
+└── minigames/                 # 🎮 Prototipos y laboratorios de aprendizaje clasificados
+    ├── 3.0_core_prototypes/   #    Prototipos completos multi-patrón (Space Swarm, Mecha Colosseum, Drone Defense)
+    │   ├── drone_defense_3d.py
+    │   ├── mecha_colosseum.py
+    │   └── space_swarm.py
+    ├── 3.1_menus_ui/          #    Laboratorios de interfaz, menús e inventarios táctiles
+    │   ├── attache_case.py
+    │   ├── gear_compare.py
+    │   ├── merchant_stall.py
+    │   ├── minimap_compass.py
+    │   ├── overloaded_mule.py
+    │   ├── paper_doll.py
+    │   ├── skill_web.py
+    │   ├── tabbed_status_menu.py
+    │   ├── tetris_backpack.py
+    │   ├── title_screen_cursor.py
+    │   ├── weapon_wheel.py
+    │   └── workbench.py
+    ├── 3.2_combat_weapons/    #    Sistemas de combate, balística y armas (en desarrollo)
+    ├── 3.3_enemies_ai/        #    Comportamientos de enemigos e IA (en desarrollo)
+    ├── 3.4_progression_economy/#   Economía, crafteo y progresión RPG (en desarrollo)
+    ├── 3.5_world_exploration/ #    Generación procedimental de mundos (en desarrollo)
+    ├── 3.6_movement_camera/   #    Físicas de movimiento y cámaras kinemáticas (en desarrollo)
+    └── 3.7_puzzle_stealth/    #    Puzzles, sigilo y sistemas lógicos (en desarrollo)
 ```
 
 ---
@@ -493,7 +501,7 @@ Game_Mechanics_Library/
    Then run `.\.venv\Scripts\Activate.ps1` again.
 2. **The window opens and closes immediately:**  
    Make sure you installed Raylib by running `pip install -r requirements.txt`. You can also run any minigame with the smoke test flag to verify errors:  
-   `python -B minigames/space_swarm.py --smoke-test`
+   `python -B minigames/3.0_core_prototypes/space_swarm.py --smoke-test`
 3. **Why do we run scripts with `python -B`?**  
    The `-B` flag tells Python not to write bytecode `.pyc` files and `__pycache__` directories, keeping the repository spotless and lightweight.
 4. **My gamepad is connected, but not responding:**  
@@ -508,7 +516,7 @@ Game_Mechanics_Library/
    Luego vuelve a ejecutar `.\.venv\Scripts\Activate.ps1`.
 2. **La ventana se abre y se cierra al instante:**  
    Asegúrate de haber instalado Raylib ejecutando `pip install -r requirements.txt`. Puedes verificar si hay algún error ejecutando la prueba de integridad:  
-   `python -B minigames/space_swarm.py --smoke-test`
+   `python -B minigames/3.0_core_prototypes/space_swarm.py --smoke-test`
 3. **¿Por qué usamos `python -B` para ejecutar?**  
    El modificador `-B` le indica a Python que no genere carpetas temporales `__pycache__` ni archivos `.pyc`, manteniendo tu carpeta de trabajo limpia y sin basura.
 4. **Mi mando está conectado pero el juego no responde:**  
