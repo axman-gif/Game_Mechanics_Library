@@ -119,32 +119,100 @@ Generates audio purely in memory without external audio files (`.wav`/`.mp3`).
 > **Important**: Always call `init_audio_device()` before playing sounds and `close_audio_device()` at game exit.
 
 ### 4.1 Sound Effects (`synth_sfx.py`)
-- `create_laser_sfx()`: Downward laser frequency sweep.
-- `create_explosion_sfx()`: Decaying filtered white noise with sub-bass rumble.
-- `create_hit_sfx()`: Punchy collision thud.
+Provides 48 procedural game sound effects synthesized purely from mathematical waveforms in memory:
+
+#### Combat & Weapons (16)
+- `create_laser_sfx()`: Downward frequency sweep (classic retro blaster).
+- `create_heavy_laser_sfx()`: Deep plasma cannon blast with sub-bass rumble.
+- `create_explosion_sfx()`: Decaying low-pass filtered white noise with sub-bass rumble.
+- `create_hit_sfx()`: Punchy collision impact / melee thud.
+- `create_parry_sfx()`: Crisp, high-pitched metallic blade clang with extended crystalline resonance.
+- `create_shield_block_sfx()`: Heavy resonant blunt barrier impact thud.
+- `create_reload_sfx()`: 3-stage mechanical slide, eject, and chamber lock snap.
+- `create_empty_sfx()`: Hollow dry fire hammer click when out of ammo.
+- `create_shotgun_sfx()`: Wide-band scattergun sub-bass blast followed by a 2-stage pump-action rack clack.
+- `create_sniper_sfx()`: Instantaneous supersonic whip crack, metallic barrel ring, and long canyon echo tail.
+- `create_charge_up_sfx()`: Quadratic pitch riser (`160 Hz -> 1120 Hz`) with accelerating LFO capacitor pulse.
+- `create_sword_slash_sfx()`: Band-pass aerodynamic blade cleave with a high-frequency steel edge whistle.
+- `create_critical_hit_sfx()`: Sub-bass armor slam layered with a 3-partial crystalline FM shatter chime (`G6/C7/G7`).
+- `create_ricochet_sfx()`: Metallic bullet deflection ping (`2600 Hz -> 580 Hz`) with a 35 Hz Doppler warble.
+- `create_flame_sfx()`: Turbulent thermal-draft filtered noise burst with stochastic crackling embers.
+- `create_freeze_sfx()`: Staggered inharmonic FM ice crystallization chimes with brittle frost crackle.
+
+#### Movement & Kinematics (10)
 - `create_jump_sfx()`: Upward frequency slide.
-- `create_coin_sfx()`: Bright 2-tone chime.
-- `create_powerup_sfx()`: Rising 4-tone fanfare.
-- `create_hurt_sfx()`: Low pitched groan with grit.
-- `create_click_sfx()`: Subtle UI blip.
+- `create_dash_sfx()`: Aerodynamic rushing air whoosh for dodges, dashes, or weapon swings.
+- `create_footstep_sfx()`: Subtle, low-impact floor tap with surface friction for character walking.
+- `create_land_sfx()`: Solid ground impact thump after falling or jumping.
+- `create_double_jump_sfx()`: Nimble 2-stage mid-air flutter kick leaping an octave higher (`240->480->980 Hz`).
+- `create_grapple_sfx()`: 3-stage pneumatic harpoon pop, 48 Hz cable winch ratchet, and magnetic claw clank.
+- `create_thruster_sfx()`: Deep 72 Hz rocket combustion rumble with a rising turbine spool whine (`420->780 Hz`).
+- `create_teleport_sfx()`: Reverse-envelope vacuum implosion folding into a ring-modulated quantum warp burst.
+- `create_slide_sfx()`: Dual-pole band-filtered kinetic crouch/wall-slide friction scrape with scuff decay.
+- `create_bounce_sfx()`: Elastic springboard / slime bumper rebound (`180->440 Hz`) with a damped 24 Hz pitch wobble.
+
+#### Progression, Rewards & Health (11)
+- `create_coin_sfx()`: Bright 2-tone melodic pickup chime (B5 to E6).
+- `create_powerup_sfx()`: Rising 4-tone victory arpeggio (E4, G4, B4, E5).
+- `create_level_up_sfx()`: Sparkling, triumphant 5-note pentatonic fanfare (C5 to C6).
+- `create_heal_sfx()`: Soothing restoration shimmer with vibrato modulation.
+- `create_hurt_sfx()`: Low pitched groan with pitch slide and distortion.
+- `create_chest_open_sfx()`: Mechanical iron lock unlatch followed by a magical 4-note Lydian discovery arpeggio (`D5-F#5-A5-C#6`).
+- `create_craft_sfx()`: Double blacksmith anvil hammer strike (`1180/1770/2950 Hz` steel modes) with a warm harmonic glow.
+- `create_debuff_sfx()`: Sinister status curse / encumbrance affliction stepping down a tritone (`A4 -> Eb4 -> A3`).
+- `create_gem_sfx()`: High-octave 3-note crystal diamond sparkle (`C6 -> G6 -> C7`) with glassy FM overtones.
+- `create_revive_sfx()`: Warm F-major cathedral organ triad swell (`F4-A4-C5-F5`) with 6.5 Hz celestial shimmer.
+- `create_death_sfx()`: 4-step descending minor/diminished arcade cascade collapsing into a sub-bass power-down drop.
+
+#### User Interface & Signals (11)
+- `create_click_sfx()`: Subtle UI button click blip.
+- `create_select_sfx()`: Ultra-soft, gentle UI cursor hover tick (non-fatiguing).
+- `create_cancel_sfx()`: Soft descending 2-tone dismissal blip for UI back / close.
+- `create_error_sfx()`: Low harsh dissonant buzzer (8 Hz beat) for invalid actions or locked doors.
+- `create_alert_sfx()`: Piercing 2-tone exclamation chirp for stealth detection or turret lock-on.
+- `create_confirm_sfx()`: Crisp 2-tone ascending perfect-fifth UI accept chime (`E5 -> B5`).
+- `create_pause_sfx()`: Classic 4-note retro staccato pause/menu stinger (`C6 - G5 - E5 - C6`).
+- `create_typewriter_sfx()`: Ultra-short 25ms warm mechanical keystroke & RPG dialogue speech blip.
+- `create_notification_sfx()`: Pleasant dual-chime toast notification & quest objective bell (`A5 -> D6`).
+- `create_sonar_ping_sfx()`: High-Q 1480 Hz radar / minimap sonar ping with a secondary echo reflection.
+- `create_countdown_sfx()`: Punchy 880 Hz arcade timer & race countdown beep.
 
 #### `SoundLibrary` Class
 ```python
 sfx = SoundLibrary()
-sfx.init_defaults()       # Generates & caches all SFX once
-sfx.play("laser")         # Plays sound by name
-sfx.play("explosion", 0.8)# Plays with volume scaling
-sfx.unload_all()          # Disposes memory at shutdown
+sfx.init_defaults()          # Synthesizes & caches all 48 SFX once on startup
+sfx.play("laser")            # Plays sound by name
+sfx.play("shotgun", 0.85)    # Plays scattergun blast + pump rack
+sfx.play("critical_hit", 0.9)# Plays sub-bass slam + crystal shatter
+sfx.play("grapple", 0.7)     # Plays 3-stage grappling hook launch
+sfx.play("chest_open", 0.8)  # Plays lock click + Lydian treasure fanfare
+sfx.play("typewriter", 0.4)  # Plays 25ms dialogue blip
+sfx.has("sonar_ping")        # Returns True if sound (or alias) exists in cache
+sfx.count()                  # Returns total number of cached sounds (48)
+sfx.register("custom", snd)  # Registers custom Sound object into library
+sfx.unload_all()             # Disposes audio memory at shutdown (double-free safe)
 ```
 
 ### 4.2 Background Music Tracks (`synth_music.py`)
-- `generate_action_track(bpm=126.0)`: 8-bar fast combat loop with 4-on-the-floor bass and synth arpeggios.
-- `generate_ambient_track(bpm=84.0)`: Atmospheric exploration pad with gentle harmonic chords.
+Generates 12 loopable multi-voice procedural chiptune, synthwave, folk, and orchestral synth soundtracks with click-free crossfaded loop boundaries:
+
+- `generate_action_track(bpm=126.0)`: 8-bar fast combat loop in D minor with 4-on-the-floor synth bass, chord pads, and 16th-note arpeggiated lead.
+- `generate_ambient_track(bpm=84.0)`: 4-bar peaceful exploration pad in A minor 9 with chorus detune and sub drone.
+- `generate_boss_track(bpm=140.0)`: 8-bar intense boss encounter in C minor with syncopated 8th-note saw bass, brassy chord pads, and rapid arpeggios.
+- `generate_stealth_track(bpm=96.0)`: 8-bar tense espionage groove in D minor with heartbeat sub-bass pulses (beats 1 & 2.5), ticking 16th-note hi-hats, and eerie pads.
+- `generate_retro_arcade_track(bpm=132.0)`: 8-bar cheerful NES-style chiptune in F/C major with walking triangle-wave bass and catchy 50% square wave melody.
+- `generate_victory_track(bpm=116.0)`: 8-bar warm, uplifting celebration / shop loop in G major with organ bass, lush pads, and sparkling pentatonic bell chimes.
+- `generate_cyberpunk_track(bpm=136.0)`: 8-bar neon sci-fi synthwave loop in E minor with sidechain-pumping 16th-note saw bass, synthesized kick/snare, and Pulse-Width Modulated (PWM) lead.
+- `generate_dungeon_track(bpm=92.0)`: 8-bar haunting crypt/labyrinth loop in E Phrygian with cathedral pedal drone, 25%-pulse harpsichord arpeggios, and vibrato ghost bells.
+- `generate_puzzle_track(bpm=104.0)`: 8-bar thoughtful logic-lab groove in C Lydian / Maj7 with plucked upright bass, FM Rhodes electric piano voicings, and syncopated wooden marimba melody.
+- `generate_racing_track(bpm=152.0)`: 8-bar high-octane turbo chase in A minor with galloping octave-jumping 8th bass, 16th-note breakbeat percussion, and soaring saw-square lead.
+- `generate_tavern_track(bpm=112.0)`: 8-bar cheerful RPG town folk tune in D Dorian with bouncy root-fifth oom-pah bass, strummed lute chords, and breath-enveloped wooden flute melody.
+- `generate_mystery_track(bpm=88.0)`: 8-bar ethereal zero-G space drift in F# minor 9 with LFO-modulated cosmic sub-bass, dual-detuned glass pad, and dotted-8th delay echo starlight plucks.
 
 #### `SynthMusicPlayer` Class
 ```python
 music = SynthMusicPlayer()
-track = generate_action_track()
+track = generate_boss_track()
 music.load_track(track)
 music.play()
 
@@ -154,4 +222,34 @@ music.update()            # Auto-loops seamlessly when track ends
 # At shutdown:
 music.unload()
 ```
+
+---
+
+### 4.3 Interactive Audio Workstation & Sound Player (`assets/audio/sound_player.py`)
+
+A standalone graphical soundboard, visualizer, and procedural jukebox for previewing, inspecting, and mixing all procedural audio in real time.
+
+- **Run Command**:
+  ```bash
+  python -B assets/audio/sound_player.py
+  python -B assets/audio/sound_player.py --smoke-test
+  ```
+- **Features**:
+  - **Categorized SFX Soundboard**: Filterable grid (`ALL`, `COMBAT`, `MOVEMENT`, `PROGRESSION`, `UI`) with visual trigger flash and descriptions.
+  - **Real-Time Visualizer**: 16-band reactive frequency spectrum equalizer with peak-hold caps and a continuous CRT oscilloscope waveform.
+  - **Procedural BGM Jukebox**: Track timeline, 8 beat LEDs, and transport controls (Play, Pause, Stop, Prev, Next).
+  - **Master Gain Mixer**: Interactive sliders for Master, SFX, and BGM volume levels with mute switches.
+  - **X-Ray Inspector (`[Tab]`)**: In-depth audio driver, sample rate, and C++ memory telemetry.
+- **Controls**:
+  - `Mouse`: Click sound cards to trigger, click transport buttons, or drag volume faders.
+  - `Arrow Keys / WASD / Gamepad Left Stick / D-Pad`: Navigate soundboard cards.
+  - `Space / Enter / Gamepad A`: Play selected sound effect.
+  - `1` - `5` / `Gamepad LB / RB`: Switch category filter tabs.
+  - `M` / `Gamepad X`: Toggle BGM Play / Pause.
+  - `N` / `Gamepad Y`: Next BGM track.
+  - `[` / `]`: Decrease / Increase Master Volume.
+  - `[Tab]` / `Gamepad Select`: Toggle X-Ray Telemetry Inspector.
+  - `[F1]`: Toggle Visualizer Mode (Spectrum + Oscilloscope vs Raw Scope).
+  - `[R]` / `Gamepad Start`: Stop all audio and reset mixer.
+
 
