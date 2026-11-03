@@ -1278,8 +1278,8 @@ class FirstPersonPlayer:
         fwd_x = math.sin(self.yaw)
         fwd_z = math.cos(self.yaw)
         # Right vector in horizontal plane
-        rgt_x = math.cos(self.yaw)
-        rgt_z = -math.sin(self.yaw)
+        rgt_x = -math.cos(self.yaw)
+        rgt_z = math.sin(self.yaw)
 
         # move_vec.y is negative for Up/W, positive for Down/S
         # move_vec.x is negative for Left/A, positive for Right/D
