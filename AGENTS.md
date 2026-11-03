@@ -11,8 +11,8 @@ The graphics and audio are intentionally built using **procedural primitives** (
 **CRITICAL RULE**: Before generating code or planning a new minigame/feature, you **MUST** review the existing components in the workspace:
 
 1. **Check Existing Minigames & Catalog Taxonomy**: Review [`minigames.md`](minigames.md) to locate the exact 3.x catalog section for the requested minigame:
-   - **Section 3.0: Core Multi-Pattern Prototypes** (large 600–900 lines, combining 4+ patterns: Space Swarm, Mecha Colosseum 3D, Drone Defense 3D). Max 1 per prompt.
-   - **Sections 3.1–3.7: Extended Single-Pattern Labs** (focused 250–500 lines, 1 to 2 per prompt):
+   - **Section 3.0: Core Multi-Pattern Prototypes** (combining 4+ patterns: Orbital Siege 2D, Titan Strider 3D, Tactical Commander TBS, Frontline Outpost RTS).
+   - **Sections 3.1–3.7: Extended Single-Pattern Labs** (focused on 1 pattern in isolation):
      - `3.1 Menus & UI`
      - `3.2 Combat & Weapons`
      - `3.3 Enemies & AI`
@@ -26,23 +26,26 @@ The graphics and audio are intentionally built using **procedural primitives** (
 
 ### 1.1 Ambiguity Gate & Mandatory Specification Check
 Before writing or modifying any code, the agent **MUST** evaluate the clarity, target section, and scope of the prompt:
-- **Mandatory Specificity**: The user must explicitly specify:
-  1. The exact catalog section (`Section 3.x`) or target prototype name(s) from `minigames.md`.
-  2. The exact quantity of tasks/scripts to be executed in this request.
-- **Ambiguity Halt**: If the request is generic, open-ended (e.g., "make some minigames", "fix bugs in minigames", "advance on the list"), or requests multiple tasks without using the `/goal` or `/plan` slash command:
-  - **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.**
-  - The agent must ask the user to clarify:
-    1. Which specific section or prototype(s) from `minigames.md` they want to target.
-    2. How many scripts to process in this session.
-    3. Suggest using `/goal` for autonomous multi-script execution or `/plan` for phased implementation.
+- **Standard Single-Turn Request (without `/teamwork`)**:
+  - The user must explicitly request **strictly 1 prototype** by specifying either its exact prototype name or section from `minigames.md`.
+  - **Multi-Minigame Halt**: If the user requests $\ge 2$ minigames in a single prompt without `/teamwork`, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.** The agent must reply:
+    > *"I detected a request for multiple minigames. To maintain pedagogical quality, prevent context dilution, and ensure role-specialized subagent execution, multi-script requests must use the `/teamwork` command (e.g. `/teamwork build 3 games from section 3.2 and 2 from section 3.3` or `/teamwork making 4 minigames from minigames.md using section 3.1`). For standard single-turn prompts, please request strictly 1 prototype."*
+  - **Ambiguity Halt**: If the request is generic, open-ended (e.g., "make some minigames", "fix bugs in minigames", "advance on the list", "do something in section 3"):
+    - **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.**
+    - The agent must ask the user to clarify the exact prototype name and catalog section from `minigames.md`.
+- **Autonomous Multi-Script Sessions (with `/teamwork`)**:
+  - Multi-script batching is permitted for **up to 8 scripts per session**, provided the prompt is specific enough (e.g. *"build 3 games from section 3.1 and 3 from section 3.2"*, *"make 1 game from each of sections 3.1 through 3.7"*, or listing specific prototype names from `minigames.md`).
+  - **Oversized Batch Halt**: If the user requests $> 8$ minigames in a single `/teamwork` session, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**, and ask the user to break the request into batches of at most 8 prototypes.
+  - **Sequential Isolated Subagent Invariant**: The Lead Coordinator MUST process scripts strictly **one at a time** using an isolated subagent per prototype (spawn subagent $N$ with clean context $\rightarrow$ write directly to disk $\rightarrow$ verify with `audit_minigame.py` $\rightarrow$ report 5-line summary $\rightarrow$ update documentation $\rightarrow$ advance to subagent $N+1$). It must NEVER attempt to generate or modify multiple scripts in a single tool call or message.
 
 ### 1.2 Script Sizing & Pedagogical Quality Invariants
-To maximize token economy, maintain deep architectural pedagogy, and ensure zero runtime defects:
-- **Strict Size Limits**:
-  - **Usual Target Range**: **1,200 to 2,000 lines** per minigame script.
-  - **Hard Ceiling**: **2,000 lines maximum**. Under NO circumstances may any minigame script exceed 2,000 lines.
+To maximize token economy, eliminate bloat, maintain deep architectural pedagogy, and ensure zero runtime defects:
+- **Strict Size Limits (Unified Across ALL Sections 3.0 to 3.7)**:
+  - **Target Range**: **600 to 1,500 lines** per minigame script.
+  - **Floor**: **600 lines minimum**. Scripts below 600 lines fail `audit_minigame.py` (prevents cutting corners on comments, 5-block anatomy, dual input, and X-Ray overlays).
+  - **Hard Ceiling**: **1,800 lines maximum**. Under NO circumstances may any minigame script exceed 1,800 lines (prevents token bloat).
 - **Pedagogical Quality Invariants (Non-Negotiable within Line Budget)**:
-  - Even within the 1,200–2,000 line target, the agent must NEVER compress code, truncate functions, or omit comments to fit arbitrary limits.
+  - Even within the 600–1,500 line target, the agent must NEVER compress code, truncate functions, or omit comments to fit arbitrary limits.
   - Every script MUST provide:
     1. Novice-friendly comments explaining *why* equations work and their direct C++ equivalent (memory layout, explicit indices, struct fields).
     2. The full 5-block anatomy (Imports, Block 1 Core Pattern, Block 2 Entities/Simulation, Block 3 Telemetry X-Ray Overlay, Block 4 Dual Input Loop & Smoke Test).
@@ -50,12 +53,37 @@ To maximize token economy, maintain deep architectural pedagogy, and ensure zero
     4. Safe HUD layout (keeping `x = 450..980, y = 14..48` clear for the global dropdown bar).
     5. Full state reset on `[R]` / Gamepad Start, zero CFFI type casting errors, and clamped Color channels (`0..255`).
 
-### 1.3 Batch Size & Scope Limits (Quality Guardrail)
-To prevent output truncation, skipped comments, or degraded code quality:
-- **Standard Single-Turn Request**: Build strictly **1 prototype per prompt/cycle** (target 1,200–2,000 lines, maximum 2,000 lines). Complete the file, run verification via `audit_minigame.py`, update documentation, and halt.
-- **Autonomous Multi-Script Sessions (`/goal` or `/plan`)**:
-  - The agent may process batches of **up to 5 scripts per session**.
-  - **Strict Sequential Processing Invariant**: The agent MUST process scripts strictly **one at a time** (generate script $N \rightarrow$ verify with `audit_minigame.py` $\rightarrow$ update documentation $\rightarrow$ advance to script $N+1$). It must NEVER attempt to generate or modify multiple scripts in a single tool call or message.
+### 1.3 Batch Size & Autonomous Teamwork Protocol (`/teamwork`)
+To eliminate context dilution, prevent degradation in code depth, avoid attention drift across long multi-game sessions, and run seamlessly without requiring constant user intervention, the repository adopts **Option A: The Sequential Isolated Craftsman Guild**:
+- **Standard Single-Turn Request**: Build strictly **1 prototype per prompt/cycle** (target 600–1,500 lines, maximum 1,800 lines). Complete the file, run verification via `audit_minigame.py`, update documentation, and halt.
+- **Autonomous Multi-Script Sessions (`/teamwork`, Up to 8 Scripts)**:
+  When invoked via `/teamwork` for up to 8 prototypes (e.g., `/teamwork making X amount of minigames from minigames.md using section(s) 3.x...`), the Lead Coordinator and subagents follow the **Autonomous Teamwork Protocol**:
+  1. **Lead Coordinator Queue & Pre-Flight**:
+     - The Coordinator validates that all requested prototypes exist in `minigames.md` and total $\le 8$ files.
+     - Sequences the batch queue strictly one prototype at a time.
+  2. **Dedicated Craftsman Subagent per Minigame (Fresh 0-Token Context)**:
+     - For each prototype $k \in \{1 \dots N\}$, the Coordinator invokes an isolated subagent via `invoke_subagent`:
+       ```python
+       invoke_subagent(
+           Role="Minigame Craftsman",
+           TypeName="self",
+           Workspace="inherit",
+           Prompt="Build <Prototype Name> in minigames/<subfolder>/<script_name>.py following AGENTS.md rules..."
+       )
+       ```
+     - **Clean Context Isolation**: The subagent receives ONLY the target prototype requirements, patterns from `patterns.md`, the 5-block anatomy, line bounds (600–1,500 lines, hard ceiling 1,800), and pyray CFFI gotchas. It carries zero previous token history from earlier games, preventing memory/attention drift.
+     - **Zero In-Chat Code Spillage**: The subagent writes code directly to `minigames/<subfolder>/<script_name>.py` via `write_file`. It does NOT print the 600–1,500 lines of code into the chat conversation text.
+     - **Non-Blocking Verification**: The subagent runs `$env:PYTHONDONTWRITEBYTECODE="1"; python -B audit_minigame.py minigames/<subfolder>/<script_name>.py`.
+     - **Strict 1-Retry Policy**: If `audit_minigame.py` fails, the subagent performs at most one (1) retry fix. If it fails a second time, it halts and reports the failure.
+     - **Concise Completion Report**: The subagent sends a 5-line summary message back to the Coordinator (File path, Line count, Demonstrated patterns, Audit status) and terminates.
+  3. **Documentation & Release Synchronization**:
+     - Upon receiving the Craftsman's success report, the Coordinator:
+       - Updates `minigames.md` (marks `(built)` in the planned catalog and logs an entry in Section 2 Active Registry).
+       - Updates `patterns.md` if registering new patterns.
+       - Runs `python -B launcher.py --smoke-test` to verify launcher dropdown synchronization.
+     - The Coordinator then advances directly to prototype $k+1$.
+  4. **Dedicated Time & Pacing Allocation**: The system allocates ~4 to 6 minutes of deep compute and rigorous execution per prototype (accumulating ~30 to 45 minutes for a full 6–8 prototype run). Subagents must NEVER rush, truncate comments, or omit 5-block components to finish early.
+  5. **Autonomous Non-Intervention Guarantee**: As long as the request specifies target prototypes and sections clearly, the Coordinator executes the entire multi-agent pipeline autonomously without pausing to ask conversational questions or requesting manual approvals between files.
 - **Focused Lab Scope**: Single-pattern labs must start **immediately in the interactive gameplay/sandbox state** (skip title screens unless the pattern itself is a menu/scene-stack pattern) so 100% of the code focuses on experiencing and inspecting the target pattern.
 
 ---
@@ -225,7 +253,7 @@ Because this repository exists to **teach** game design patterns:
   *(This executes template checks, C++-transferable AST rules, and 3 full Raylib `update()`/`draw()` frames to catch 100% of syntax errors, missing imports, and CFFI type mismatches).*
 - **Strict 1-Retry Policy for Bug Fixes**:
   - If `audit_minigame.py` or `--smoke-test` fails (AST rule violation, syntax error, pyray CFFI type crash, missing imports, or logic defect), the agent is permitted **AT MOST ONE (1) retry pass** to correct all identified issues.
-  - **Line Cap Preservation**: The corrected file MUST STILL remain strictly under the **2,000-line hard ceiling** (and target the 1,200–2,000 line range).
+  - **Line Cap Preservation**: The corrected file MUST STILL remain strictly under the **1,800-line hard ceiling** (and target the 600–1,500 line range, with a 600-line minimum).
   - **Terminal Stop on Second Failure**: If the script still fails after the single retry attempt, the agent **MUST STOP IMMEDIATELY**, log the exact error and line numbers to the user, and request human guidance rather than attempting further automated loops.
 
 ### Rule 7: Immediate Documentation Updates & Novice-Friendly English

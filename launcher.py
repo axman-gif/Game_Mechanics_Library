@@ -43,6 +43,7 @@ COLOR_PANEL_BORDER = Color(48, 65, 105, 255)
 COLOR_ITEM_SELECTED = Color(32, 85, 145, 255)
 COLOR_ITEM_HOVER = Color(24, 34, 56, 255)
 COLOR_ACCENT = Color(70, 205, 255, 255)
+COLOR_ACCENT_GOLD = Color(255, 215, 0, 255)
 COLOR_TEXT_MAIN = Color(235, 242, 255, 255)
 COLOR_TEXT_DIM = Color(145, 160, 185, 255)
 
@@ -63,63 +64,63 @@ CATALOG_SECTIONS = [
         "name": "All Categories",
         "title": "All Built Prototypes",
         "desc": "Browse all standalone minigames and design pattern labs across all categories.",
-        "planned_count": 133
+        "planned_count": 106
     },
     {
         "id": CAT_3_0,
         "name": "3.0 Core Multi-Pattern",
         "title": "Section 3.0: Core Multi-Pattern Prototypes",
-        "desc": "Full multi-pattern arcade and action prototypes combining 4+ patterns: Space Swarm, Mecha Colosseum 3D, Drone Defense 3D.",
-        "planned_count": 5
+        "desc": "Full multi-pattern arcade and strategy loops combining 4+ patterns: Orbital Siege 2D, Titan Strider 3D, Tactical Commander TBS, Frontline Outpost RTS.",
+        "planned_count": 7
     },
     {
         "id": CAT_3_1,
         "name": "3.1 Menus & UI",
         "title": "Section 3.1: Menus & User Interface",
-        "desc": "Tactile menus and interface architectures: Title Screen Cursor, Weapon Wheel, Tabbed Status Menu, Attaché Case, Tetris Backpack, Overloaded Mule, Paper Doll, Gear Compare.",
-        "planned_count": 30
+        "desc": "Tactile menus and interface architectures: Diegetic Wrist Comm, Micro-Inventory Grid, Modular Weapon Workbench, Radial Action Pie, 4X Grand Strategy Ledger, Unified Pointer Viewport.",
+        "planned_count": 17
     },
     {
         "id": CAT_3_2,
         "name": "3.2 Combat & Weapons",
         "title": "Section 3.2: Combat & Weapon Systems",
-        "desc": "Offensive and defensive mechanics: Hitscan tracing, Ballistic arcs, Spread cones, Combo input buffers, Parry windows, Recoil bloom, Hit-stop freeze frames.",
-        "planned_count": 25
+        "desc": "Offensive and defensive mechanics: Ballistic mortar arcs, Hitscan penetration, Active reload timing, Parry stagger windows, Grid Zone of Control, RTS siege splash.",
+        "planned_count": 17
     },
     {
         "id": CAT_3_3,
         "name": "3.3 Enemies & AI",
         "title": "Section 3.3: Enemies & Game AI",
-        "desc": "Artificial intelligence behaviors: Waypoint patrols, Alert state machines, Flow fields, Boid flocking, Telegraphed snipers, Three-phase bosses, Bullet generators.",
-        "planned_count": 23
+        "desc": "Artificial intelligence behaviors: Boid flocking panic, Dijkstra flow fields, Visualized behavior trees, Colossus multi-phase bosses, RTS formation steering, Harvester FSMs.",
+        "planned_count": 15
     },
     {
         "id": CAT_3_4,
         "name": "3.4 Progression & Economy",
         "title": "Section 3.4: Progression & Economy Loops",
-        "desc": "RPG and survival loops: Loot drop tables with rarity tiers, XP leveling curves, Herb/ammo crafting alchemy, Scrap buy/sell economies, Gacha pity timers.",
-        "planned_count": 15
+        "desc": "RPG and strategy economy loops: Cumulative loot CDF sampling, Mathematical XP curves, Crafting DAGs, Gacha pity simulators, RTS tech tree research, 4X resource ledgers.",
+        "planned_count": 12
     },
     {
         "id": CAT_3_5,
         "name": "3.5 World & Exploration",
         "title": "Section 3.5: World & Procedural Exploration",
-        "desc": "Environment generation: Voxel chunked sandboxes, Noise terrain heightmaps, Cellular automata caves, BSP room-and-corridor dungeons, Lock-and-key gating.",
-        "planned_count": 16
+        "desc": "Environment generation: Cellular automata caverns, BSP dungeons, Voxel DDA raymarching, Infinite chunk streamers, Dual-layer fog of war, Hex world biomes.",
+        "planned_count": 13
     },
     {
         "id": CAT_3_6,
         "name": "3.6 Movement & Camera",
         "title": "Section 3.6: Physics, Movement & Camera Rigs",
-        "desc": "Kinematic movement feel: Coyote time and jump buffers, Dash with invulnerability frames, Grappling swing pendulums, Orbit cameras with collision.",
-        "planned_count": 15
+        "desc": "Kinematic movement feel: Platformer forgiveness lab, Verlet grappling cables, Quake strafe controllers, Trauma screen shake, RTS strategic cameras, TBS AP path noodles.",
+        "planned_count": 12
     },
     {
         "id": CAT_3_7,
         "name": "3.7 Puzzle, Stealth & Other",
         "title": "Section 3.7: Puzzle, Stealth & Systemic Mechanics",
-        "desc": "Logic and systemic patterns: Sokoban push-block puzzles, Vision cone stealth, Tower targeting priorities, Command pattern undo/rewind, Particle emitters.",
-        "planned_count": 19
+        "desc": "Logic, stealth and systemic patterns: Sokoban deadlock solvers, Stealth lux illumination, Fluid cellular automata, Lockpick sweet spots, RTS marquee selection, Dynamic initiative timelines.",
+        "planned_count": 13
     },
 ]
 

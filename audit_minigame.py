@@ -27,6 +27,9 @@ REQUIRED_STRINGS = [
     "--smoke-test"
 ]
 
+MIN_LINES = 600
+HARD_CEILING_LINES = 1800
+
 def check_ast_cpp_rules(filepath, source):
     try:
         tree = ast.parse(source, filename=filepath)
@@ -82,7 +85,18 @@ def main():
             print(f"  - {err}")
         sys.exit(1)
 
-    # 3. Run headless Raylib smoke test (catches CFFI float/int and Color errors)
+    # 3. Check line count bounds (600 to 1,500 lines target, 1,800 maximum hard ceiling)
+    line_count = len(source.splitlines())
+    if line_count < MIN_LINES:
+        print(f"[FAIL] {filepath} - Script is undersized ({line_count} lines < {MIN_LINES} minimum).")
+        print(f"  Every minigame must provide thorough pedagogical comments, full 5-block anatomy, dual input, and X-Ray overlay.")
+        sys.exit(1)
+    if line_count > HARD_CEILING_LINES:
+        print(f"[FAIL] {filepath} - Script exceeds hard ceiling ({line_count} lines > {HARD_CEILING_LINES} maximum).")
+        print(f"  Scripts must remain strictly within 600 to 1,500 lines (hard ceiling of 1,800) to avoid token bloat.")
+        sys.exit(1)
+
+    # 4. Run headless Raylib smoke test (catches CFFI float/int and Color errors)
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     res = subprocess.run([sys.executable, "-B", filepath, "--smoke-test"], capture_output=True, text=True, env=env)
