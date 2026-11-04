@@ -29,8 +29,34 @@ from typing import List, Dict
 
 # 3. Mandatory Raylib & modular imports
 from pyray import *
-from assets import *
+try:
+    from assets import *
+except Exception:
+    pass
 from utils import *
+
+# Resilient Audio Asset Fallbacks (prevents crashes when assets/ is being rebuilt)
+if "SoundLibrary" not in globals():
+    class SoundLibrary:
+        def init_defaults(self): pass
+        def play(self, *args, **kwargs): pass
+        def unload_all(self): pass
+
+if "SynthMusicPlayer" not in globals():
+    class SynthMusicPlayer:
+        def load_track(self, *args, **kwargs): pass
+        def set_volume(self, *args, **kwargs): pass
+        def play(self): pass
+        def pause(self): pass
+        def resume(self): pass
+        def update(self): pass
+
+if "generate_ambient_track" not in globals():
+    def generate_ambient_track(*args, **kwargs): return None
+
+if "draw_slime_enemy_2d" not in globals():
+    def draw_slime_enemy_2d(pos, anim_timer=0.0, radius=14.0, palette=None):
+        draw_circle_v(pos, float(radius), Color(70, 205, 120, 255))
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
@@ -47,7 +73,7 @@ COLOR_ACCENT_GOLD = Color(255, 215, 0, 255)
 COLOR_TEXT_MAIN = Color(235, 242, 255, 255)
 COLOR_TEXT_DIM = Color(145, 160, 185, 255)
 
-# 3.x Catalog Taxonomy Categories from minigames.md
+# 3.x Catalog Taxonomy Categories from rules/minigames.md
 CAT_ALL = "ALL"
 CAT_3_0 = "3.0"
 CAT_3_1 = "3.1"
@@ -641,7 +667,7 @@ class PatternHubLauncher:
 
             draw_text("NO PROTOTYPES BUILT YET", box_x + 18, box_y + 20, 15, COLOR_ACCENT)
             draw_text(cur_sec_info["name"], box_x + 18, box_y + 44, 13, WHITE)
-            draw_text(f"{cur_sec_info['planned_count']} planned prototypes in minigames.md", box_x + 18, box_y + 68, 12, COLOR_TEXT_DIM)
+            draw_text(f"{cur_sec_info['planned_count']} planned prototypes in rules/minigames.md", box_x + 18, box_y + 68, 12, COLOR_TEXT_DIM)
 
             draw_line(box_x + 18, box_y + 90, box_x + box_w - 18, box_y + 90, COLOR_PANEL_BORDER)
 
@@ -741,14 +767,14 @@ class PatternHubLauncher:
         else:
             # Right Panel Planned Section Overview
             draw_text(cur_sec_info["title"], right_x + 22, right_y + 16, 20, GOLD)
-            meta = f"Planned Catalog ({cur_sec_info['planned_count']} prototypes documented in minigames.md)"
+            meta = f"Planned Catalog ({cur_sec_info['planned_count']} prototypes documented in rules/minigames.md)"
             draw_text(meta, right_x + 22, right_y + 46, 13, COLOR_ACCENT)
             draw_line(right_x, right_y + 72, right_x + right_w, right_y + 72, COLOR_PANEL_BORDER)
 
             draw_text("Category Overview & Learning Objectives:", right_x + 24, right_y + 90, 16, COLOR_ACCENT)
             draw_text(cur_sec_info["desc"], right_x + 24, right_y + 120, 15, COLOR_TEXT_MAIN)
 
-            draw_text("Consult minigames.md to see the planned prototypes for this section.", right_x + 24, right_y + 170, 14, COLOR_TEXT_DIM)
+            draw_text("Consult rules/minigames.md to see the planned prototypes for this section.", right_x + 24, right_y + 170, 14, COLOR_TEXT_DIM)
             draw_text("Ask the agent: 'make <prototype name>' to implement any pattern from this category!", right_x + 24, right_y + 196, 14, COLOR_ACCENT_GOLD)
 
         # Bottom Controls & Status Bar
@@ -806,7 +832,8 @@ class PatternHubLauncher:
                 break
 
         self.sfx.unload_all()
-        self.music.unload()
+        if hasattr(self.music, 'unload'):
+            self.music.unload()
         close_audio_device()
         close_window()
 

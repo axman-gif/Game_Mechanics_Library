@@ -8,9 +8,9 @@ The graphics and audio are intentionally built using **procedural primitives** (
 
 ## 1. Mandatory Step 0: Pre-Flight Check & Scope Control
 
-**CRITICAL RULE**: Before generating code or planning a new minigame/feature, you **MUST** review the existing components in the workspace:
+**CRITICAL RULE**: Before generating code or planning a new minigame/asset/feature, you **MUST** review the existing components in the workspace:
 
-1. **Check Existing Minigames & Catalog Taxonomy**: Review [`minigames.md`](minigames.md) to locate the exact 3.x catalog section for the requested minigame:
+1. **Check Existing Minigames & Catalog Taxonomy**: Review [`rules/minigames.md`](rules/minigames.md) for architectural guidelines and [`tasks/minigames.csv`](tasks/minigames.csv) for task status:
    - **Section 3.0: Core Multi-Pattern Prototypes** (combining 4+ patterns: Orbital Siege 2D, Titan Strider 3D, Tactical Commander TBS, Frontline Outpost RTS).
    - **Sections 3.1–3.7: Extended Single-Pattern Labs** (focused on 1 pattern in isolation):
      - `3.1 Menus & UI`
@@ -20,71 +20,119 @@ The graphics and audio are intentionally built using **procedural primitives** (
      - `3.5 World & Exploration`
      - `3.6 Movement & Camera`
      - `3.7 Puzzle, Stealth & Other`
-2. **Check Existing Visual & Audio Assets**: Review [`assets.md`](assets.md) to reuse existing 3D models (`assets/models_3d/`), 2D primitive renderers (`assets/sprites_2d/`), and procedural audio synthesizers (`assets/audio/`). **NEVER rewrite or duplicate these assets.**
-3. **Check Existing Utilities & Math**: Review [`utils.md`](utils.md) to reuse non-native collision routines (rotated 3D/2D capsules, SAT OBB), spatial hash grids (`SpatialGrid2D`/`3D`), AI pursuit/pathfinding algorithms (A*, BFS, seek, lead intercept), math dampening/shake tools, and the global UI/Font/Window manager (`utils/ui_settings.py`). **NEVER rewrite these utilities** (unless a single-pattern lab is specifically teaching that algorithm, in which case expose its step-by-step state visually).
-4. **Reference Game Design Patterns**: Consult [`patterns.md`](patterns.md) to document and explain the design patterns demonstrated.
+2. **Check Existing Visual & Audio Assets**: Consult the decomposed asset guidelines and tracking spreadsheets in `tasks/` (saving tokens by querying via `tasks.py --list` or Python's built-in `csv` module):
+   - [`rules/audio.md`](rules/audio.md) & [`tasks/audio.csv`](tasks/audio.csv): For procedural sound effects (`assets/audio/synth_sfx.py` & `assets/audio/SFX/`) and background music tracks (`assets/audio/BGM/`).
+   - [`rules/models_3D.md`](rules/models_3D.md) & [`tasks/models_3D.csv`](tasks/models_3D.csv): For 3D procedural primitive models (`assets/models_3D/`).
+   - [`rules/sprites_2D.md`](rules/sprites_2D.md) & [`tasks/sprites_2D.csv`](tasks/sprites_2D.csv): For 2D procedural primitive sprites (`assets/sprites_2D/`).
+   - [`rules/assets.md`](rules/assets.md): Top-level router index and quick-import reference.  
+   **NEVER rewrite or duplicate existing assets.**
+3. **Interactive Tasks Editor (`tasks.py`)**: All tracking spreadsheets in `tasks/` are visually inspected, edited, and maintained via `python -B tasks.py`. Humans should always use `tasks.py` rather than LibreOffice Calc or Microsoft Excel to prevent file corruption and schema breakage.
+4. **Check Existing Utilities & Math**: Review [`rules/utils.md`](rules/utils.md) to reuse non-native collision routines (rotated 3D/2D capsules, SAT OBB), spatial hash grids (`SpatialGrid2D`/`3D`), AI pursuit/pathfinding algorithms (A*, BFS, seek, lead intercept), math dampening/shake tools, and the global UI/Font/Window manager (`utils/ui_settings.py`). **NEVER rewrite these utilities** (unless a single-pattern lab is specifically teaching that algorithm, in which case expose its step-by-step state visually).
+5. **Reference Game Design Patterns & Creative Autonomy**: Consult [`rules/patterns.md`](rules/patterns.md) to document and explain demonstrated design patterns. **Creative Autonomy Rule**: Subagents are **not** restricted to existing patterns in [`rules/patterns.md`](rules/patterns.md)—they are encouraged to invent or adapt novel game design patterns and register them into [`rules/patterns.md`](rules/patterns.md).
 
 ### 1.1 Ambiguity Gate & Mandatory Specification Check
 Before writing or modifying any code, the agent **MUST** evaluate the clarity, target section, and scope of the prompt:
 - **Standard Single-Turn Request (without `/teamwork`)**:
-  - The user must explicitly request **strictly 1 prototype** by specifying either its exact prototype name or section from `minigames.md`.
-  - **Multi-Minigame Halt**: If the user requests $\ge 2$ minigames in a single prompt without `/teamwork`, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.** The agent must reply:
-    > *"I detected a request for multiple minigames. To maintain pedagogical quality, prevent context dilution, and ensure role-specialized subagent execution, multi-script requests must use the `/teamwork` command (e.g. `/teamwork build 3 games from section 3.2 and 2 from section 3.3` or `/teamwork making 4 minigames from minigames.md using section 3.1`). For standard single-turn prompts, please request strictly 1 prototype."*
-  - **Ambiguity Halt**: If the request is generic, open-ended (e.g., "make some minigames", "fix bugs in minigames", "advance on the list", "do something in section 3"):
-    - **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.**
-    - The agent must ask the user to clarify the exact prototype name and catalog section from `minigames.md`.
+  - The user must explicitly request **strictly 1 prototype or asset** by specifying either its name or category.
+  - **Multi-File Halt**: If the user requests $\ge 2$ files in a single prompt without `/teamwork`, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE.** The agent must reply:
+    > *"I detected a request for multiple files. To maintain pedagogical quality, prevent context dilution, and ensure role-specialized subagent execution, multi-file requests must use the `/teamwork` command (e.g. `/teamwork build 3 games from section 3.2 and 2 from section 3.3` or `/teamwork create 4 combat weapon SFX`). For standard single-turn prompts, please request strictly 1 item."*
+  - **Ambiguity Halt**: If the request is generic or open-ended, halt immediately and ask the user to clarify.
 - **Autonomous Multi-Script Sessions (with `/teamwork`)**:
-  - Multi-script batching is permitted for **up to 8 scripts per session**, provided the prompt is specific enough (e.g. *"build 3 games from section 3.1 and 3 from section 3.2"*, *"make 1 game from each of sections 3.1 through 3.7"*, or listing specific prototype names from `minigames.md`).
-  - **Oversized Batch Halt**: If the user requests $> 8$ minigames in a single `/teamwork` session, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**, and ask the user to break the request into batches of at most 8 prototypes.
-  - **Sequential Isolated Subagent Invariant**: The Lead Coordinator MUST process scripts strictly **one at a time** using an isolated subagent per prototype (spawn subagent $N$ with clean context $\rightarrow$ write directly to disk $\rightarrow$ verify with `audit_minigame.py` $\rightarrow$ report 5-line summary $\rightarrow$ update documentation $\rightarrow$ advance to subagent $N+1$). It must NEVER attempt to generate or modify multiple scripts in a single tool call or message.
+  - Multi-script batching is permitted for **up to 8 files per session**.
+  - **Oversized Batch Halt**: If the user requests $> 8$ files in a single `/teamwork` session, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**, and ask the user to break the request into batches of at most 8 files.
+  - **Automatic Directory & Catalog Inference**: The user does **not** need to type folder paths or `.md` filenames. The orchestrator automatically routes:
+    - Sound Effects (SFX) $\rightarrow$ default `assets/audio/SFX/` via `rules/audio.md`
+    - Background Music (BGM) $\rightarrow$ default `assets/audio/BGM/` via `rules/audio.md`
+    - 3D Models $\rightarrow$ default `assets/models_3D/` via `rules/models_3D.md`
+    - 2D Sprites $\rightarrow$ default `assets/sprites_2D/` via `rules/sprites_2D.md`
+    - Minigames $\rightarrow$ default `minigames/3.x_<category>/` via `rules/minigames.md`
+  - **Educational Ambiguity Refusal**: If a `/teamwork` request is ambiguous or underspecified (e.g. "make some games", "build 4 things", "work on sound"), **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE** and output the Educational Specificity Reply:
+    > *"In this repository, every minigame, BGM soundtrack, SFX synthesizer, 3D model, and 2D sprite is designed as a standalone, modular, and reusable building block with zero external dependencies and strict C++ transferability.*  
+    > *To execute this task with dedicated parallel subagents while preventing duplicate files or context drift, please specify the exact number of files (up to 8) and target categories or prototype concepts. You do not need to provide paths or doc names—the orchestrator will automatically infer them:*  
+    > *- Minigames: `/teamwork build 3 minigames from Section 3.2 and 2 from Section 3.3` or `/teamwork build 2 minigames: Micro-Inventory Grid and Socket Workbench`*  
+    > *- SFX: `/teamwork create 4 SFX for combat weapons` (auto-targets `assets/audio/SFX/` via `rules/audio.md`)*  
+    > *- BGM: `/teamwork compose 2 BGM tracks for dungeon and stealth` (auto-targets `assets/audio/BGM/` via `rules/audio.md`)*  
+    > *- 3D Models: `/teamwork create 2 3D models for vehicles and mechs` (auto-targets `assets/models_3D/` via `rules/models_3D.md`)*  
+    > *- 2D Sprites: `/teamwork create 3 2D sprites for top-down enemies` (auto-targets `assets/sprites_2D/` via `rules/sprites_2D.md`)*  
+    > *- Mixed Batches: `/teamwork build 2 combat minigames and 3 weapon SFX`"*
 
 ### 1.2 Script Sizing & Pedagogical Quality Invariants
 To maximize token economy, eliminate bloat, maintain deep architectural pedagogy, and ensure zero runtime defects:
-- **Strict Size Limits (Unified Across ALL Sections 3.0 to 3.7)**:
+- **Strict Size Limits for Minigames (Sections 3.0 to 3.7)**:
   - **Target Range**: **600 to 1,500 lines** per minigame script.
   - **Floor**: **600 lines minimum**. Scripts below 600 lines fail `audit_minigame.py` (prevents cutting corners on comments, 5-block anatomy, dual input, and X-Ray overlays).
   - **Hard Ceiling**: **1,800 lines maximum**. Under NO circumstances may any minigame script exceed 1,800 lines (prevents token bloat).
+- **Strict Size Limits for Procedural Assets (SFX, BGM, 3D Models, 2D Sprites)**:
+  - **Target Range**: **400 to 800 lines** per procedural asset module.
+  - **Floor**: **400 lines minimum**. Scripts below 400 lines omit critical mathematical primitives, animation loops, color palettes, or pedagogical C++ mapping comments.
+  - **Hard Ceiling**: **1,000 lines maximum**. Under NO circumstances may any procedural asset module exceed 1,000 lines (preserves subagent token budgets).
 - **Pedagogical Quality Invariants (Non-Negotiable within Line Budget)**:
-  - Even within the 600–1,500 line target, the agent must NEVER compress code, truncate functions, or omit comments to fit arbitrary limits.
+  - Even within the line target ranges, the agent must NEVER compress code, truncate functions, or omit comments to fit arbitrary limits.
   - Every script MUST provide:
     1. Novice-friendly comments explaining *why* equations work and their direct C++ equivalent (memory layout, explicit indices, struct fields).
-    2. The full 5-block anatomy (Imports, Block 1 Core Pattern, Block 2 Entities/Simulation, Block 3 Telemetry X-Ray Overlay, Block 4 Dual Input Loop & Smoke Test).
-    3. Complete simultaneous Keyboard/Mouse + Gamepad parity (no mouse-only or key-only actions).
+    2. Complete structure (5-block anatomy for minigames; canonical procedural drawing/synthesis interfaces for assets).
+    3. Complete simultaneous Keyboard/Mouse + Gamepad parity for minigames (no mouse-only or key-only actions).
     4. Safe HUD layout (keeping `x = 450..980, y = 14..48` clear for the global dropdown bar).
     5. Full state reset on `[R]` / Gamepad Start, zero CFFI type casting errors, and clamped Color channels (`0..255`).
 
-### 1.3 Batch Size & Autonomous Teamwork Protocol (`/teamwork`)
-To eliminate context dilution, prevent degradation in code depth, avoid attention drift across long multi-game sessions, and run seamlessly without requiring constant user intervention, the repository adopts **Option A: The Sequential Isolated Craftsman Guild**:
-- **Standard Single-Turn Request**: Build strictly **1 prototype per prompt/cycle** (target 600–1,500 lines, maximum 1,800 lines). Complete the file, run verification via `audit_minigame.py`, update documentation, and halt.
-- **Autonomous Multi-Script Sessions (`/teamwork`, Up to 8 Scripts)**:
-  When invoked via `/teamwork` for up to 8 prototypes (e.g., `/teamwork making X amount of minigames from minigames.md using section(s) 3.x...`), the Lead Coordinator and subagents follow the **Autonomous Teamwork Protocol**:
-  1. **Lead Coordinator Queue & Pre-Flight**:
-     - The Coordinator validates that all requested prototypes exist in `minigames.md` and total $\le 8$ files.
-     - Sequences the batch queue strictly one prototype at a time.
-  2. **Dedicated Craftsman Subagent per Minigame (Fresh 0-Token Context)**:
-     - For each prototype $k \in \{1 \dots N\}$, the Coordinator invokes an isolated subagent via `invoke_subagent`:
-       ```python
-       invoke_subagent(
-           Role="Minigame Craftsman",
-           TypeName="self",
-           Workspace="inherit",
-           Prompt="Build <Prototype Name> in minigames/<subfolder>/<script_name>.py following AGENTS.md rules..."
-       )
-       ```
-     - **Clean Context Isolation**: The subagent receives ONLY the target prototype requirements, patterns from `patterns.md`, the 5-block anatomy, line bounds (600–1,500 lines, hard ceiling 1,800), and pyray CFFI gotchas. It carries zero previous token history from earlier games, preventing memory/attention drift.
-     - **Zero In-Chat Code Spillage**: The subagent writes code directly to `minigames/<subfolder>/<script_name>.py` via `write_file`. It does NOT print the 600–1,500 lines of code into the chat conversation text.
-     - **Non-Blocking Verification**: The subagent runs `$env:PYTHONDONTWRITEBYTECODE="1"; python -B audit_minigame.py minigames/<subfolder>/<script_name>.py`.
-     - **Strict 1-Retry Policy**: If `audit_minigame.py` fails, the subagent performs at most one (1) retry fix. If it fails a second time, it halts and reports the failure.
-     - **Concise Completion Report**: The subagent sends a 5-line summary message back to the Coordinator (File path, Line count, Demonstrated patterns, Audit status) and terminates.
-  3. **Documentation & Release Synchronization**:
-     - Upon receiving the Craftsman's success report, the Coordinator:
-       - Updates `minigames.md` (marks `(built)` in the planned catalog and logs an entry in Section 2 Active Registry).
-       - Updates `patterns.md` if registering new patterns.
-       - Runs `python -B launcher.py --smoke-test` to verify launcher dropdown synchronization.
-     - The Coordinator then advances directly to prototype $k+1$.
-  4. **Dedicated Time & Pacing Allocation**: The system allocates ~4 to 6 minutes of deep compute and rigorous execution per prototype (accumulating ~30 to 45 minutes for a full 6–8 prototype run). Subagents must NEVER rush, truncate comments, or omit 5-block components to finish early.
-  5. **Autonomous Non-Intervention Guarantee**: As long as the request specifies target prototypes and sections clearly, the Coordinator executes the entire multi-agent pipeline autonomously without pausing to ask conversational questions or requesting manual approvals between files.
+### 1.3 Batch Size & Autonomous Parallel Swarm Protocol (`/teamwork`)
+To eliminate context dilution, prevent degradation in code depth, avoid attention drift across long sessions, and maximize throughput, the repository adopts the **Parallel Isolated Craftsman Swarm**:
+- **Standard Single-Turn Request**: Build strictly **1 prototype or asset per prompt/cycle**. Complete the file, run verification, update documentation, and halt.
+- **Autonomous Multi-Script Sessions (`/teamwork`, Up to 8 Files)**:
+  When invoked via `/teamwork` for $N$ files ($1 \le N \le 8$), the Lead Orchestrator and subagents follow the **Parallel Swarm Protocol**:
+  1. **Lead Orchestrator Queue & Invariant Checks**:
+     - The Orchestrator validates the total batch count $N \le 8$.
+     - **Strict Task Uniqueness Invariant**: Under NO circumstances may more than one subagent take the same task or generate the same file ($Agent_i \leftrightarrow TargetFile_i$).
+     - Automatically infers which catalog to read (`rules/minigames.md`, `rules/audio.md`, `rules/models_3D.md`, or `rules/sprites_2D.md`) based on the requested categories.
+  2. **Concurrent Spawning of $N$ Isolated Subagents (0-Token Context)**:
+     - The Orchestrator issues $N$ concurrent `invoke_subagent` calls in a single turn.
+     - **Decoupled Orchestration**: The Orchestrator does not need to micromanage internal code details. It equips each subagent with:
+       - Dedicated target file path in its canonical default directory.
+       - Clean requirements extracted from the relevant catalog markdown document.
+       - Applicable design pattern references.
+       - Pedagogical invariants (C++ transferability, 5-block anatomy, line counts, pyray CFFI gotchas).
+     - **Zero In-Chat Code Spillage**: Each subagent writes code directly to disk via `write_file`. Subagents do NOT print large source files into chat text.
+     - **Non-Blocking Verification**: Each subagent verifies its own file directly (e.g. `$env:PYTHONDONTWRITEBYTECODE="1"; python -B audit_minigame.py minigames/<subfolder>/<script_name>.py` or the appropriate `--smoke-test`).
+     - **Strict 1-Retry Policy**: If verification fails, the subagent performs at most one (1) retry fix. If it fails a second time, it halts and reports the failure.
+     - **Concise Completion Report**: Each subagent sends a 5-line summary message back to the Orchestrator (File path, Line count, Demonstrated patterns, Audit status) and terminates.
+  3. **Creative Pattern Discovery & Registration**:
+     - Subagents have full creative freedom to introduce novel design patterns. When a subagent creates a new pattern, it documents its mathematical and architectural rationale and reports it back to the Orchestrator.
+  4. **Documentation & Release Synchronization**:
+     - Upon receiving completion reports from all parallel subagents, the Orchestrator:
+       - Updates `tasks/minigames.csv`, `tasks/audio.csv`, `tasks/models_3D.csv`, or `tasks/sprites_2D.csv` (marks `status = "built"`).
+       - Updates `rules/patterns.md` if any subagents introduced new design patterns.
+       - Runs `python -B launcher.py --smoke-test` to verify launcher dropdown synchronization across all categories.
+       - Reports a consolidated summary table of all built files to the user.
+  5. **Autonomous Non-Intervention Guarantee**: As long as the request specifies target file counts and categories clearly, the Orchestrator executes the entire parallel swarm pipeline autonomously without pausing to ask conversational questions between files.
 - **Focused Lab Scope**: Single-pattern labs must start **immediately in the interactive gameplay/sandbox state** (skip title screens unless the pattern itself is a menu/scene-stack pattern) so 100% of the code focuses on experiencing and inspecting the target pattern.
+
+### 1.4 Token-Saving Console Query Protocol (Orchestrator & Craftsmen)
+To prevent context dilution and avoid blowing token budgets when inspecting large tracking catalogs:
+1. **Never read raw CSV files into agent context**: Avoid calling `read_file` on `tasks/minigames.csv` (107 rows) or `tasks/audio.csv` (91 rows). Reading full CSV files burns 4,000 to 8,000 tokens per turn.
+2. **Lead Orchestrator Fast CLI Queries (<50 tokens)**:
+   The Orchestrator queries pending tasks using the headless `tasks.py` CLI:
+   ```bash
+   # Query next pending minigames in a section
+   python -B tasks.py --list minigames --section 3.2 --status pending --limit 3
+
+   # Query next pending SFX in a category
+   python -B tasks.py --list audio --category combat --status pending --limit 4
+
+   # Query full specifications of a specific task
+   python -B tasks.py --get minigames mg_3201_mortar_arc
+   ```
+3. **Direct Spec Injection to Craftsmen (0 CSV tokens spent by Craftsmen)**:
+   When spawning a craftsman via `invoke_subagent`, the Orchestrator extracts the target row's fields (`target_file`, `title`, `dimension`, `patterns`, `description`) and embeds them directly into the prompt. Craftsmen subagents NEVER need to read or parse the CSV file.
+4. **Surgical Status Updates (<30 tokens)**:
+   Upon successful audit verification, either the Craftsman or the Orchestrator updates status directly on disk without opening the GUI:
+   ```bash
+   python -B tasks.py --set-status <catalog> <id_or_target_file> built
+   ```
+5. **Collision Prevention Check**:
+   Before creating a procedural asset, subagents check if a function or concept name is already registered:
+   ```bash
+   python -B tasks.py --check audio create_laser_sound
+   ```
 
 ---
 
@@ -100,7 +148,7 @@ To eliminate context dilution, prevent degradation in code depth, avoid attentio
   ```
 
 ### Rule 2: Mandatory `from pyray import *` followed by `from utils import *`
-- Every minigame inside `minigames/` must be a **single, self-contained Python script** located inside its designated 3.x category subfolder (e.g., `minigames/3.0_core_prototypes/space_swarm.py` or `minigames/3.1_menus_ui/weapon_wheel.py`).
+- Every minigame inside `minigames/` must be a **single, self-contained Python script** located inside its designated 3.x category subfolder.
 - In **EVERY** script, you **MUST** import in this exact order:
   ```python
   from pyray import *
@@ -119,7 +167,7 @@ Every minigame script must follow a strict 5-block anatomy so learners can locat
 <Prototype Title> - <Target Design Pattern(s)>
 ==============================================
 Section          : <3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, or 3.7>
-Pattern Category : <Category from patterns.md>
+Pattern Category : <Category from rules/patterns.md>
 Dimension        : <2D or 3D>
 
 Problem Solved:
@@ -253,16 +301,18 @@ Because this repository exists to **teach** game design patterns:
   *(This executes template checks, C++-transferable AST rules, and 3 full Raylib `update()`/`draw()` frames to catch 100% of syntax errors, missing imports, and CFFI type mismatches).*
 - **Strict 1-Retry Policy for Bug Fixes**:
   - If `audit_minigame.py` or `--smoke-test` fails (AST rule violation, syntax error, pyray CFFI type crash, missing imports, or logic defect), the agent is permitted **AT MOST ONE (1) retry pass** to correct all identified issues.
-  - **Line Cap Preservation**: The corrected file MUST STILL remain strictly under the **1,800-line hard ceiling** (and target the 600–1,500 line range, with a 600-line minimum).
+  - **Line Cap Preservation**: The corrected minigame script MUST STILL remain strictly under the **1,800-line hard ceiling** (and target the 600–1,500 line range, with a 600-line minimum). Corrected procedural asset modules MUST remain strictly under the **1,000-line hard ceiling** (and target the 400–800 line range, with a 400-line minimum).
   - **Terminal Stop on Second Failure**: If the script still fails after the single retry attempt, the agent **MUST STOP IMMEDIATELY**, log the exact error and line numbers to the user, and request human guidance rather than attempting further automated loops.
 
 ### Rule 7: Immediate Documentation Updates & Novice-Friendly English
 - All code, comments, and markdown documents must be written in **clear, readable English**.
 - Include thorough comments explaining *why* equations work (e.g., shortest segment distance, Reynolds steering, DDA raycast, spring damping) and brief notes on how the data structures map to C++.
 - Whenever you create or modify:
-  - A minigame $\rightarrow$ Update [`minigames.md`](minigames.md) (and [`patterns.md`](patterns.md) if adding a new pattern).
-  - An asset $\rightarrow$ Update [`assets.md`](assets.md).
-  - A utility $\rightarrow$ Update [`utils.md`](utils.md).
+  - A minigame $\rightarrow$ Update [`rules/minigames.md`](rules/minigames.md) (and [`rules/patterns.md`](rules/patterns.md) if adding a new pattern).
+  - An audio asset (SFX or BGM) $\rightarrow$ Update [`rules/audio.md`](rules/audio.md).
+  - A 3D model $\rightarrow$ Update [`rules/models_3D.md`](rules/models_3D.md).
+  - A 2D sprite $\rightarrow$ Update [`rules/sprites_2D.md`](rules/sprites_2D.md).
+  - A utility $\rightarrow$ Update [`rules/utils.md`](rules/utils.md).
 
 ### Rule 8: Simultaneous Keyboard/Mouse & Gamepad Controls (Dual Input)
 - Every minigame and the launcher **MUST** support **Gamepad (Controller) input** that activates automatically whenever a connected controller is detected (`is_gamepad_available`) and works **simultaneously** alongside **Keyboard & Mouse** (either one, the other, or both at the same time — never locking out Keyboard/Mouse when a controller is plugged in).
@@ -273,12 +323,12 @@ Because this repository exists to **teach** game design patterns:
   - **HUD Status Badge**: Call `draw_gamepad_status_badge(985, 22, 11)` on the top HUD bar so the learner can see live controller detection (`PAD: ON [KB/M + Pad]` vs. `PAD: OFF [KB/M Only]`).
 
 ### Rule 9: Catalog Classification & Launcher Dropdown Synchronization
-Every minigame script MUST be classified under its designated section from `minigames.md` (`3.0` or `3.1` through `3.7`):
+Every minigame script MUST be classified under its designated section from `rules/minigames.md` (`3.0` or `3.1` through `3.7`):
 1. **Docstring Section Tag**: Declare `Section          : <3.x Category>` in the script header docstring so `launcher.py`'s AST parser assigns it to the corresponding 3.x dropdown menu filter automatically.
-2. **Sync `minigames.md`**:
+2. **Sync `rules/minigames.md`**:
    - Mark the item in its planned 3.x section with a `(built)` suffix.
    - Add an entry in Section 2 (Active Minigames Registry) specifying its Section designation (e.g., `Section 3.1: Menus & UI`).
-3. **Sync `patterns.md`**: Ensure the demonstrated pattern is documented under its category and registered in the Summary Matrix.
+3. **Sync `rules/patterns.md`**: Ensure the demonstrated pattern is documented under its category and registered in the Summary Matrix.
 4. **Dual Smoke Test**: Run both `python -B minigames/<subfolder>/<script_name>.py --smoke-test` AND `python -B launcher.py --smoke-test` to verify zero regressions in the prototype and the launcher dropdown system.
 
 ---
@@ -305,21 +355,36 @@ Every minigame script MUST be classified under its designated section from `mini
 
 ```
 ./
-├── AGENTS.md                  <-- You are here (Agent rules, template & pyray gotchas)
+├── AGENTS.md                  <-- You are here (Agent rules, parallel swarm & pyray gotchas)
 ├── README.md                  <-- Beginner onboarding & usage instructions
 ├── config.json                <-- Persisted UI preferences (font, font size, window size)
 ├── launcher.py                <-- Interactive Pattern Encyclopedia & Minigame Hub
-├── patterns.md                <-- Exhaustive catalog of 2D & 3D game design patterns
-├── assets.md                  <-- Registry of all 3D models, 2D sprites, and synth audio
-├── utils.md                   <-- Registry of collisions, spatial grids, AI, math & UI
-├── minigames.md               <-- Registry and status of all standalone minigames
+├── tasks.py                   <-- Interactive Task Catalog & Spreadsheet Editor (Raylib GUI)
+├── rules/                     <-- Architectural guidelines, catalogs & patterns
+│   ├── patterns.md            <-- Exhaustive catalog of 2D & 3D game design patterns
+│   ├── minigames.md           <-- Registry and status of all standalone minigames
+│   ├── assets.md              <-- Top-level router index for procedural assets
+│   ├── audio.md               <-- Procedural audio registry (SFX, BGM, workstation)
+│   ├── models_3D.md           <-- Procedural 3D primitive models registry
+│   ├── sprites_2D.md          <-- Procedural 2D primitive sprites registry
+│   └── utils.md               <-- Registry of collisions, spatial grids, AI, math & UI
+│
+├── tasks/                     <-- Dedicated task catalogs & progress spreadsheets
+│   ├── minigames.csv          <-- 106 planned prototypes across sections 3.0 to 3.7
+│   ├── audio.csv              <-- 90 procedural SFX synthesizers and BGM tracks
+│   ├── models_3D.csv          <-- 29 3D procedural primitive models
+│   └── sprites_2D.csv         <-- 29 2D procedural vector sprites
 │
 ├── assets/                    <-- Reusable procedural visual and audio assets
-│   ├── models_3d/             <-- 3D procedural primitive models (Humanoid, Beast, Drone, Turret)
-│   ├── sprites_2d/            <-- 2D procedural primitive sprites (Humanoid, Slime, Flying, Crawler)
+│   ├── models_3D/             <-- 3D procedural primitive models (.gitkeep)
+│   ├── sprites_2D/            <-- 2D procedural vector sprites (.gitkeep)
 │   └── audio/                 <-- Procedural in-memory SFX and BGM synthesizers
+│       ├── synth_sfx.py       <-- 48 procedural sound effects & SoundLibrary
+│       ├── SFX/               <-- Dedicated modular sound effect synthesizers (.gitkeep)
+│       └── BGM/               <-- Algorithmic background music tracks (.gitkeep)
 │
 ├── utils/                     <-- Reusable non-native utilities
+│   ├── __init__.py            <-- Central utility exporter & UI manager
 │   ├── collisions.py          <-- Rotated capsule 3D/2D, SAT OBB, segment projections
 │   ├── spatial_grid.py        <-- 2D & 3D spatial hash grids, 2D tile navigation grid
 │   ├── ai_pursuit.py          <-- Steering (Seek, Lead Intercept, Wander), A* & BFS pathfinding, LOS
@@ -328,12 +393,12 @@ Every minigame script MUST be classified under its designated section from `mini
 │   └── gamepad_input.py       <-- Simultaneous Keyboard/Mouse + Gamepad hot-plug & radial deadzone
 │
 └── minigames/                 <-- Categorized single-file minigames & pattern labs
-    ├── 3.0_core_prototypes/   <-- Full multi-pattern prototypes (Space Swarm, Mecha Colosseum, Drone Defense)
-    ├── 3.1_menus_ui/          <-- Tactile UI and inventory labs (Title Screen, Weapon Wheel, Attaché Case, etc.)
-    ├── 3.2_combat_weapons/    <-- Combat mechanics (Hitscan, Ballistics, Recoil, Ammo, Parry)
-    ├── 3.3_enemies_ai/        <-- AI patterns (Patrols, Alert FSM, Flow Fields, Boss Phases)
-    ├── 3.4_progression_economy/<-- RPG loops (Loot tables, Crafting, XP curves, Shops)
-    ├── 3.5_world_exploration/ <-- Procedural generation (Voxel chunks, Caves, BSP Dungeons)
-    ├── 3.6_movement_camera/   <-- Kinematic movement feel (Coyote time, Jump buffer, Dash, Grapple)
-    └── 3.7_puzzle_stealth/    <-- Logic & systemic mechanics (Push blocks, Vision cones, Undo/Redo)
+    ├── 3.0_core_prototypes/   <-- Full multi-pattern prototypes (.gitkeep)
+    ├── 3.1_menus_ui/          <-- Tactile UI and inventory labs (.gitkeep)
+    ├── 3.2_combat_weapons/    <-- Combat mechanics (Hitscan, Ballistics, Recoil, Ammo, Parry) (.gitkeep)
+    ├── 3.3_enemies_ai/        <-- AI patterns (Patrols, Alert FSM, Flow Fields, Boss Phases) (.gitkeep)
+    ├── 3.4_progression_economy/<-- RPG loops (Loot tables, Crafting, XP curves, Shops) (.gitkeep)
+    ├── 3.5_world_procgen/     <-- Procedural generation (Voxel chunks, Caves, BSP Dungeons) (.gitkeep)
+    ├── 3.6_movement_camera/   <-- Kinematic movement feel (Coyote time, Jump buffer, Dash, Grapple) (.gitkeep)
+    └── 3.7_puzzle_stealth/    <-- Logic & systemic mechanics (Push blocks, Vision cones, Undo/Redo) (.gitkeep)
 ```

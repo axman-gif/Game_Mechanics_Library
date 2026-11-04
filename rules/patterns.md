@@ -7,6 +7,9 @@ This document provides an exhaustive, practical reference of game programming an
 > - Use plain struct-like classes (`__init__` with explicit member fields) instead of `@dataclass`, `@property`, or decorators.
 > - Use explicit `for` loops, integer indices, and pre-allocated arrays (`std::array` / `std::vector` style) instead of generators (`yield`), `lambda`, or complex list comprehensions.
 > - Avoid Python dunder/operator overloading and dynamic reflection (`getattr`/`setattr`) so any novice or C++ developer can translate the data structures and algorithms directly into C++, C#, Rust, or Zig without mental friction.
+>
+> **Subagent Creative Autonomy & Pattern Registration**:
+> Existing patterns in this catalog provide a rigorous foundational reference, but subagents and developers are **not** restricted to existing patterns. Subagents are granted creative freedom to architect and demonstrate novel game design patterns. Whenever a new pattern is introduced, the subagent documents its mathematical and architectural principles and the Lead Orchestrator registers the new pattern in this catalog.
 
 ---
 
@@ -668,11 +671,20 @@ This document provides an exhaustive, practical reference of game programming an
 | **Diegetic World-Space Interface (Wrist Comm)**| User Interface & Presentation| 3D | Tangible bone-anchored 3D interface, second-order damped spring parallax, offscreen FBO projection, localized tactical radar |
 | **Hitscan (Instant Raycast)**| Combat & Weapons| Both | Zero flight latency, instant line-of-sight raycasts, contrasting with swept CCD travel projectiles |
 | **Parabolic Kinematics & Closed-Form Trajectory Solver**| Combat & Weapons| Both | O(1) closed-form high/low arc launch angle calculation, instant discriminant reachability check |
+| **Gaussian Distribution Cone & Ballistic Choke**| Combat & Weapons| Both | Box-Muller normal deviate distribution, interchangeable choke cones, clustering vs flat uniform RNG |
 | **Waypoint Patrol (Circuit & Ping-Pong)**| Artificial Intelligence & Navigation| Both | Graph route progression, arrival hysteresis, dwell/observation sweeps, vision cone perception |
+| **Target-Tile Pursuit Heuristics (Pac-Man AI)**| Artificial Intelligence & Coordination| Both | 4 distinct target-tile heuristics (Direct, 4-ahead intercept, vector reflection pincer, distance threshold retreat) preventing conga-line AI clustering |
 | **Weighted Loot Table & Rarity Tiers (CDF)**| Progression & Economy| Both | O(log N) CDF sampling, dynamic Magic Find scaling, Law of Large Numbers empirical convergence |
+| **Level Progression Curves & Diminishing Returns**| Progression & Economy| Both | Linear, polynomial (WoW/Pokémon), and exponential (JRPG) leveling formulas alongside piecewise soft/hard cap attribute scaling |
 | **Voxel Place and Break World (DDA & Culling)**| World & Exploration| 3D | Fast Amanatides-Woo DDA raymarching, 85%+ hidden-face occlusion culling, block hotbar |
 | **Platformer Kinematic Feel & Jump Forgiveness**| Movement & Camera| 2D | Coyote time, jump buffering, variable jump cutoff, apex float, and corner nudging |
+| **Newtonian Inertial Kinematics & Toroidal Topology**| Movement & Camera| Both | True zero-G flight dynamics (linear thruster vectors, angular torque, retro braking) alongside 9-patch ghost hull seamless toroidal screen wrapping |
 | **Push-Block Puzzle & Command Undo/Redo (Crate Pusher)**| Logic, Puzzle & Systemic Patterns| 2D | Discrete turn transactions, Command pattern undo/redo stack, real-time corner & 2x2 deadlock heuristics, visual damping |
+| **Fluid Cellular Automata (Falling Sand & Liquids)**| Logic, Puzzle & Systemic Patterns| 2D | Double-buffered granular sand dynamics, liquid horizontal equalization, immiscible density displacement, and chemical phase transitions (Lava+Water->Stone, Acid dissolution) |
 | **Reynolds Flocking & Predator Panic**| Artificial Intelligence & Steering| Both | Craig Reynolds' 3-rule self-organization, apex predator panic swarm splitting, and O(N) spatial partitioning |
 | **Cellular Automata Caverns & Flood-Fill**| World & Procedural Generation| Both | 4-5 rule smoothing, double-buffered ping-pong updates, BFS connectivity labeling, and disconnected pocket culling |
+| **Binary Space Partitioning (BSP) Dungeon Generation**| World & Procedural Generation| Both | Recursive spatial splitting binary tree, padded room carving in leaf nodes, L-shaped sibling corridor stitching guaranteeing 100% reachability |
+| **Procedural Inverse Kinematics (2-Bone Foot-Planting IK)**| Animation & Kinematics| 3D | Analytical cosine-law 2-joint limb positioning, dynamic ground heightfield contact, zero foot-sliding |
+| **Hierarchical Behavior Tree (Composite AI)**| Artificial Intelligence| Both | Selector/Sequence control flow, modular condition decorators, multi-phase boss combat decisions |
+| **Multi-Phase Boss Encounter Architecture**| Game Design & Progression| Both | Discrete health-gated escalation stages, dynamic arena hazards, telegraph/recovery combat cadence |
 
