@@ -20,8 +20,10 @@ The graphics and audio are intentionally built using **procedural primitives** (
      - `3.5 World & Exploration`
      - `3.6 Movement & Camera`
      - `3.7 Puzzle, Stealth & Other`
-2. **Check Existing Visual & Audio Assets**: Consult the decomposed asset guidelines and tracking spreadsheets in `tasks/` (saving tokens by querying via `tasks.py --list` or Python's built-in `csv` module):
-   - [`rules/audio.md`](rules/audio.md) & [`tasks/audio.csv`](tasks/audio.csv): For procedural sound effects (`assets/audio/synth_sfx.py` & `assets/audio/SFX/`) and background music tracks (`assets/audio/BGM/`).
+2. **Check Existing Visual & Audio Assets**: Consult the decomposed asset guidelines and tracking spreadsheets in `tasks/` (saving tokens by querying exclusively via `tasks.py --list`; never read raw CSV files into context):
+   - [`rules/audio.md`](rules/audio.md), [`tasks/SFXs.csv`](tasks/SFXs.csv), & [`tasks/BGMs.csv`](tasks/BGMs.csv): For procedural sound effects (`assets/audio/SFX/<category>/<name>.py`) and background music tracks (`assets/audio/BGM/<vibe>/<name>.py`).
+   - [`assets/audio/synth_sfx.py`](assets/audio/synth_sfx.py): Central dynamic audio discovery registry (`SFX_REGISTRY`, `BGM_REGISTRY`) and selective in-RAM loader (`SoundLibrary`).
+   - [`rules/minigames.md`](rules/minigames.md) Section 3.5: Authoritative guide for minigame audio imports, selective in-RAM loading via `SFXS = [...]` and `BGMS = [...]`, per-frame `sfx.update()`, and clean teardown.
    - [`rules/models_3D.md`](rules/models_3D.md) & [`tasks/models_3D.csv`](tasks/models_3D.csv): For 3D procedural primitive models (`assets/models_3D/`).
    - [`rules/sprites_2D.md`](rules/sprites_2D.md) & [`tasks/sprites_2D.csv`](tasks/sprites_2D.csv): For 2D procedural primitive sprites (`assets/sprites_2D/`).
    - [`rules/assets.md`](rules/assets.md): Top-level router index and quick-import reference.  
@@ -41,8 +43,8 @@ Before writing or modifying any code, the agent **MUST** evaluate the clarity, t
   - Multi-script batching is permitted for **up to 8 files per session**.
   - **Oversized Batch Halt**: If the user requests $> 8$ files in a single `/teamwork` session, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**, and ask the user to break the request into batches of at most 8 files.
   - **Automatic Directory & Catalog Inference**: The user does **not** need to type folder paths or `.md` filenames. The orchestrator automatically routes:
-    - Sound Effects (SFX) $\rightarrow$ default `assets/audio/SFX/` via `rules/audio.md`
-    - Background Music (BGM) $\rightarrow$ default `assets/audio/BGM/` via `rules/audio.md`
+    - Sound Effects (SFX) $\rightarrow$ default `assets/audio/SFX/<category>/` via `rules/audio.md`
+    - Background Music (BGM) $\rightarrow$ default `assets/audio/BGM/<vibe>/` via `rules/audio.md`
     - 3D Models $\rightarrow$ default `assets/models_3D/` via `rules/models_3D.md`
     - 2D Sprites $\rightarrow$ default `assets/sprites_2D/` via `rules/sprites_2D.md`
     - Minigames $\rightarrow$ default `minigames/3.x_<category>/` via `rules/minigames.md`
@@ -50,26 +52,30 @@ Before writing or modifying any code, the agent **MUST** evaluate the clarity, t
     > *"In this repository, every minigame, BGM soundtrack, SFX synthesizer, 3D model, and 2D sprite is designed as a standalone, modular, and reusable building block with zero external dependencies and strict C++ transferability.*  
     > *To execute this task with dedicated parallel subagents while preventing duplicate files or context drift, please specify the exact number of files (up to 8) and target categories or prototype concepts. You do not need to provide paths or doc names—the orchestrator will automatically infer them:*  
     > *- Minigames: `/teamwork build 3 minigames from Section 3.2 and 2 from Section 3.3` or `/teamwork build 2 minigames: Micro-Inventory Grid and Socket Workbench`*  
-    > *- SFX: `/teamwork create 4 SFX for combat weapons` (auto-targets `assets/audio/SFX/` via `rules/audio.md`)*  
-    > *- BGM: `/teamwork compose 2 BGM tracks for dungeon and stealth` (auto-targets `assets/audio/BGM/` via `rules/audio.md`)*  
+    > *- SFX: `/teamwork create 4 SFX for combat weapons` (auto-targets `assets/audio/SFX/<category>/` via `rules/audio.md`)*  
+    > *- BGM: `/teamwork compose 2 BGM tracks for dungeon and stealth` (auto-targets `assets/audio/BGM/<vibe>/` via `rules/audio.md`)*  
     > *- 3D Models: `/teamwork create 2 3D models for vehicles and mechs` (auto-targets `assets/models_3D/` via `rules/models_3D.md`)*  
     > *- 2D Sprites: `/teamwork create 3 2D sprites for top-down enemies` (auto-targets `assets/sprites_2D/` via `rules/sprites_2D.md`)*  
-    > *- Mixed Batches: `/teamwork build 2 combat minigames and 3 weapon SFX`"*
+    > *- Mixed Batches: `/teamwork build 2 combat minigames and 3 weapon SFX` or `/teamwork create 3 SFX, 2 BGM, and 2 2D sprites`"*
 
-### 1.2 Script Sizing & Pedagogical Quality Invariants
+### 1.2 Script Sizing, Readability Criterion & Pedagogical Invariants
 To maximize token economy, eliminate bloat, maintain deep architectural pedagogy, and ensure zero runtime defects:
 - **Strict Size Limits for Minigames (Sections 3.0 to 3.7)**:
-  - **Target Range**: **600 to 1,500 lines** per minigame script.
-  - **Floor**: **600 lines minimum**. Scripts below 600 lines fail `audit_minigame.py` (prevents cutting corners on comments, 5-block anatomy, dual input, and X-Ray overlays).
+  - **Target Range**: **300 to 1,500 lines** per minigame script.
+  - **Floor**: **300 lines minimum**. (Prevents cutting corners on comments, 5-block anatomy, dual input, and X-Ray overlays).
   - **Hard Ceiling**: **1,800 lines maximum**. Under NO circumstances may any minigame script exceed 1,800 lines (prevents token bloat).
 - **Strict Size Limits for Procedural Assets (SFX, BGM, 3D Models, 2D Sprites)**:
-  - **Target Range**: **400 to 800 lines** per procedural asset module.
-  - **Floor**: **400 lines minimum**. Scripts below 400 lines omit critical mathematical primitives, animation loops, color palettes, or pedagogical C++ mapping comments.
+  - **Target Range**: **200 to 800 lines** per procedural asset module.
+  - **Floor**: **200 lines minimum**. (Ensures complete mathematical primitives, animation loops, color palettes, and pedagogical C++ mapping comments).
   - **Hard Ceiling**: **1,000 lines maximum**. Under NO circumstances may any procedural asset module exceed 1,000 lines (preserves subagent token budgets).
+- **Token Control & Line Limit Guidance**:
+  - Line limits are guidance for token control. **NEVER** pad a file with artificial lines or redundant comments just to reach the floor. **NEVER** compress code, truncate functions, or drop comments to fit under the ceiling.
+- **Readability Criterion (Clarity Wins over Line Count)**:
+  - A file must be completely understandable reading top to bottom, without jumping back and forth to other files. Pedagogical clarity and self-contained understanding always win over strict line count.
 - **Pedagogical Quality Invariants (Non-Negotiable within Line Budget)**:
-  - Even within the line target ranges, the agent must NEVER compress code, truncate functions, or omit comments to fit arbitrary limits.
+  - **Simple beats clever**: Python is executable pseudocode that ports 1-to-1 to C++, C, C#, Rust, or Zig (plain classes with `__init__`, explicit loops, no decorators, no generators, no lambdas, no magic dunders).
   - Every script MUST provide:
-    1. Novice-friendly comments explaining *why* equations work and their direct C++ equivalent (memory layout, explicit indices, struct fields).
+    1. Novice-friendly comments explaining *why* equations work in plain language without academic jargon, alongside direct C++ equivalent mappings (memory layout, explicit indices, struct fields).
     2. Complete structure (5-block anatomy for minigames; canonical procedural drawing/synthesis interfaces for assets).
     3. Complete simultaneous Keyboard/Mouse + Gamepad parity for minigames (no mouse-only or key-only actions).
     4. Safe HUD layout (keeping `x = 450..980, y = 14..48` clear for the global dropdown bar).
@@ -77,30 +83,32 @@ To maximize token economy, eliminate bloat, maintain deep architectural pedagogy
 
 ### 1.3 Batch Size & Autonomous Parallel Swarm Protocol (`/teamwork`)
 To eliminate context dilution, prevent degradation in code depth, avoid attention drift across long sessions, and maximize throughput, the repository adopts the **Parallel Isolated Craftsman Swarm**:
-- **Standard Single-Turn Request**: Build strictly **1 prototype or asset per prompt/cycle**. Complete the file, run verification, update documentation, and halt.
+- **Standard Single-Turn Request**: Build strictly **1 prototype or asset per prompt/cycle**. Complete the file, run verification, report to user, and halt.
 - **Autonomous Multi-Script Sessions (`/teamwork`, Up to 8 Files)**:
-  When invoked via `/teamwork` for $N$ files ($1 \le N \le 8$), the Lead Orchestrator and subagents follow the **Parallel Swarm Protocol**:
+  When invoked via `/teamwork` for $N$ files ($1 \le N \le 8$, e.g., `/teamwork create 3 SFX, 2 BGM, and 2 2D sprites` or `/teamwork build 3 minigames from Section 3.2`), the Lead Orchestrator and subagents follow the **Parallel Swarm Protocol**:
   1. **Lead Orchestrator Queue & Invariant Checks**:
      - The Orchestrator validates the total batch count $N \le 8$.
      - **Strict Task Uniqueness Invariant**: Under NO circumstances may more than one subagent take the same task or generate the same file ($Agent_i \leftrightarrow TargetFile_i$).
-     - Automatically infers which catalog to read (`rules/minigames.md`, `rules/audio.md`, `rules/models_3D.md`, or `rules/sprites_2D.md`) based on the requested categories.
+     - Automatically routes targets to their canonical directories (`minigames/3.x_*`, `assets/audio/SFX/<category>/`, `assets/audio/BGM/<vibe>/`, `assets/models_3D/`, `assets/sprites_2D/`) without requiring manual paths from the user.
+     - **Exclusive Task Lifecycle**: The Orchestrator sets task status from `pending` to `in_progress` via `python -B tasks.py --set-status <catalog> <task_id> in_progress` when assigning to a subagent.
   2. **Concurrent Spawning of $N$ Isolated Subagents (0-Token Context)**:
      - The Orchestrator issues $N$ concurrent `invoke_subagent` calls in a single turn.
-     - **Decoupled Orchestration**: The Orchestrator does not need to micromanage internal code details. It equips each subagent with:
+     - **Decoupled Orchestration**: The Orchestrator does not micromanage internal code details. It equips each subagent with:
        - Dedicated target file path in its canonical default directory.
-       - Clean requirements extracted from the relevant catalog markdown document.
+       - Clean requirements extracted via `tasks.py --get` from the tracking catalog.
        - Applicable design pattern references.
        - Pedagogical invariants (C++ transferability, 5-block anatomy, line counts, pyray CFFI gotchas).
-     - **Zero In-Chat Code Spillage**: Each subagent writes code directly to disk via `write_file`. Subagents do NOT print large source files into chat text.
+     - **Zero In-Chat Code Spillage**: Each subagent writes code directly to disk via file writing tools. Subagents do NOT print large source files into chat text.
      - **Non-Blocking Verification**: Each subagent verifies its own file directly (e.g. `$env:PYTHONDONTWRITEBYTECODE="1"; python -B audit_minigame.py minigames/<subfolder>/<script_name>.py` or the appropriate `--smoke-test`).
      - **Strict 1-Retry Policy**: If verification fails, the subagent performs at most one (1) retry fix. If it fails a second time, it halts and reports the failure.
-     - **Concise Completion Report**: Each subagent sends a 5-line summary message back to the Orchestrator (File path, Line count, Demonstrated patterns, Audit status) and terminates.
+     - **Concise Completion Report**: Each subagent sends a 5-line summary message back to the Orchestrator (File path, Line count, Demonstrated patterns, Audit status) and terminates. Craftsmen NEVER edit CSV files or `assets/__init__.py`.
   3. **Creative Pattern Discovery & Registration**:
-     - Subagents have full creative freedom to introduce novel design patterns. When a subagent creates a new pattern, it documents its mathematical and architectural rationale and reports it back to the Orchestrator.
+     - Subagents have full creative freedom to introduce novel design patterns. When a subagent creates a new pattern, it documents its mathematical and architectural rationale and registers it in [`rules/patterns.md`](rules/patterns.md).
   4. **Documentation & Release Synchronization**:
      - Upon receiving completion reports from all parallel subagents, the Orchestrator:
-       - Updates `tasks/minigames.csv`, `tasks/audio.csv`, `tasks/models_3D.csv`, or `tasks/sprites_2D.csv` (marks `status = "built"`).
-       - Updates `rules/patterns.md` if any subagents introduced new design patterns.
+       - Updates task status in `tasks/minigames.csv`, `tasks/SFXs.csv`, `tasks/BGMs.csv`, `tasks/models_3D.csv`, or `tasks/sprites_2D.csv` from `in_progress` to `built` exclusively via `python -B tasks.py --set-status <catalog> <id> built`.
+       - Registers any newly built procedural assets in `assets/__init__.py` (Orchestrator ONLY).
+       - Updates [`rules/patterns.md`](rules/patterns.md) if any subagents introduced new design patterns (no other `rules/*.md` files require editing during builds).
        - Runs `python -B launcher.py --smoke-test` to verify launcher dropdown synchronization across all categories.
        - Reports a consolidated summary table of all built files to the user.
   5. **Autonomous Non-Intervention Guarantee**: As long as the request specifies target file counts and categories clearly, the Orchestrator executes the entire parallel swarm pipeline autonomously without pausing to ask conversational questions between files.
@@ -108,30 +116,47 @@ To eliminate context dilution, prevent degradation in code depth, avoid attentio
 
 ### 1.4 Token-Saving Console Query Protocol (Orchestrator & Craftsmen)
 To prevent context dilution and avoid blowing token budgets when inspecting large tracking catalogs:
-1. **Never read raw CSV files into agent context**: Avoid calling `read_file` on `tasks/minigames.csv` (107 rows) or `tasks/audio.csv` (91 rows). Reading full CSV files burns 4,000 to 8,000 tokens per turn.
+1. **Never read raw CSV files into agent context**:
+   Under **NO** circumstances may either the Lead Orchestrator or Craftsmen subagents call `view_file` or read raw `.csv` files into context. Reading full CSV files burns 4,000 to 8,000 tokens per turn and causes context overflow. All catalog queries must go through the headless `tasks.py` CLI.
 2. **Lead Orchestrator Fast CLI Queries (<50 tokens)**:
    The Orchestrator queries pending tasks using the headless `tasks.py` CLI:
    ```bash
-   # Query next pending minigames in a section
+   # Query next pending minigames in a specific section
    python -B tasks.py --list minigames --section 3.2 --status pending --limit 3
 
-   # Query next pending SFX in a category
-   python -B tasks.py --list audio --category combat --status pending --limit 4
+   # Query next pending minigames across all sections (fallback to pending row order)
+   python -B tasks.py --list minigames --status pending --limit 3
+
+   # Query next pending audio assets by type (SFX or BGM)
+   python -B tasks.py --list SFXs --category combat --status pending --limit 3
+   python -B tasks.py --list BGMs --vibe energetic --status pending --limit 2
+
+   # Query next pending audio assets across all categories/vibes
+   python -B tasks.py --list SFXs --status pending --limit 4
+   python -B tasks.py --list BGMs --status pending --limit 4
+
+   # Query next pending 3D models or 2D sprites
+   python -B tasks.py --list models_3D --status pending --limit 2
+   python -B tasks.py --list sprites_2D --status pending --limit 2
 
    # Query full specifications of a specific task
    python -B tasks.py --get minigames mg_3201_mortar_arc
+   python -B tasks.py --get SFXs sfx_combat_laser
+   python -B tasks.py --get BGMs bgm_synth_pulse
    ```
 3. **Direct Spec Injection to Craftsmen (0 CSV tokens spent by Craftsmen)**:
-   When spawning a craftsman via `invoke_subagent`, the Orchestrator extracts the target row's fields (`target_file`, `title`, `dimension`, `patterns`, `description`) and embeds them directly into the prompt. Craftsmen subagents NEVER need to read or parse the CSV file.
-4. **Surgical Status Updates (<30 tokens)**:
-   Upon successful audit verification, either the Craftsman or the Orchestrator updates status directly on disk without opening the GUI:
-   ```bash
-   python -B tasks.py --set-status <catalog> <id_or_target_file> built
-   ```
+   When spawning a craftsman via `invoke_subagent`, the Orchestrator extracts the target row's fields (`target_file`, `title`, `dimension`, `patterns`, `description`) via `tasks.py --get` and embeds them directly into the prompt. Craftsmen subagents NEVER need to read or parse CSV files.
+4. **Exclusive CSV Task Lifecycle (pending -> in_progress -> built)**:
+   Task status transitions follow a strict lifecycle managed **exclusively by the Lead Orchestrator** using `tasks.py`:
+   - `pending` $\rightarrow$ Default initial state in tracking catalogs.
+   - `in_progress` $\rightarrow$ Set by Orchestrator upon dispatching subagents (`python -B tasks.py --set-status <catalog> <task_id> in_progress`).
+   - `built` $\rightarrow$ Set by Orchestrator upon subagent verification (`python -B tasks.py --set-status <catalog> <task_id> built`).
+   - **Craftsmen subagents MUST NEVER edit CSV files or execute `--set-status`**. Only the Orchestrator modifies task status and registers assets in `assets/__init__.py`.
 5. **Collision Prevention Check**:
-   Before creating a procedural asset, subagents check if a function or concept name is already registered:
+   Before creating a procedural asset, the Orchestrator or subagent checks if a function or concept name is already registered:
    ```bash
-   python -B tasks.py --check audio create_laser_sound
+   python -B tasks.py --check SFXs create_laser_sound
+   python -B tasks.py --check BGMs synth_pulse
    ```
 
 ---
@@ -158,122 +183,21 @@ To prevent context dilution and avoid blowing token budgets when inspecting larg
 - Importing `from utils import *` after `from pyray import *` automatically enables the repository's **Global Top-Bar Settings Dropdowns** (`Font`, `Font Size [Ctrl +/-]`, and `Window Size / Fullscreen [F11]`) backed by `config.json`. Keep the top-bar region `x = 450..980, y = 14..48` free of HUD text so the dropdown bar (`draw_ui_settings_bar(450, 16)`) never overlaps your HUD.
 - Every minigame must be directly executable from the terminal (`python -B minigames/<subfolder>/<script_name>.py`) and discoverable via the root [`launcher.py`](launcher.py).
 
-### Rule 3: Mandatory 5-Block Pedagogical Anatomy & Template
-Every minigame script must follow a strict 5-block anatomy so learners can locate the pattern implementation immediately and automated tests can verify it without hanging:
+### Rule 3: Mandatory 5-Block Pedagogical Anatomy (Single Authoritative Template)
+Every minigame script in `minigames/` must follow the standardized **5-Block Pedagogical Anatomy**.
+The **single authoritative template** for minigames is defined in [`rules/minigames.md`](rules/minigames.md). All minigames implement these 5 blocks:
+- **Block 1: Header Docstring & Metadata**: Canonical script header specifying Title, Section (e.g. `3.2`), Pattern Category, Dimension (`2D` or `3D`), Problem Solved, Mathematical/Algorithmic Concept, and Dual Controls summary.
+- **Block 2: Core Pattern Implementation**: Isolated, self-contained pattern classes and functions with novice-friendly comments explaining mathematical rationale and direct C++ mapping (struct fields, fixed-size arrays, explicit indices).
+- **Block 3: World Simulation & Entities**: Concrete game entities, environment setup, and asset integration demonstrating the pattern in action.
+- **Block 4: Telemetry & X-Ray Debug Overlay**: Visual telemetry panel and world-space debug inspector toggled via `[Tab]` / Gamepad `Y` (`Triangle`), with live pattern parameter/behavior toggle via `[F1]` / Gamepad `LB` (`L1`).
+- **Block 5: Main Game Loop & Automated Smoke Test**: Window initialization, audio device lifecycle, selective in-RAM audio loading via `SFXS` & `BGMS` lists (`self.sfx.load(sfx=SFXS, bgm=BGMS)`), per-frame `self.sfx.update()`, 60 FPS update/draw loop, dual controller input polling, safe HUD layout, global settings dropdown bar (`draw_ui_settings_bar(450, 16)`), clean audio teardown (`self.sfx.unload_all()`), and non-blocking `--smoke-test` exit after 3 frames.
 
-```python
-# -*- coding: utf-8 -*-
-"""
-<Prototype Title> - <Target Design Pattern(s)>
-==============================================
-Section          : <3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, or 3.7>
-Pattern Category : <Category from rules/patterns.md>
-Dimension        : <2D or 3D>
-
-Problem Solved:
-  <1-2 sentences explaining what goes wrong in games without this pattern>
-
-How the Pattern Works:
-  <Clear mathematical and architectural explanation of the pattern>
-
-Interactive Learning Controls (Simultaneous Keyboard/Mouse + Gamepad):
-  - <Movement / Action keys + Gamepad Left/Right Stick, D-Pad & Face/Trigger buttons>
-  - [Tab] / Gamepad View (Select) : Toggle X-Ray Pattern Telemetry & Debug Overlay
-  - [F1]  / Gamepad R3            : Toggle Pattern ON/OFF (compare behavior with vs. without the pattern)
-  - [Ctrl +/-]                    : Increase / Decrease UI Font Size
-  - [F11]                         : Toggle Fullscreen
-  - [R]   / Gamepad Start         : Reset simulation
-"""
-
-import sys
-import os
-import math
-import random
-
-# 1. Enforce zero __pycache__ generation
-sys.dont_write_bytecode = True
-
-# 2. Add repository root to search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-
-# 3. Mandatory Raylib & modular imports
-from pyray import *
-from assets import *
-from utils import *
-
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
-WINDOW_TITLE = "<Prototype Title> - <Pattern Name> (Raylib Pattern Lab)"
-
-# ==============================================================================
-# BLOCK 1: CORE PATTERN IMPLEMENTATION (<PATTERN NAME>)
-# ==============================================================================
-# Isolate the pure pattern classes/functions here with thorough novice-friendly
-# comments explaining WHY the math/architecture works and how it maps to C++
-# (e.g., struct fields, fixed-size arrays, explicit indices).
-
-
-# ==============================================================================
-# BLOCK 2: WORLD SIMULATION & ENTITIES
-# ==============================================================================
-# Entities, environment setup, and integration with assets/ and utils/.
-
-
-# ==============================================================================
-# BLOCK 3: TELEMETRY & X-RAY DEBUG OVERLAY ([Tab] & [F1])
-# ==============================================================================
-# Visualizes internal pattern metrics (counters, state graphs, vectors, pools).
-
-
-# ==============================================================================
-# BLOCK 4: MAIN GAME LOOP & AUTOMATED SMOKE TEST
-# ==============================================================================
-class PatternLabGame:
-    def __init__(self):
-        init_window(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE)
-        set_target_fps(60)
-        init_audio_device()
-        self.sfx = SoundLibrary()
-        self.sfx.init_defaults()
-        self.show_xray = True
-        self.pattern_enabled = True
-
-    def update(self):
-        dt = min(get_frame_time(), 0.05)
-        if is_dual_xray_toggle_pressed():
-            self.show_xray = not self.show_xray
-        if is_dual_pattern_toggle_pressed():
-            self.pattern_enabled = not self.pattern_enabled
-            self.sfx.play("click", 0.6)
-        # Update simulation (use get_dual_move_2d() / get_dual_look_2d() for simultaneous KB/M + Gamepad)...
-
-    def draw(self):
-        begin_drawing()
-        clear_background(Color(12, 14, 22, 255))
-        # Draw world & HUD...
-        draw_gamepad_status_badge(985, 22, 11)
-        draw_ui_settings_bar(450, 16)  # Top-bar Font, Size (Ctrl+/-), and Window (F11) dropdowns
-        end_drawing()
-
-    def run(self, smoke_test: bool = False):
-        frame_count = 0
-        while not window_should_close():
-            self.update()
-            self.draw()
-            frame_count += 1
-            if smoke_test and frame_count >= 3:
-                break
-        self.sfx.unload_all()
-        close_audio_device()
-        close_window()
-
-if __name__ == "__main__":
-    is_smoke = "--smoke-test" in sys.argv
-    PatternLabGame().run(smoke_test=is_smoke)
-```
+*(Consult [`rules/minigames.md`](rules/minigames.md) for the complete reference code template).*
 
 ### Rule 4: Language-Agnostic & C++-Transferable Code (Zero "Pythonic Magic")
-Python is used in this repository strictly as **readable, executable pseudocode**. Learners study this code to understand data structures and algorithms and port them to **C++, C, C#, Rust, or Zig**. You **MUST** write code that translates 1-to-1 to C++:
+This repository exists for **learning and inspiration**: **simple beats clever**. Python is used strictly as **readable, executable pseudocode**. Learners study this code to understand data structures and algorithms and port them 1-to-1 to **C++, C, C#, Rust, or Zig**. Comments must explain *WHY* equations work in simple words without academic jargon.
+
+You **MUST** write code that translates 1-to-1 to C++:
 1. **NO Decorators (`@dataclass`, `@property`, `@staticmethod`, `@classmethod`, `@lru_cache`, custom `@decorator`)**:
    - Declare plain classes with an explicit `__init__(self)` constructor initializing every member variable line-by-line with concrete default values (equivalent to a C++ `struct` or `class`).
 2. **NO Generators (`yield`), Coroutines (`async`/`await`), or `with` Context Managers for Game Logic**:
@@ -301,35 +225,50 @@ Because this repository exists to **teach** game design patterns:
   *(This executes template checks, C++-transferable AST rules, and 3 full Raylib `update()`/`draw()` frames to catch 100% of syntax errors, missing imports, and CFFI type mismatches).*
 - **Strict 1-Retry Policy for Bug Fixes**:
   - If `audit_minigame.py` or `--smoke-test` fails (AST rule violation, syntax error, pyray CFFI type crash, missing imports, or logic defect), the agent is permitted **AT MOST ONE (1) retry pass** to correct all identified issues.
-  - **Line Cap Preservation**: The corrected minigame script MUST STILL remain strictly under the **1,800-line hard ceiling** (and target the 600–1,500 line range, with a 600-line minimum). Corrected procedural asset modules MUST remain strictly under the **1,000-line hard ceiling** (and target the 400–800 line range, with a 400-line minimum).
+  - **Line Cap Preservation**: The corrected minigame script MUST STILL remain strictly under the **1,800-line hard ceiling** (and target the 300–1,500 line range, with a 300-line minimum). Corrected procedural asset modules MUST remain strictly under the **1,000-line hard ceiling** (and target the 200–800 line range, with a 200-line minimum). Limits are guidance for token control: never pad code to reach the floor, never compress code to fit the ceiling, and readability top-to-bottom wins over line count.
   - **Terminal Stop on Second Failure**: If the script still fails after the single retry attempt, the agent **MUST STOP IMMEDIATELY**, log the exact error and line numbers to the user, and request human guidance rather than attempting further automated loops.
 
-### Rule 7: Immediate Documentation Updates & Novice-Friendly English
-- All code, comments, and markdown documents must be written in **clear, readable English**.
-- Include thorough comments explaining *why* equations work (e.g., shortest segment distance, Reynolds steering, DDA raycast, spring damping) and brief notes on how the data structures map to C++.
-- Whenever you create or modify:
-  - A minigame $\rightarrow$ Update [`rules/minigames.md`](rules/minigames.md) (and [`rules/patterns.md`](rules/patterns.md) if adding a new pattern).
-  - An audio asset (SFX or BGM) $\rightarrow$ Update [`rules/audio.md`](rules/audio.md).
-  - A 3D model $\rightarrow$ Update [`rules/models_3D.md`](rules/models_3D.md).
-  - A 2D sprite $\rightarrow$ Update [`rules/sprites_2D.md`](rules/sprites_2D.md).
-  - A utility $\rightarrow$ Update [`rules/utils.md`](rules/utils.md).
+### Rule 7: Novice-Friendly Comments & Catalog Immutability during Builds
+- All code, comments, and markdown documents must be written in **clear, readable English** explaining *why* equations work in simple words without academic jargon (e.g., shortest segment distance, Reynolds steering, DDA raycast, spring damping) and brief notes on how data structures map to C++.
+- **Rules Catalog Immutability during Asset/Minigame Creation**:
+  - Subagents do **NOT** edit rulebooks (`rules/minigames.md`, `rules/audio.md`, `rules/models_3D.md`, `rules/sprites_2D.md`, `rules/utils.md`, or `rules/assets.md`) when creating minigames or assets.
+  - All task tracking is managed exclusively in `tasks/*.csv` by the Lead Orchestrator via `tasks.py`.
+- **Exception for Novel Patterns**:
+  - If and only if a subagent invents or adapts a novel design pattern, it must register and document the new pattern in [`rules/patterns.md`](rules/patterns.md).
 
-### Rule 8: Simultaneous Keyboard/Mouse & Gamepad Controls (Dual Input)
+### Rule 8: Simultaneous Keyboard/Mouse & Gamepad Controls (Canonical Mapping)
 - Every minigame and the launcher **MUST** support **Gamepad (Controller) input** that activates automatically whenever a connected controller is detected (`is_gamepad_available`) and works **simultaneously** alongside **Keyboard & Mouse** (either one, the other, or both at the same time — never locking out Keyboard/Mouse when a controller is plugged in).
-- Always reuse the helpers in [`utils/gamepad_input.py`](utils/gamepad_input.py) (exported via `from utils import *`):
+- Always reuse the canonical helpers in [`utils/gamepad_input.py`](utils/gamepad_input.py) (exported via `from utils import *`) adhering to the Canonical Controls Table in [`rules/utils.md`](rules/utils.md):
   - **2D / 3D Movement**: `get_dual_move_2d()` (combines `WASD` / `Arrow Keys` + `Gamepad Left Stick` with radial deadzone + `D-Pad`, clamping combined magnitude to `<= 1.0` so using both devices never doubles player speed).
   - **Aiming / Camera Look**: `get_dual_look_2d()` (combines `Q`/`E` or `Left`/`Right` keys + `Gamepad Right Stick` with radial deadzone). For cursor/reticle aiming in 2D, allow the Mouse cursor when moved and smoothly steer with the Gamepad Right Stick when deflected.
-  - **Actions & Lab Toggles**: `is_dual_primary_fire_down()`, `is_dual_primary_fire_pressed()`, `is_dual_secondary_fire_pressed()`, `is_dual_jump_down()`, `is_dual_jump_pressed()`, `is_dual_dash_down()`, `is_dual_dash_pressed()`, `is_dual_xray_toggle_pressed()` (`[Tab]` / `Gamepad Y`), `is_dual_pattern_toggle_pressed()` (`[F1]` / `GamepadLB`), `is_dual_secondary_toggle_pressed()` (`[F2]` / `GamepadRB`), and `is_dual_reset_pressed()` (`[R]` / `Gamepad Select` or `Start`).
+  - **Primary Action / Fire**: `is_dual_primary_fire_pressed()` / `down()` (`Left Mouse` / `Space` + Gamepad `RT` / `A`).
+  - **Secondary Action / Alt Fire**: `is_dual_secondary_fire_pressed()` / `down()` (`Right Mouse` / `Shift` + Gamepad `LT` / `X`).
+  - **Jump**: `is_dual_jump_pressed()` / `down()` (`Space` + Gamepad `A`).
+  - **Dash / Evade**: `is_dual_dash_pressed()` / `down()` (`Left Shift` + Gamepad `B`).
+  - **X-Ray Overlay Toggle**: `is_dual_xray_toggle_pressed()` (`[Tab]` / Gamepad `Y` (`Triangle`)).
+  - **Pattern Toggle**: `is_dual_pattern_toggle_pressed()` (`[F1]` / Gamepad `LB` (`L1`)).
+  - **Secondary Pattern Toggle**: `is_dual_secondary_toggle_pressed()` (`[F2]` / Gamepad `RB` (`R1`)).
+  - **Reset Simulation**: `is_dual_reset_pressed()` (`[R]` / Gamepad `Start`).
   - **HUD Status Badge**: Call `draw_gamepad_status_badge(985, 22, 11)` on the top HUD bar so the learner can see live controller detection (`PAD: ON [KB/M + Pad]` vs. `PAD: OFF [KB/M Only]`).
 
 ### Rule 9: Catalog Classification & Launcher Dropdown Synchronization
-Every minigame script MUST be classified under its designated section from `rules/minigames.md` (`3.0` or `3.1` through `3.7`):
+Every minigame script MUST be classified under its designated section (`3.0` or `3.1` through `3.7`):
 1. **Docstring Section Tag**: Declare `Section          : <3.x Category>` in the script header docstring so `launcher.py`'s AST parser assigns it to the corresponding 3.x dropdown menu filter automatically.
-2. **Sync `rules/minigames.md`**:
-   - Mark the item in its planned 3.x section with a `(built)` suffix.
-   - Add an entry in Section 2 (Active Minigames Registry) specifying its Section designation (e.g., `Section 3.1: Menus & UI`).
-3. **Sync `rules/patterns.md`**: Ensure the demonstrated pattern is documented under its category and registered in the Summary Matrix.
-4. **Dual Smoke Test**: Run both `python -B minigames/<subfolder>/<script_name>.py --smoke-test` AND `python -B launcher.py --smoke-test` to verify zero regressions in the prototype and the launcher dropdown system.
+2. **Task Tracking via `tasks/minigames.csv`**:
+   - Task completion is tracked exclusively in `tasks/minigames.csv` by the Lead Orchestrator using `python -B tasks.py --set-status minigames <target_file_or_id> built`.
+   - `rules/minigames.md` is a reference catalog and does NOT need manual edits when building minigames.
+3. **Pattern Reference**:
+   - Reference existing patterns from [`rules/patterns.md`](rules/patterns.md). If a novel pattern was created, register it in [`rules/patterns.md`](rules/patterns.md).
+4. **Verification**:
+   - Craftsman runs `python -B audit_minigame.py minigames/<subfolder>/<script_name>.py`.
+   - Orchestrator verifies launcher dropdown discovery during release synchronization via `python -B launcher.py --smoke-test`.
+
+### Rule 10: Assets-Only Minigames (Zero Inlined or Fabricated Assets)
+- Minigames MUST use ONLY procedural visual and audio assets that already exist and are registered in `assets/` (imported via `from assets import *`).
+- **Missing Asset Halt**: If a minigame specification or design requires an asset (3D model, 2D sprite, SFX synthesizer, or BGM track) that does NOT already exist in `assets/`, the agent **MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**.
+- The agent must report the missing asset dependencies back to the user or orchestrator so the assets can be built first (or scheduled in a `/teamwork` batch before the minigame).
+- Minigames must **NEVER** inline procedural asset synthesis, define local sound wave generators, or draw ad-hoc complex entity models that belong in the modular asset catalog.
+- **Selective Audio In-RAM Loading**: Minigames declare strictly the required cues in module-level `SFXS = [...]` and `BGMS = [...]` lists, passing them to `SoundLibrary` to compile into RAM only what is needed (see `rules/minigames.md` Section 3.5).
 
 ---
 
@@ -357,6 +296,7 @@ Every minigame script MUST be classified under its designated section from `rule
 ./
 ├── AGENTS.md                  <-- You are here (Agent rules, parallel swarm & pyray gotchas)
 ├── README.md                  <-- Beginner onboarding & usage instructions
+├── audit_minigame.py          <-- AST & smoke test gatekeeper for minigames
 ├── config.json                <-- Persisted UI preferences (font, font size, window size)
 ├── launcher.py                <-- Interactive Pattern Encyclopedia & Minigame Hub
 ├── tasks.py                   <-- Interactive Task Catalog & Spreadsheet Editor (Raylib GUI)
@@ -371,17 +311,37 @@ Every minigame script MUST be classified under its designated section from `rule
 │
 ├── tasks/                     <-- Dedicated task catalogs & progress spreadsheets
 │   ├── minigames.csv          <-- 106 planned prototypes across sections 3.0 to 3.7
-│   ├── audio.csv              <-- 90 procedural SFX synthesizers and BGM tracks
+│   ├── SFXs.csv               <-- 73 procedural SFX synthesizers across 6 categories
+│   ├── BGMs.csv               <-- 18 algorithmic BGM tracks across 12 emotional vibes
 │   ├── models_3D.csv          <-- 29 3D procedural primitive models
 │   └── sprites_2D.csv         <-- 29 2D procedural vector sprites
 │
 ├── assets/                    <-- Reusable procedural visual and audio assets
+│   ├── __init__.py            <-- Central asset loader, SoundLibrary & catalog exporter
 │   ├── models_3D/             <-- 3D procedural primitive models (.gitkeep)
 │   ├── sprites_2D/            <-- 2D procedural vector sprites (.gitkeep)
 │   └── audio/                 <-- Procedural in-memory SFX and BGM synthesizers
-│       ├── synth_sfx.py       <-- 48 procedural sound effects & SoundLibrary
-│       ├── SFX/               <-- Dedicated modular sound effect synthesizers (.gitkeep)
-│       └── BGM/               <-- Algorithmic background music tracks (.gitkeep)
+│       ├── synth_sfx.py       <-- Central dynamic audio discovery registry & selective in-RAM SoundLibrary
+│       ├── SFX/               <-- Dedicated modular sound effect synthesizers by category
+│       │   ├── combat/        <-- Combat and weapon SFX (.gitkeep)
+│       │   ├── creature/      <-- Creature SFX (.gitkeep)
+│       │   ├── environment/   <-- Environmental SFX (.gitkeep)
+│       │   ├── movement/      <-- Movement and locomotion SFX (.gitkeep)
+│       │   ├── progression/   <-- Progression, loot, and UI SFX (.gitkeep)
+│       │   └── ui_hud/        <-- UI and HUD feedback SFX (.gitkeep)
+│       └── BGM/               <-- Algorithmic background music tracks by emotional vibe
+│           ├── calm/          <-- Calm, ambient traversal (.gitkeep)
+│           ├── cheerful/      <-- Cheerful tavern, festive (.gitkeep)
+│           ├── curious/       <-- Curious puzzle, inquisitive (.gitkeep)
+│           ├── eerie/         <-- Eerie dungeon, catacombs (.gitkeep)
+│           ├── energetic/     <-- Energetic action, racing, synth pulse (.gitkeep)
+│           ├── futuristic/    <-- Futuristic cyberpunk synth (.gitkeep)
+│           ├── industrial/    <-- Industrial shipyard, machinery (.gitkeep)
+│           ├── intense/       <-- Intense boss, siege dreadnought (.gitkeep)
+│           ├── mystical/      <-- Mystical cosmic wonder (.gitkeep)
+│           ├── nostalgic/     <-- Nostalgic chiptune, retro arcade (.gitkeep)
+│           ├── suspenseful/   <-- Suspenseful stealth, espionage (.gitkeep)
+│           └── triumphant/    <-- Triumphant victory fanfare (.gitkeep)
 │
 ├── utils/                     <-- Reusable non-native utilities
 │   ├── __init__.py            <-- Central utility exporter & UI manager

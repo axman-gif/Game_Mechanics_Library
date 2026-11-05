@@ -187,5 +187,18 @@ Provides **simultaneous dual-input multiplexing** so players can use **Keyboard 
 - `draw_gamepad_status_badge(x: int = 985, y: int = 22, font_size: int = 12)`:
   Draws a live HUD indicator showing whether a controller is active alongside Keyboard & Mouse.
 
+### 7.3 Canonical Controls Table
+
+Single source of truth for gamepad and keyboard mapping:
+
+| Action | Keyboard / Mouse | Gamepad (Xbox / PlayStation) |
+|---|---|---|
+| X-Ray Telemetry Overlay | `Tab` | `Y` (Triangle) |
+| Pattern Toggle (ON/OFF) | `F1` | `LB` (L1) |
+| Secondary Toggle / Parameter | `F2` | `RB` (R1) |
+| Reset Simulation | `R` | `Start` |
+| Font Size | `Ctrl +/-` | *(Top HUD Bar)* |
+| Toggle Fullscreen | `F11` | *(Top HUD Bar)* |
+
 
 

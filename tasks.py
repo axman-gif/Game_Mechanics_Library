@@ -7,7 +7,7 @@ sort, and maintain all project tracking spreadsheets located in `tasks/`.
 
 Features:
   - Hot runtime switching between all CSV catalogs in `tasks/`
-    (minigames.csv, audio.csv, models_3D.csv, sprites_2D.csv).
+    (minigames.csv, SFXs.csv, BGMs.csv, models_3D.csv, sprites_2D.csv).
   - Strictly hides internal technical columns (`id` and `target_file`) from the
     visual table while preserving and auto-generating them faithfully on disk.
   - Alphanumeric column sorting (Ascending, Descending, Original Row Order).
@@ -82,6 +82,7 @@ DEFAULT_COL_WIDTHS: Dict[str, int] = {
     "status": 120,
     "type": 95,
     "category": 130,
+    "vibe": 120,
     "title": 220,
     "concept_name": 220,
     "function_name": 220,
@@ -139,22 +140,39 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
     """
     tasks_dir = os.path.join(repo_root, "tasks")
 
-    def resolve_csv(cat_name: str) -> str:
-        clean = cat_name if cat_name.endswith(".csv") else f"{cat_name}.csv"
-        return os.path.join(tasks_dir, clean)
+    def resolve_csv_paths(cat_name: str) -> List[str]:
+        c_lower = cat_name.lower().replace(".csv", "")
+        if c_lower in ("sfx", "sfxs"):
+            return [os.path.join(tasks_dir, "SFXs.csv")]
+        elif c_lower in ("bgm", "bgms"):
+            return [os.path.join(tasks_dir, "BGMs.csv")]
+        elif c_lower == "audio":
+            paths = []
+            sfx_p = os.path.join(tasks_dir, "SFXs.csv")
+            bgm_p = os.path.join(tasks_dir, "BGMs.csv")
+            if os.path.exists(sfx_p):
+                paths.append(sfx_p)
+            if os.path.exists(bgm_p):
+                paths.append(bgm_p)
+            if not paths:
+                fallback = os.path.join(tasks_dir, "audio.csv")
+                if os.path.exists(fallback):
+                    paths.append(fallback)
+            return paths
+        else:
+            clean = cat_name if cat_name.endswith(".csv") else f"{cat_name}.csv"
+            return [os.path.join(tasks_dir, clean)]
 
     if "--list" in args:
         idx = args.index("--list")
         cat_arg = args[idx + 1] if idx + 1 < len(args) and not args[idx + 1].startswith("--") else "minigames"
-        path = resolve_csv(cat_arg)
-        if not os.path.exists(path):
-            print(f"[ERROR] Catalog file not found: {path}")
-            return True
 
         # Parse filters
         section_filter = None
         category_filter = None
         status_filter = None
+        type_filter = None
+        vibe_filter = None
         limit_val = None
 
         if "--section" in args:
@@ -169,49 +187,85 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             st_idx = args.index("--status")
             if st_idx + 1 < len(args):
                 status_filter = args[st_idx + 1].lower()
+        if "--type" in args:
+            t_idx = args.index("--type")
+            if t_idx + 1 < len(args):
+                type_filter = args[t_idx + 1].upper()
+        if "--vibe" in args:
+            v_idx = args.index("--vibe")
+            if v_idx + 1 < len(args):
+                vibe_filter = args[v_idx + 1].lower()
         if "--limit" in args:
             l_idx = args.index("--limit")
             if l_idx + 1 < len(args) and args[l_idx + 1].isdigit():
                 limit_val = int(args[l_idx + 1])
 
-        with open(path, "r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            count = 0
-            for r in reader:
-                if section_filter and r.get("section") != section_filter:
-                    continue
-                if category_filter and r.get("category") != category_filter:
-                    continue
-                if status_filter and r.get("status", "").lower() != status_filter:
-                    continue
+        # Filter resolution for audio aliases
+        paths = resolve_csv_paths(cat_arg)
+        if type_filter == "SFX" and len(paths) > 1:
+            paths = [p for p in paths if "sfx" in os.path.basename(p).lower()]
+        elif (type_filter == "BGM" or vibe_filter) and len(paths) > 1:
+            paths = [p for p in paths if "bgm" in os.path.basename(p).lower()]
 
-                r_id = r.get("id", "")
-                r_status = r.get("status", "")
-                r_file = r.get("target_file", "")
+        if not paths or not any(os.path.exists(p) for p in paths):
+            print(f"[ERROR] Catalog file not found for: {cat_arg}")
+            return True
 
-                if "minigames" in cat_arg:
-                    r_sec = r.get("section", "")
-                    r_title = r.get("title", "")
-                    r_dim = r.get("dimension", "")
-                    r_pat = r.get("patterns", "")
-                    print(f"{r_id} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
-                elif "audio" in cat_arg:
-                    r_type = r.get("type", "")
-                    r_cat = r.get("category", "")
-                    r_fn = r.get("function_name", "")
-                    r_spec = r.get("audio_specs", "")
-                    print(f"{r_id} | {r_type} | {r_cat} | {r_fn} | {r_file} | {r_spec} | {r_status}")
-                else:
-                    r_cat = r.get("category", "")
-                    r_name = r.get("concept_name", "")
-                    r_fn = r.get("function_name", "")
-                    r_prim = r.get("primitives_used", "")
-                    print(f"{r_id} | {r_cat} | {r_name} | {r_fn} | {r_file} | {r_prim} | {r_status}")
+        count = 0
+        for path in paths:
+            if not os.path.exists(path):
+                continue
+            cat_name = os.path.basename(path).lower()
+            with open(path, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    if section_filter and r.get("section") != section_filter:
+                        continue
+                    if category_filter and r.get("category") != category_filter:
+                        continue
+                    if status_filter and r.get("status", "").lower() != status_filter:
+                        continue
+                    if type_filter and r.get("type", "").upper() != type_filter:
+                        continue
+                    if vibe_filter and r.get("vibe", "").lower() != vibe_filter:
+                        continue
 
-                count += 1
-                if limit_val and count >= limit_val:
-                    break
-            print(f"[Total matching: {count}]")
+                    r_id = r.get("id", "")
+                    r_status = r.get("status", "")
+                    r_file = r.get("target_file", "")
+
+                    if "minigames" in cat_name:
+                        r_sec = r.get("section", "")
+                        r_title = r.get("title", "")
+                        r_dim = r.get("dimension", "")
+                        r_pat = r.get("patterns", "")
+                        print(f"{r_id} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
+                    elif "bgm" in cat_name:
+                        r_type = r.get("type", "BGM")
+                        r_cat = r.get("category", "")
+                        r_vibe = r.get("vibe", "")
+                        r_fn = r.get("function_name", "")
+                        r_spec = r.get("audio_specs", "")
+                        print(f"{r_id} | {r_type} | {r_cat} | {r_vibe} | {r_fn} | {r_file} | {r_spec} | {r_status}")
+                    elif "sfx" in cat_name or "audio" in cat_name:
+                        r_type = r.get("type", "SFX")
+                        r_cat = r.get("category", "")
+                        r_fn = r.get("function_name", "")
+                        r_spec = r.get("audio_specs", "")
+                        print(f"{r_id} | {r_type} | {r_cat} | {r_fn} | {r_file} | {r_spec} | {r_status}")
+                    else:
+                        r_cat = r.get("category", "")
+                        r_name = r.get("concept_name", "")
+                        r_fn = r.get("function_name", "")
+                        r_prim = r.get("primitives_used", "")
+                        print(f"{r_id} | {r_cat} | {r_name} | {r_fn} | {r_file} | {r_prim} | {r_status}")
+
+                    count += 1
+                    if limit_val and count >= limit_val:
+                        break
+            if limit_val and count >= limit_val:
+                break
+        print(f"[Total matching: {count}]")
         return True
 
     if "--get" in args:
@@ -221,21 +275,23 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             return True
         cat_arg = args[idx + 1]
         target_key = args[idx + 2]
-        path = resolve_csv(cat_arg)
-        if not os.path.exists(path):
-            print(f"[ERROR] Catalog file not found: {path}")
-            return True
-        with open(path, "r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            found = False
-            for r in reader:
-                if r.get("id") == target_key or r.get("target_file") == target_key or r.get("target_file", "").endswith(target_key):
-                    found = True
-                    for k, v in r.items():
-                        print(f"{k}: {v}")
-                    break
-            if not found:
-                print(f"[NOT FOUND] No record matching '{target_key}' in {path}")
+        paths = resolve_csv_paths(cat_arg)
+        found = False
+        for path in paths:
+            if not os.path.exists(path):
+                continue
+            with open(path, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    if r.get("id") == target_key or r.get("target_file") == target_key or r.get("target_file", "").endswith(target_key):
+                        found = True
+                        for k, v in r.items():
+                            print(f"{k}: {v}")
+                        break
+            if found:
+                break
+        if not found:
+            print(f"[NOT FOUND] No record matching '{target_key}' in {cat_arg}")
         return True
 
     if "--set-status" in args:
@@ -246,29 +302,33 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
         cat_arg = args[idx + 1]
         target_key = args[idx + 2]
         new_status = args[idx + 3].lower()
-        path = resolve_csv(cat_arg)
-        if not os.path.exists(path):
-            print(f"[ERROR] Catalog file not found: {path}")
-            return True
-        rows = []
-        fieldnames = []
+        paths = resolve_csv_paths(cat_arg)
         updated = False
-        with open(path, "r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            fieldnames = list(reader.fieldnames or [])
-            for r in reader:
-                if (r.get("id") == target_key or r.get("target_file") == target_key or r.get("target_file", "").endswith(target_key)) and not updated:
-                    r["status"] = new_status
-                    updated = True
-                rows.append(r)
+        target_path_updated = ""
+        for path in paths:
+            if not os.path.exists(path):
+                continue
+            rows = []
+            fieldnames = []
+            with open(path, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                fieldnames = list(reader.fieldnames or [])
+                for r in reader:
+                    if (r.get("id") == target_key or r.get("target_file") == target_key or r.get("target_file", "").endswith(target_key)) and not updated:
+                        r["status"] = new_status
+                        updated = True
+                        target_path_updated = path
+                    rows.append(r)
+            if updated and target_path_updated == path:
+                with open(path, "w", encoding="utf-8-sig", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+                    writer.writeheader()
+                    writer.writerows(rows)
+                break
         if updated:
-            with open(path, "w", encoding="utf-8-sig", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
-                writer.writeheader()
-                writer.writerows(rows)
-            print(f"[OK] Updated status to '{new_status}' for '{target_key}' in {os.path.basename(path)}")
+            print(f"[OK] Updated status to '{new_status}' for '{target_key}' in {os.path.basename(target_path_updated)}")
         else:
-            print(f"[ERROR] Target '{target_key}' not found in {path}")
+            print(f"[ERROR] Target '{target_key}' not found in {cat_arg}")
         return True
 
     if "--check" in args:
@@ -278,24 +338,24 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             return True
         cat_arg = args[idx + 1]
         target_name = args[idx + 2].lower()
-        path = resolve_csv(cat_arg)
-        if not os.path.exists(path):
-            print(f"[ERROR] Catalog file not found: {path}")
-            return True
-        with open(path, "r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            matches = []
-            for r in reader:
-                for k in ("id", "function_name", "concept_name", "title", "target_file"):
-                    if target_name in r.get(k, "").lower():
-                        matches.append(f"{r.get('id')} | {r.get(k)} | {r.get('target_file')}")
-                        break
-            if matches:
-                print(f"[EXISTS] {len(matches)} match(es) for '{target_name}':")
-                for m in matches:
-                    print(f"  - {m}")
-            else:
-                print(f"[AVAILABLE] '{target_name}' not found in {os.path.basename(path)}")
+        paths = resolve_csv_paths(cat_arg)
+        matches = []
+        for path in paths:
+            if not os.path.exists(path):
+                continue
+            with open(path, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    for k in ("id", "function_name", "concept_name", "title", "target_file", "vibe"):
+                        if target_name in r.get(k, "").lower():
+                            matches.append(f"{r.get('id')} | {r.get(k)} | {r.get('target_file')}")
+                            break
+        if matches:
+            print(f"[EXISTS] {len(matches)} match(es) for '{target_name}':")
+            for m in matches:
+                print(f"  - {m}")
+        else:
+            print(f"[AVAILABLE] '{target_name}' not found in {cat_arg}")
         return True
 
     return False
@@ -407,7 +467,7 @@ class TasksEditor:
 
     def _discover_csv_files(self):
         """Scans the tasks/ directory for all CSV files."""
-        candidates = ["minigames.csv", "audio.csv", "models_3D.csv", "sprites_2D.csv"]
+        candidates = ["minigames.csv", "SFXs.csv", "BGMs.csv", "models_3D.csv", "sprites_2D.csv"]
         found = []
         # Preferred order first
         for name in candidates:
@@ -618,6 +678,37 @@ class TasksEditor:
             new_row["status"] = "pending"
             new_row["description"] = "Pedagogical description of the target mechanics."
 
+        elif "sfx" in fname.lower():
+            cat = "combat"
+            rows = data["rows"]
+            if 0 <= insert_position_hint < len(rows):
+                cat = rows[insert_position_hint].get("category", "combat")
+            new_row["id"] = f"sfx_{cat}_{suffix}"
+            new_row["type"] = "SFX"
+            new_row["category"] = cat
+            new_row["function_name"] = f"create_{cat}_sound_{suffix}"
+            new_row["target_file"] = f"assets/audio/SFX/{cat}/sound_{suffix}.py"
+            new_row["audio_specs"] = "44.1kHz 16-bit Mono Sine Wave"
+            new_row["status"] = "pending"
+            new_row["description"] = "Procedural audio synthesizer description."
+
+        elif "bgm" in fname.lower():
+            cat = "music"
+            vibe = "energetic"
+            rows = data["rows"]
+            if 0 <= insert_position_hint < len(rows):
+                cat = rows[insert_position_hint].get("category", "music")
+                vibe = rows[insert_position_hint].get("vibe", "energetic")
+            new_row["id"] = f"bgm_{vibe}_{suffix}"
+            new_row["type"] = "BGM"
+            new_row["category"] = cat
+            new_row["vibe"] = vibe
+            new_row["function_name"] = f"generate_{vibe}_track_{suffix}"
+            new_row["target_file"] = f"assets/audio/BGM/{vibe}/track_{suffix}.py"
+            new_row["audio_specs"] = "120.0 BPM | A minor | 8-bar loop"
+            new_row["status"] = "pending"
+            new_row["description"] = "Procedural background music stream description."
+
         elif "audio" in fname:
             cat = "combat"
             typ = "sfx"
@@ -629,8 +720,8 @@ class TasksEditor:
             new_row["type"] = typ
             new_row["category"] = cat
             new_row["function_name"] = f"create_{cat}_sound_{suffix}"
-            subfolder = "SFX" if typ == "sfx" else "BGM"
-            new_row["target_file"] = f"assets/audio/{subfolder}/sound_{suffix}.py"
+            subfolder = "SFX" if typ.lower() == "sfx" else "BGM"
+            new_row["target_file"] = f"assets/audio/{subfolder}/{cat}/sound_{suffix}.py"
             new_row["audio_specs"] = "44.1kHz 16-bit Mono Sine Wave"
             new_row["status"] = "pending"
             new_row["description"] = "Procedural audio synthesizer description."
@@ -816,8 +907,24 @@ class TasksEditor:
                 self.enum_selected_idx = self.enum_options.index(current_val)
             self.active_modal = "enum_select"
 
-        elif col_name == "type" and "audio" in self.get_current_fname():
-            self.enum_options = ["sfx", "bgm"]
+        elif col_name == "type" and any(k in self.get_current_fname().lower() for k in ("audio", "sfx", "bgm")):
+            self.enum_options = ["SFX", "BGM"]
+            self.enum_target_row = actual_row_idx
+            self.enum_target_col = col_name
+            self.enum_selected_idx = 0
+            if current_val in self.enum_options:
+                self.enum_selected_idx = self.enum_options.index(current_val)
+            self.active_modal = "enum_select"
+
+        elif col_name == "vibe" and "bgm" in self.get_current_fname().lower():
+            existing_vibes = sorted(list(set(r.get("vibe", "") for r in self.get_current_data()["rows"] if r.get("vibe"))))
+            if not existing_vibes:
+                existing_vibes = [
+                    "calm", "cheerful", "curious", "eerie", "energetic",
+                    "futuristic", "industrial", "intense", "mystical",
+                    "nostalgic", "suspenseful", "triumphant"
+                ]
+            self.enum_options = existing_vibes
             self.enum_target_row = actual_row_idx
             self.enum_target_col = col_name
             self.enum_selected_idx = 0
@@ -1179,7 +1286,7 @@ class TasksEditor:
             is_dirty = self.file_data.get(fname, {}).get("is_dirty", False)
 
             # Icon badge based on name
-            icon = "🎮 " if "minigames" in fname else ("🎵 " if "audio" in fname else ("🧊 " if "models" in fname else "🎨 "))
+            icon = "🎮 " if "minigames" in fname else ("🔊 " if "sfx" in fname.lower() else ("🎵 " if ("bgm" in fname.lower() or "audio" in fname.lower()) else ("🧊 " if "models" in fname else "🎨 ")))
             label = f"{icon}{fname}" + (" *" if is_dirty else "")
 
             tab_w = max(130, len(label) * 8 + 36)

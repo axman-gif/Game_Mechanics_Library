@@ -6,17 +6,23 @@ This document defines the architectural standards, vector primitive rendering ru
 All 2D sprite task tracking, vector specifications, and progress statuses are maintained in the companion spreadsheet:
 👉 [**`tasks/sprites_2D.csv`**](../tasks/sprites_2D.csv) (29 planned sprites: 4 base sprites and 25 specialized sprites)
 
+For top-level asset architecture and unified contracts, see [**`rules/assets.md`**](assets.md).
+
 ---
 
 ## 1. Golden Architecture Rules for 2D Procedural Sprites
 
-1. **Pure Geometric Primitives**: All 2D sprites are drawn directly onto the framebuffer using Raylib 2D vector calls (`draw_circle_v`, `draw_rectangle_pro`, `draw_line_ex`, `draw_triangle`, `draw_poly`). External raster image files (`.png`, `.jpg`, `.bmp`, `.tga`) and sprite sheets are strictly forbidden.
-2. **Language-Agnostic & C++-Transferable Code**:
-   In alignment with [`README.md`](../README.md) and [`AGENTS.md`](../AGENTS.md), sprite drawing functions must be written as pure imperative routines without decorators (`@dataclass`), generators (`yield`), or dynamic metaclasses. All geometric transformations must use basic trigonometry (`math.sin`, `math.cos`) and explicit vector math that translates 1-to-1 to C++ (`raylib.h`) and C#.
-3. **Canonical Procedural Animation Interface**:
-   Every 2D sprite drawing function must accept standardized procedural animation arguments:
+1. **Pure Geometric Primitives**: All 2D sprites are drawn directly onto the framebuffer using Raylib 2D vector and primitive calls (`draw_circle`, `draw_circle_v`, `draw_rectangle_pro`, `draw_rectangle`, `draw_line`, `draw_line_ex`, `draw_triangle`, `draw_poly`). External raster image files (`.png`, `.jpg`, `.bmp`, `.tga`) and sprite sheets are strictly forbidden.
+2. **Language-Agnostic & C++-Transferable Code (Simple Beats Clever)**:
+   In alignment with [`README.md`](../README.md) and [`AGENTS.md`](../AGENTS.md), this repository is built for learning and inspiration. Python serves as **executable, readable pseudocode** that ports 1-to-1 to C++, C, C#, Rust, or Zig.
+   - Use plain classes with explicit `__init__` constructors initializing all fields line-by-line.
+   - Use explicit `for` loops and `if/else` branching.
+   - **Strictly forbidden**: decorators (`@dataclass`, `@property`, `@staticmethod`), generators (`yield`), coroutines (`async`/`await`), lambdas, list/dict comprehensions in rendering loops, and magic dunders (except `__init__`).
+   - Write novice-friendly comments explaining **WHY** equations work in simple words without unnecessary jargon.
+3. **Canonical Procedural Animation Interface (Unified Asset Contract B)**:
+   Every 2D sprite module must export a standardized external drawing function:
 ```python
-def draw_sprite_name_2d(
+def draw_<name>_2d(
     position: Vector2,
     facing_angle_rad: float = 0.0,
     anim_timer: float = 0.0,
@@ -25,18 +31,29 @@ def draw_sprite_name_2d(
 ) -> None:
     pass
 ```
-4. **Color Palettes with Concrete Defaults**: Every sprite must expose an explicit default dictionary mapping semantic parts (`body`, `armor`, `accent`, `outline`, `eye`, `weapon`) to Raylib `Color` instances. When `palette=None` is passed, it uses its documented `DEFAULT_<NAME>_PALETTE`.
+   - `position` (`Vector2`): The anchor position in world or screen coordinates.
+   - `facing_angle_rad` (`float`): Sprite orientation angle strictly in **radians** (0.0 rad points along the positive X-axis).
+   - `anim_timer` (`float`): Continuous time variable driving procedural oscillation (sway, bob, breath).
+   - `scale` (`float`): Uniform multiplier for dimensions and geometric offsets.
+   - `palette` (`dict`): Optional color theme override. When `None`, the function falls back to its documented `DEFAULT_<NAME>_PALETTE`.
+4. **Color Palettes & Named Geometric Constants**:
+   - Every sprite must expose an explicit default dictionary constant named `DEFAULT_<NAME>_PALETTE` mapping semantic parts (`body`, `armor`, `accent`, `outline`, `eye`, `weapon`) to Raylib `Color` instances.
+   - **No Magic Numbers**: Body dimensions, limb offsets, radii, and weapon coordinates must be declared as uppercase named constants (e.g., `BASE_RADIUS`, `SHOULDER_RADIUS`, `WEAPON_WIDTH`) rather than hardcoded inline numbers.
 5. **Default Destination Directory**: All 2D procedural sprites are strictly located in `assets/sprites_2D/`.
-6. **2D Rendering Order & Int Casting**: Ensure all coordinates and dimensions passed to non-vector draw routines (`draw_rectangle`, `draw_text`) are explicitly cast to `int` to satisfy Raylib CFFI type contracts. Vector routines (`draw_circle_v`, `draw_rectangle_pro`) take `Vector2`.
-7. **Strict Sizing Bounds**: Every 2D procedural sprite module must strictly remain within the **400 to 800 line** target range (floor: **400 lines**, hard ceiling: **1,000 lines**). Scripts below 400 lines lack pedagogical explanations and vector animation loops; scripts above 1,000 lines cause token bloat.
+6. **2D Rendering Order & Explicit Int Casting**:
+   All coordinates and dimensions passed to non-vector pixel draw routines (`draw_line`, `draw_circle`, `draw_rectangle`, `draw_text`) must be explicitly cast to `int` (`int(x)`, `int(y)`) to satisfy Raylib CFFI type contracts and prevent float truncation issues. Vector routines (`draw_circle_v`, `draw_rectangle_pro`) take `Vector2`.
+7. **Line Limits & Readability Criterion**:
+   - **Procedural Assets** (SFX, BGM, 3D models, 2D sprites): floor **200 lines**, target **200 to 800 lines**, hard ceiling **1,000 lines**.
+   - **Minigames**: floor **300 lines**, target **300 to 1,500 lines**, hard ceiling **1,800 lines**.
+   - **Token Guidance, Not Padding**: Line limits are practical guidance for token control. **Never pad a file** to artificially reach the floor. **Never compress code or drop comments** to squeeze under the ceiling.
+   - **Readability Criterion**: A file must be understandable reading top to bottom, without jumping back and forth to other files. **Clarity always wins over line count.**
 8. **Standalone Previewer & Automated `--smoke-test`**:
-   Every sprite file must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/sprites_2D/<file>.py` opens an interactive 2D Vector Preview Canvas. Running with `--smoke-test` renders 3 frames headlessly and exits with code `0`.
-
+   Every sprite file must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/sprites_2D/<file>.py` launches an interactive preview application (`SpritePreviewApp`). Running with `--smoke-test` renders 3 frames headlessly and exits with code `0`.
 ---
 
 ## 2. Standard 2D Sprite Code Template
 
-Every craftsman subagent creating a 2D sprite must follow this exact anatomy. Copy and adapt this template for your target asset:
+Every craftsman subagent creating a 2D sprite must follow this exact 6-part anatomy. Copy and adapt this template for your target asset:
 
 ```python
 # -*- coding: utf-8 -*-
@@ -55,17 +72,21 @@ Problem Solved:
 
 How the Procedural Articulation Works:
   - Vector transforms use standard 2D rotation formulas:
-      x' = cos(theta) * dx - sin(theta) * dy
-      y' = sin(theta) * dx + cos(theta) * dy
+      rx = cos(angle_rad) * vx - sin(angle_rad) * vy
+      ry = sin(angle_rad) * vx + cos(angle_rad) * vy
   - Walking produces alternating counter-phase shoulder sway and weapon bob via math.sin(anim_timer * speed).
   - Aiming laser pulses opacity using sinusoidal modulation: 180 + 75 * sin(anim_timer * 10).
 
 C++ Raylib Equivalent:
-  struct TacticalOpsPalette { Color armor; Color vest; Color hands; Color visor; Color weapon; Color laser; };
+  struct TacticalOpsPalette { Color armor; Color vest; Color hands; Color visor; Color weapon; Color laser; Color outline; };
+  void RotateVector2D(float vx, float vy, float angle_rad, float* out_x, float* out_y);
   void DrawTacticalOps2D(Vector2 position, float facing_angle_rad, float anim_timer, float scale, const TacticalOpsPalette* palette);
-  Mapped directly to DrawCircleV, DrawRectanglePro, and DrawLineEx from raylib.h.
+  Mapped directly to DrawCircle, DrawCircleV, DrawRectanglePro, and DrawLine from raylib.h.
 """
 
+# ==============================================================================
+# PART 2: ZERO __PYCACHE__ SETUP, SYS.PATH & RAYLIB IMPORTS
+# ==============================================================================
 import sys
 import os
 import math
@@ -81,9 +102,9 @@ from pyray import *
 from utils import *
 
 # ==============================================================================
-# SEMANTIC COLOR PALETTES (Exposes concrete defaults)
+# PART 3: COLOR PALETTES & NAMED GEOMETRIC CONSTANTS
 # ==============================================================================
-# Mapping semantic body parts to Raylib Color structs.
+# Semantic color palettes mapping body parts to Raylib Color structs.
 # In C++, this translates directly to a constant struct instance:
 # const TacticalOpsPalette DEFAULT_TACTICAL_OPS_PALETTE = { ... };
 
@@ -107,24 +128,51 @@ STEALTH_TACTICAL_OPS_PALETTE = {
     "outline": Color(10, 15, 12, 255),
 }
 
+# Named geometric dimensions (replacing magic numbers for clarity & easy tuning)
+BASE_RADIUS = 16.0
+SHOULDER_RADIUS = 6.0
+SHOULDER_OUTLINE_RADIUS = 7.5
+SHOULDER_OFFSET_X = -2.0
+SHOULDER_OFFSET_Y = 14.0
+VEST_RADIUS = 11.5
+VEST_OUTLINE_RADIUS = 13.0
+WEAPON_WIDTH = 24.0
+WEAPON_HEIGHT = 6.0
+WEAPON_OFFSET_X = 18.0
+WEAPON_OFFSET_Y = 8.0
+HAND_RADIUS = 3.0
+HAND_OUTLINE_RADIUS = 3.8
+HAND_LEFT_OFFSET_X = 22.0
+HAND_LEFT_OFFSET_Y = 6.0
+HAND_RIGHT_OFFSET_X = 12.0
+HAND_RIGHT_OFFSET_Y = 9.0
+BARREL_FORWARD = 34.0
+BARREL_SIDE = 8.0
+LASER_LENGTH = 180.0
+VISOR_OFFSET_X = 6.0
+VISOR_OFFSET_Y = 5.0
+WALK_SPEED = 6.0
+
 
 # ==============================================================================
-# VECTOR ROTATION & COORDINATE MATH HELPERS (C++-Transferable)
+# PART 4: CANONICAL 2D DRAWING FUNCTION & ROTATION HELPER
 # ==============================================================================
-def rotate_vector_2d(dx: float, dy: float, cos_a: float, sin_a: float) -> Vector2:
+def rotate_vector_2d(vx: float, vy: float, angle_rad: float) -> tuple[float, float]:
     """
-    Rotates a 2D local offset (dx, dy) by precomputed cos(a) and sin(a).
-    Translates directly to:
-      Vector2 r = { cos_a * dx - sin_a * dy, sin_a * dx + cos_a * dy };
+    Rotates a 2D local offset (vx, vy) by angle_rad (in radians).
+    Returns (rx, ry) tuple. Translates directly to C++:
+      float cos_a = cosf(angle_rad);
+      float sin_a = sinf(angle_rad);
+      float rx = (cos_a * vx) - (sin_a * vy);
+      float ry = (sin_a * vx) + (cos_a * vy);
     """
-    rx = (cos_a * dx) - (sin_a * dy)
-    ry = (sin_a * dx) + (cos_a * dy)
-    return Vector2(rx, ry)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    rx = (cos_a * vx) - (sin_a * vy)
+    ry = (sin_a * vx) + (cos_a * vy)
+    return (rx, ry)
 
 
-# ==============================================================================
-# CORE PROCEDURAL 2D DRAWING FUNCTION
-# ==============================================================================
 def draw_tactical_ops_2d(
     position: Vector2,
     facing_angle_rad: float = 0.0,
@@ -134,7 +182,8 @@ def draw_tactical_ops_2d(
 ) -> None:
     """
     Renders an articulated 2D top-down Tactical Operator at position oriented along
-    facing_angle_rad with procedural walking sway, weapon bob, and pulsing laser beam.
+    facing_angle_rad (radians) with procedural walking sway, weapon bob, and pulsing laser beam.
+    Coordinates passed to pixel draw routines are explicitly cast to int for Raylib CFFI safety.
     """
     # 1. Fallback to default palette if None provided
     pal = palette
@@ -149,95 +198,126 @@ def draw_tactical_ops_2d(
     c_laser = pal["laser"]
     c_outline = pal["outline"]
 
-    # 2. Trigonometric basis vectors for orientation
-    cos_a = math.cos(facing_angle_rad)
-    sin_a = math.sin(facing_angle_rad)
-
-    # 3. Kinematic Sway & Breathing Oscillation
-    walk_speed = 6.0
-    sway = math.sin(anim_timer * walk_speed) * 3.5 * scale
+    # 2. Kinematic Sway & Breathing Oscillation
+    sway = math.sin(anim_timer * WALK_SPEED) * 3.5 * scale
     breath = math.sin(anim_timer * 2.0) * 0.8 * scale
-    base_radius = 16.0 * scale
+    scaled_base_radius = BASE_RADIUS * scale
 
-    # 4. Laser Targeting Ray (Emitted forward from carbine barrel)
-    barrel_forward = 34.0 * scale
-    barrel_side = 8.0 * scale
-    b_off = rotate_vector_2d(barrel_forward, barrel_side, cos_a, sin_a)
-    laser_start = Vector2(position.x + b_off.x, position.y + b_off.y)
+    # 3. Laser Targeting Ray (Emitted forward from carbine barrel)
+    barrel_fwd = BARREL_FORWARD * scale
+    barrel_side = BARREL_SIDE * scale
+    bx_off, by_off = rotate_vector_2d(barrel_fwd, barrel_side, facing_angle_rad)
+    laser_start_x = int(position.x + bx_off)
+    laser_start_y = int(position.y + by_off)
 
-    laser_len = 180.0 * scale
-    laser_end_off = rotate_vector_2d(barrel_forward + laser_len, barrel_side, cos_a, sin_a)
-    laser_end = Vector2(position.x + laser_end_off.x, position.y + laser_end_off.y)
+    laser_len = LASER_LENGTH * scale
+    lx_off, ly_off = rotate_vector_2d(barrel_fwd + laser_len, barrel_side, facing_angle_rad)
+    laser_end_x = int(position.x + lx_off)
+    laser_end_y = int(position.y + ly_off)
 
     # Modulate laser alpha slightly for realistic optical beam flicker
     laser_alpha = int(170 + 75 * math.sin(anim_timer * 12.0))
     laser_alpha = max(0, min(255, laser_alpha))
     c_flicker_laser = Color(c_laser.r, c_laser.g, c_laser.b, laser_alpha)
-    draw_line_ex(laser_start, laser_end, 1.8 * scale, c_flicker_laser)
-    draw_circle_v(laser_end, 2.5 * scale, c_flicker_laser)
+    draw_line(laser_start_x, laser_start_y, laser_end_x, laser_end_y, c_flicker_laser)
+    draw_circle(laser_end_x, laser_end_y, 2.5 * scale, c_flicker_laser)
 
-    # 5. Articulated Shoulder Pads & Kevlar Vest (Torso)
-    # Left Shoulder (dx = -2.0, dy = -14.0 + sway)
-    ls_off = rotate_vector_2d(-2.0 * scale, (-14.0 * scale) + sway, cos_a, sin_a)
-    ls_pos = Vector2(position.x + ls_off.x, position.y + ls_off.y)
-    draw_circle_v(ls_pos, 7.5 * scale, c_outline)
-    draw_circle_v(ls_pos, 6.0 * scale, c_armor)
+    # 4. Articulated Shoulder Pads & Kevlar Vest (Torso)
+    # Left Shoulder
+    ls_x_off, ls_y_off = rotate_vector_2d(SHOULDER_OFFSET_X * scale, (SHOULDER_OFFSET_Y * scale) + sway, facing_angle_rad)
+    ls_x = int(position.x + ls_x_off)
+    ls_y = int(position.y + ls_y_off)
+    draw_circle(ls_x, ls_y, SHOULDER_OUTLINE_RADIUS * scale, c_outline)
+    draw_circle(ls_x, ls_y, SHOULDER_RADIUS * scale, c_armor)
 
-    # Right Shoulder (dx = -2.0, dy = 14.0 - sway)
-    rs_off = rotate_vector_2d(-2.0 * scale, (14.0 * scale) - sway, cos_a, sin_a)
-    rs_pos = Vector2(position.x + rs_off.x, position.y + rs_off.y)
-    draw_circle_v(rs_pos, 7.5 * scale, c_outline)
-    draw_circle_v(rs_pos, 6.0 * scale, c_armor)
+    # Right Shoulder
+    rs_x_off, rs_y_off = rotate_vector_2d(SHOULDER_OFFSET_X * scale, (-SHOULDER_OFFSET_Y * scale) - sway, facing_angle_rad)
+    rs_x = int(position.x + rs_x_off)
+    rs_y = int(position.y + rs_y_off)
+    draw_circle(rs_x, rs_y, SHOULDER_OUTLINE_RADIUS * scale, c_outline)
+    draw_circle(rs_x, rs_y, SHOULDER_RADIUS * scale, c_armor)
 
     # Armored Chestplate / Vest
-    vest_center_off = rotate_vector_2d(0.0, 0.0, cos_a, sin_a)
-    vest_pos = Vector2(position.x + vest_center_off.x, position.y + vest_center_off.y)
-    draw_circle_v(vest_pos, (13.0 * scale) + breath, c_outline)
-    draw_circle_v(vest_pos, (11.5 * scale) + breath, c_vest)
+    vest_x = int(position.x)
+    vest_y = int(position.y)
+    draw_circle(vest_x, vest_y, (VEST_OUTLINE_RADIUS * scale) + breath, c_outline)
+    draw_circle(vest_x, vest_y, (VEST_RADIUS * scale) + breath, c_vest)
 
-    # 6. Assault Carbine & Articulated Hands (Two-point weapon grip)
-    # Weapon Receiver Body (Oriented along facing angle)
-    wpn_off = rotate_vector_2d(18.0 * scale, 8.0 * scale, cos_a, sin_a)
-    wpn_pos = Vector2(position.x + wpn_off.x, position.y + wpn_off.y)
-    wpn_rect = Rectangle(wpn_pos.x, wpn_pos.y, 24.0 * scale, 6.0 * scale)
+    # 5. Assault Carbine & Articulated Hands (Two-point weapon grip)
+    # Weapon Receiver Body (Oriented along facing angle in degrees for DrawRectanglePro)
+    wpn_x_off, wpn_y_off = rotate_vector_2d(WEAPON_OFFSET_X * scale, WEAPON_OFFSET_Y * scale, facing_angle_rad)
+    wpn_x = position.x + wpn_x_off
+    wpn_y = position.y + wpn_y_off
+    wpn_rect = Rectangle(wpn_x, wpn_y, WEAPON_WIDTH * scale, WEAPON_HEIGHT * scale)
     wpn_origin = Vector2(4.0 * scale, 3.0 * scale)
     wpn_deg = facing_angle_rad * (180.0 / math.pi)
     draw_rectangle_pro(wpn_rect, wpn_origin, wpn_deg, c_weapon)
 
     # Carbine Suppressor / Muzzle Tip
-    muz_off = rotate_vector_2d(32.0 * scale, 8.0 * scale, cos_a, sin_a)
-    draw_circle_v(Vector2(position.x + muz_off.x, position.y + muz_off.y), 2.2 * scale, c_armor)
+    muz_x_off, muz_y_off = rotate_vector_2d(BARREL_FORWARD * scale, BARREL_SIDE * scale, facing_angle_rad)
+    muz_x = int(position.x + muz_x_off)
+    muz_y = int(position.y + muz_y_off)
+    draw_circle(muz_x, muz_y, 2.2 * scale, c_armor)
 
-    # Left Hand (Front Foregrip: dx = 22.0, dy = 6.0)
-    lh_off = rotate_vector_2d(22.0 * scale, 6.0 * scale, cos_a, sin_a)
-    lh_pos = Vector2(position.x + lh_off.x, position.y + lh_off.y)
-    draw_circle_v(lh_pos, 3.8 * scale, c_outline)
-    draw_circle_v(lh_pos, 3.0 * scale, c_hands)
+    # Left Hand (Front Foregrip)
+    lh_x_off, lh_y_off = rotate_vector_2d(HAND_LEFT_OFFSET_X * scale, HAND_LEFT_OFFSET_Y * scale, facing_angle_rad)
+    lh_x = int(position.x + lh_x_off)
+    lh_y = int(position.y + lh_y_off)
+    draw_circle(lh_x, lh_y, HAND_OUTLINE_RADIUS * scale, c_outline)
+    draw_circle(lh_x, lh_y, HAND_RADIUS * scale, c_hands)
 
-    # Right Hand (Rear Trigger: dx = 12.0, dy = 9.0)
-    rh_off = rotate_vector_2d(12.0 * scale, 9.0 * scale, cos_a, sin_a)
-    rh_pos = Vector2(position.x + rh_off.x, position.y + rh_off.y)
-    draw_circle_v(rh_pos, 3.8 * scale, c_outline)
-    draw_circle_v(rh_pos, 3.0 * scale, c_hands)
+    # Right Hand (Rear Trigger)
+    rh_x_off, rh_y_off = rotate_vector_2d(HAND_RIGHT_OFFSET_X * scale, HAND_RIGHT_OFFSET_Y * scale, facing_angle_rad)
+    rh_x = int(position.x + rh_x_off)
+    rh_y = int(position.y + rh_y_off)
+    draw_circle(rh_x, rh_y, HAND_OUTLINE_RADIUS * scale, c_outline)
+    draw_circle(rh_x, rh_y, HAND_RADIUS * scale, c_hands)
 
-    # 7. Ballistic Combat Helmet & Visor Slit
-    helm_off = rotate_vector_2d(0.0, 0.0, cos_a, sin_a)
-    helm_pos = Vector2(position.x + helm_off.x, position.y + helm_off.y)
-    draw_circle_v(helm_pos, (base_radius * 0.75) + 1.5, c_outline)
-    draw_circle_v(helm_pos, base_radius * 0.75, c_armor)
+    # 6. Ballistic Combat Helmet & Visor Slit
+    helm_x = int(position.x)
+    helm_y = int(position.y)
+    draw_circle(helm_x, helm_y, (scaled_base_radius * 0.75) + 1.5, c_outline)
+    draw_circle(helm_x, helm_y, scaled_base_radius * 0.75, c_armor)
 
     # Tactical HUD Visor (Arc slit in front of helmet)
-    v_start_off = rotate_vector_2d(6.0 * scale, -5.0 * scale, cos_a, sin_a)
-    v_end_off = rotate_vector_2d(6.0 * scale, 5.0 * scale, cos_a, sin_a)
-    v_start = Vector2(position.x + v_start_off.x, position.y + v_start_off.y)
-    v_end = Vector2(position.x + v_end_off.x, position.y + v_end_off.y)
-    draw_line_ex(v_start, v_end, 2.5 * scale, c_visor)
+    v1_x_off, v1_y_off = rotate_vector_2d(VISOR_OFFSET_X * scale, -VISOR_OFFSET_Y * scale, facing_angle_rad)
+    v2_x_off, v2_y_off = rotate_vector_2d(VISOR_OFFSET_X * scale, VISOR_OFFSET_Y * scale, facing_angle_rad)
+    v1_x = int(position.x + v1_x_off)
+    v1_y = int(position.y + v1_y_off)
+    v2_x = int(position.x + v2_x_off)
+    v2_y = int(position.y + v2_y_off)
+    draw_line(v1_x, v1_y, v2_x, v2_y, c_visor)
 
 
 # ==============================================================================
-# STANDALONE INTERACTIVE VIEWER & AUTOMATED SMOKE TEST
+# PART 5: C++ MAPPING & MEMORY LAYOUT REFERENCE
 # ==============================================================================
-class Sprite2DViewer:
+# In C++ (raylib.h), this entire module maps 1-to-1 with zero dynamic allocation:
+#
+# struct TacticalOpsPalette {
+#     Color armor;
+#     Color vest;
+#     Color hands;
+#     Color visor;
+#     Color weapon;
+#     Color laser;
+#     Color outline;
+# };
+#
+# void RotateVector2D(float vx, float vy, float angle_rad, float* out_x, float* out_y);
+# void DrawTacticalOps2D(Vector2 position, float facing_angle_rad, float anim_timer, float scale, const TacticalOpsPalette* palette);
+#
+# Memory Layout & Performance:
+# - TacticalOpsPalette is a flat struct of 7 Color structs (28 bytes total, 4 bytes each: r, g, b, a).
+# - Position is a Vector2 (8 bytes: float x, float y).
+# - All trigonometric calculations (sin, cos) execute in registers with zero heap allocation.
+# - Renders directly to the active framebuffer via immediate Raylib draw calls.
+
+
+# ==============================================================================
+# PART 6: STANDALONE 2D PREVIEW CANVAS (SpritePreviewApp)
+# ==============================================================================
+class SpritePreviewApp:
     """
     Interactive 2D preview canvas allowing inspection, continuous steering,
     animation speed adjustment, scale zooming, palette swapping, and smoke testing.
@@ -253,7 +333,6 @@ class Sprite2DViewer:
         self.anim_timer = 0.0
         self.anim_playing = True
         self.scale = 2.0
-        self.auto_rotate = False
 
         self.active_palette_idx = 0
         self.palettes = [DEFAULT_TACTICAL_OPS_PALETTE, STEALTH_TACTICAL_OPS_PALETTE]
@@ -298,9 +377,9 @@ class Sprite2DViewer:
         # Background Subtle Coordinate Grid
         grid_step = 40
         for x in range(0, self.screen_width, grid_step):
-            draw_line(x, 0, x, self.screen_height, Color(30, 36, 48, 255))
+            draw_line(int(x), 0, int(x), self.screen_height, Color(30, 36, 48, 255))
         for y in range(0, self.screen_height, grid_step):
-            draw_line(0, y, self.screen_width, y, Color(30, 36, 48, 255))
+            draw_line(0, int(y), self.screen_width, int(y), Color(30, 36, 48, 255))
 
         # Draw Sprite at Screen Center
         draw_tactical_ops_2d(
@@ -336,20 +415,34 @@ class Sprite2DViewer:
 
 if __name__ == "__main__":
     is_smoke = "--smoke-test" in sys.argv
-    Sprite2DViewer().run(smoke_test=is_smoke)
+    SpritePreviewApp().run(smoke_test=is_smoke)
 ```
 
 ---
 
-## 3. Minigame Integration Example
+## 3. Minigame Integration & Import Standards
 
-To render this sprite in any 2D minigame prototype (e.g. `minigames/3.2_combat_weapons/active_reload_timing.py`):
+### 3.1 Importing 2D Sprites in Minigames
+
+Minigames can import procedural sprites using either granular per-module imports or bulk package imports:
 
 ```python
+# Option A: Granular Import (Explicit dependency tracking)
 from assets.sprites_2D.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
 
+# Option B: Bulk Package Import (Convenient for prototypes using multiple sprites)
+from assets import *
+# Or category-level import:
+from assets.sprites_2D import *
+```
+
+### 3.2 Invocation Inside Minigame Draw Loop
+
+Inside any 2D minigame prototype (e.g. `minigames/3.2_combat_weapons/active_reload_timing.py`), invoke the sprite within screen-space or a 2D camera viewport (`begin_mode_2d(camera)`):
+
+```python
 # Inside Minigame draw():
-# Render the player entity with smooth mouse-facing orientation
+# Render the player entity with smooth facing orientation and walking animation
 draw_tactical_ops_2d(
     position=self.player.pos,
     facing_angle_rad=self.player.aim_angle,
@@ -359,6 +452,11 @@ draw_tactical_ops_2d(
 )
 ```
 
+### 3.3 Mandatory Rule: Assets-Only Minigames
+
+Minigames must use **only assets that currently exist** in `assets/` (`assets/sprites_2D/`, `assets/models_3D/`, `assets/audio/SFX/<category>/`, `assets/audio/BGM/<vibe>/`).
+- Subagents and developers must **never** create inline placeholder art/primitives or fabricate mock asset files inside minigame code.
+- If a minigame task references a 2D sprite that has not yet been implemented, the agent must **STOP IMMEDIATELY, report the missing asset to the orchestrator/user, and request that the asset be created first** before writing the minigame.
 ---
 
 ## 4. 2D Sprite Categorization Overview
@@ -389,7 +487,7 @@ python -B tasks.py --get sprites_2D s2d_top_tactical_ops
 
 ### 5.3 Check if Concept Name Already Exists (Prevent Collisions)
 ```bash
-python -B tasks.py --check models_3D "Tactical Ops"
+python -B tasks.py --check sprites_2D "Tactical Ops"
 ```
 
 ### 5.4 Mark a 2D Sprite as Built (Fast CLI)
