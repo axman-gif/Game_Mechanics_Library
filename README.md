@@ -4,9 +4,9 @@
 
 [![Python Version](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Raylib](https://img.shields.io/badge/Raylib-pyray%206.0%2B-D73A49?style=for-the-badge&logo=raylib&logoColor=white)](https://www.raylib.com/)
-[![Assets](https://img.shields.io/badge/Art%20Assets-0%20(100%25%20Procedural)-2ea44f?style=for-the-badge)](assets.md)
-[![Audio](https://img.shields.io/badge/Audio-Synthesized%20in%20RAM-orange?style=for-the-badge)](assets.md)
-[![Gamepad](https://img.shields.io/badge/Input-Dual%20KB%2FM%20%2B%20Gamepad-8A2BE2?style=for-the-badge)](utils.md)
+[![Assets](https://img.shields.io/badge/Art%20Assets-0%20(100%25%20Procedural)-2ea44f?style=for-the-badge)](rules/assets.md)
+[![Audio](https://img.shields.io/badge/Audio-Synthesized%20in%20RAM-orange?style=for-the-badge)](rules/audio.md)
+[![Gamepad](https://img.shields.io/badge/Input-Dual%20KB%2FM%20%2B%20Gamepad-8A2BE2?style=for-the-badge)](rules/utils.md)
 [![C++ Ready](https://img.shields.io/badge/Code%20Style-1%3A1%20C%2B%2B%20Transferable-blue?style=for-the-badge)](AGENTS.md)
 
 **An interactive, beginner-friendly encyclopedia of video game programming patterns.**  
@@ -62,7 +62,7 @@ This repository takes a radically different, ultra-clear approach:
 Every minigame in this collection includes two signature pedagogical tools:
 
 > [!TIP]
-> ### 🔬 1. The X-Ray Inspector (`[Tab]` or Gamepad `Y` / `Select`)
+> ### 🔬 1. The X-Ray Inspector (`[Tab]` or Gamepad `Y` / `Triangle`)
 > Press **`[Tab]`** at any time to peel back the graphics and view the mathematical machinery underneath:
 > - **Spatial Hash Grids**: Watch cell boundaries highlight as entities move across them.
 > - **Object Pools**: Inspect active vs. available bullet slots and allocation metrics live.
@@ -151,6 +151,16 @@ python -B minigames/<category_subfolder>/<script_name>.py
 # python -B minigames/3.0_core_prototypes/orbital_siege.py
 ```
 
+### Option C: The Interactive Task Catalog & Spreadsheet Editor (`tasks.py`)
+To inspect, edit, sort, and add prototypes or procedural assets across any catalog without risking CSV delimiter or quote corruption:
+```bash
+python -B tasks.py
+```
+- **Hot-Switch Catalogs**: Switch between `minigames.csv`, `SFXs.csv`, `BGMs.csv`, `models_3D.csv`, and `sprites_2D.csv` at runtime.
+- **Hidden Technical Columns**: Keeps internal keys (`id`, `target_file`) hidden from the UI grid while faithfully auto-generating them when rows are added.
+- **Pattern Selector Modal**: Select patterns directly from `rules/patterns.md` via a searchable multi-select checklist.
+- **Safe Row Editing**: Insert rows above or below, duplicate rows, and sort alphanumerically with guaranteed schema immutability.
+
 ---
 
 ## 🎮 Global Controls (Keyboard, Mouse & Gamepad)
@@ -163,9 +173,10 @@ All prototypes feature unified controls with simultaneous Keyboard/Mouse and Gam
 | **Aim / Reticle / Look** | **Mouse Cursor** / `Q` & `E` | **Right Analog Stick** (steers reticle or 3D camera) |
 | **Primary Action / Select** | `Space` / Left Mouse Button / `Enter` | **Face Button A** (Xbox) / **Cross** (PlayStation) / `RT` |
 | **Secondary Action / Back** | `Right Click` / `Esc` / `Backspace` | **Face Button B** (Xbox) / **Circle** (PlayStation) / `LT` |
-| **🔬 X-Ray Debug Overlay** | **`[Tab]`** | **Face Button Y** (Xbox) / **Triangle** / **View (Select)** |
-| **🎚️ Live Pattern Toggle** | **`[F1]`** | **Left Bumper (`LB` / `L1`)** or **R3** |
-| **🔄 Reset Simulation** | **`[R]`** | **Start (Menu)** |
+| **🔬 X-Ray Telemetry Overlay** | **`[Tab]`** | **Face Button Y** (Xbox) / **Triangle** (PlayStation) |
+| **🎚️ Pattern Toggle (ON/OFF)** | **`[F1]`** | **Left Bumper (`LB` / `L1`)** |
+| **🎛️ Secondary Toggle / Parameter** | **`[F2]`** | **Right Bumper (`RB` / `R1`)** |
+| **🔄 Reset Simulation** | **`[R]`** | **Start** (Xbox Menu / PlayStation Options) |
 | **🔤 Font Size Adjust** | **`Ctrl + '+'`** / **`Ctrl + '-'`** | *Use Top Bar Dropdown* |
 | **🖥️ Toggle Fullscreen** | **`[F11]`** | *Use Top Bar Dropdown* |
 
@@ -192,7 +203,7 @@ The library organizes minigames and experimental laboratories into designated su
 | **3.2** | [`3.2_combat_weapons/`](minigames/3.2_combat_weapons/) | **2D / 3D Combat** | Kinetic weapon ballistics, parabolic mortars, penetrating hitscan, recoil bloom springs, active reload timing, fighting game frame-data arcs, parry stagger windows, elemental reactions, and RTS siege splash. |
 | **3.3** | [`3.3_enemies_ai/`](minigames/3.3_enemies_ai/) | **2D / 3D AI Systems** | Autonomous enemy steering, flocking boids, Dijkstra flow fields for swarms, tactical cover scoring, visualized behavior trees, threat aggro tables, multi-phase bosses, and RTS military formation steering. |
 | **3.4** | [`3.4_progression_economy/`](minigames/3.4_progression_economy/) | **2D Progression** | Mathematical progression and economy models: CDF loot drop histograms, polynomial/exponential XP curves, crafting DAGs, market supply/demand, deckbuilder cycles, and 4X resource flow ledgers. |
-| **3.5** | [`3.5_world_exploration/`](minigames/3.5_world_exploration/) | **2D / 3D Worlds** | Procedural generation and exploration: cellular automata caverns, BSP dungeons, Amanatides-Woo DDA voxel raymarching, infinite chunk streaming, dynamic day-night orbits, and dual-layer fog of war. |
+| **3.5** | [`3.5_world_procgen/`](minigames/3.5_world_procgen/) | **2D / 3D Worlds** | Procedural generation and exploration: cellular automata caverns, BSP dungeons, Amanatides-Woo DDA voxel raymarching, infinite chunk streaming, dynamic day-night orbits, and dual-layer fog of war. |
 | **3.6** | [`3.6_movement_camera/`](minigames/3.6_movement_camera/) | **2D / 3D Movement** | Movement kinematics and game feel: Coyote time and jump buffers, Verlet pendulum grapples, 3D Quake-style strafing controllers, spring-arm orbit cameras, trauma screen shake, and RTS panning cameras. |
 | **3.7** | [`3.7_puzzle_stealth/`](minigames/3.7_puzzle_stealth/) | **2D / 3D Systems** | Discrete logic and systemic interactions: Sokoban deadlock detection with undo/redo stacks, stealth illumination sensors, cellular fluid automata, lockpicking sweet spots, and RTS marquee box selection. |
 
@@ -222,6 +233,60 @@ No dynamic getattr/eval/metaclasses  Direct field access and explicit integers
 | `init_window(1280, 720, "Title")` | `InitWindow(1280, 720, "Title");` |
 | `draw_sphere(pos, radius, color)` | `DrawSphere(pos, radius, color);` |
 
+### 📏 Script Sizing Guidelines & Readability Criterion
+
+To keep learning lightweight, modular, and directly portable without cognitive overload or token bloat, all code adheres to clear line budget guidance:
+
+- **Minigames (Sections 3.0 to 3.7)**: Floor **300 lines**, Target **300–1,500 lines**, Hard ceiling **1,800 lines**.
+- **Procedural Assets (SFX, BGM, 3D Models, 2D Sprites)**: Floor **200 lines**, Target **200–800 lines**, Hard ceiling **1,000 lines**.
+
+> [!IMPORTANT]
+> **Token Control & Pedagogical Integrity**:
+> - Limits are guidance for token control and scope discipline.
+> - **Never pad a file** to reach the floor with dummy code or artificial comments.
+> - **Never compress code** or drop explanatory comments to fit under the ceiling.
+> - **Readability Criterion**: A file must be understandable reading top to bottom, without jumping to other files; **clarity wins over line count**.
+
+---
+
+## 📊 CSV-Driven Dynamic Registries & Task Management
+
+To maintain lightweight, token-efficient documentation and provide an intuitive workflow for both humans and AI subagents, all active inventories and task tracking are managed through four **spreadsheet-safe CSV files**:
+
+| Registry Spreadsheet | Description & Content | Total Planned Items |
+| :--- | :--- | :---: |
+| [**`tasks/minigames.csv`**](tasks/minigames.csv) | All standalone prototypes across Sections 3.0 to 3.7 with patterns and status | **106 prototypes** |
+| [**`tasks/SFXs.csv`**](tasks/SFXs.csv) | Procedural SFX synthesizers across 6 modular categories | **73 SFX items** |
+| [**`tasks/BGMs.csv`**](tasks/BGMs.csv) | Algorithmic streaming BGM tracks categorized by emotional vibe | **18 BGM tracks** |
+| [**`tasks/models_3D.csv`**](tasks/models_3D.csv) | 3D procedural primitive models with primitives, animation, and palette keys | **29 models** |
+| [**`tasks/sprites_2D.csv`**](tasks/sprites_2D.csv) | 2D procedural vector sprites with primitives, animation, and palette keys | **29 sprites** |
+
+### 🛠️ How Humans Can Edit the CSV Files
+To avoid unintentional formatting mistakes or character encoding changes when editing catalogs, use our built-in graphical editor:
+```bash
+python -B tasks.py
+```
+- **Guaranteed Schema Safety**: Columns `id` and `target_file` are protected and auto-generated, while column schema is immutable.
+- **Pattern Verification**: Pick verified patterns straight from `rules/patterns.md` with zero typographical errors.
+- **Desktop Spreadsheet Fallback**: You can also open `tasks/*.csv` in LibreOffice Calc, Excel, or Google Sheets with UTF-8 BOM encoding.
+- **Alphanumeric explicit identifiers**: Keys like `mg_orbital_siege` and `"sec_3_0"` prevent Excel from auto-converting numbers into dates or truncated decimals.
+- **Universal compatibility**: All text fields are RFC 4180 quoted and saved in UTF-8. The Python scripts automatically detect and accept both comma (`,`) and semicolon (`;`) separators as well as Windows Excel BOM headers.
+- **Status column**: Simply update the `status` column to `pending`, `in_progress`, or `built`.
+
+### ⚡ How AI Subagents Query Tasks via Python Built-in `csv`
+Subagents do not parse massive markdown catalogs. Instead, they run instantaneous, single-line Python standard library `csv` queries that return compact dictionaries (<50 tokens):
+
+```bash
+# 1. Grab the next pending task in a category:
+python -B -c "import csv; f=open('tasks/minigames.csv', encoding='utf-8-sig'); r=csv.DictReader(f); print(next(dict(id=x['id'], title=x['title'], file=x['target_file']) for x in r if x['section']=='3.2' and x['status']=='pending'))"
+
+# 2. Check task details by ID:
+python -B -c "import csv; f=open('tasks/SFXs.csv', encoding='utf-8-sig'); r=csv.DictReader(f); print(next(x for x in r if x['id']=='sfx_plan_arc_lightning'))"
+
+# 3. View pending count summary across categories:
+python -B -c "import csv; from collections import Counter; f=open('tasks/models_3D.csv', encoding='utf-8-sig'); c=Counter(x['category'] for x in csv.DictReader(f) if x['status']=='pending'); print(dict(c))"
+```
+
 ---
 ---
 
@@ -244,7 +309,7 @@ Este repositorio propone un método radicalmente distinto, claro y educativo:
 Cada prototipo incluye dos herramientas pedagógicas fundamentales:
 
 > [!TIP]
-> ### 🔬 1. El Inspector de Rayos X (`[Tab]` o Mando `Y` / `Select`)
+> ### 🔬 1. El Inspector de Rayos X (`[Tab]` o Mando `Y` / `Triángulo`)
 > Presiona **`[Tab]`** en cualquier momento para hacer transparentes los gráficos y ver la maquinaria matemática en tiempo real:
 > - **Rejillas Espaciales (*Spatial Grid*)**: Observa cómo se iluminan las celdas de colisión al moverse los objetos.
 > - **Reserva de Objetos (*Object Pool*)**: Inspecciona cuántos proyectiles están activos vs disponibles sin saturar la memoria.
@@ -345,9 +410,10 @@ Todos los minijuegos responden a un esquema unificado de controles que combina t
 | **Apuntar / Mirilla / Vista** | **Cursor del Ratón** / `Q` y `E` | **Stick Analógico Derecho** (apunta la mirilla o gira la cámara 3D) |
 | **Acción Principal / Seleccionar** | `Espacio` / Clic Izquierdo / `Enter` | **Botón A** (Xbox) / **Cruz** (PlayStation) / Gatillo `RT` |
 | **Acción Secundaria / Cancelar** | `Clic Derecho` / `Esc` / `Backspace` | **Botón B** (Xbox) / **Círculo** (PlayStation) / Gatillo `LT` |
-| **🔬 Modo Rayos X (Telemetría)** | **`[Tab]`** | **Botón Y** (Xbox) / **Triángulo** / **Botón View (Select)** |
-| **🎚️ Activar/Desactivar Patrón** | **`[F1]`** | **Botón Superior Izquierdo (`LB` / `L1`)** o **R3** |
-| **🔄 Reiniciar Simulación** | **`[R]`** | **Botón Start (Menú)** |
+| **🔬 Modo Rayos X (Telemetría)** | **`[Tab]`** | **Botón Y** (Xbox) / **Triángulo** (PlayStation) |
+| **🎚️ Alternar Patrón (ON/OFF)** | **`[F1]`** | **Botón Superior Izquierdo (`LB` / `L1`)** |
+| **🎛️ Parámetro / Toggle Secundario** | **`[F2]`** | **Botón Superior Derecho (`RB` / `R1`)** |
+| **🔄 Reiniciar Simulación** | **`[R]`** | **Botón Start** (Xbox Menú / PlayStation Options) |
 | **🔤 Ajustar Tamaño de Letra** | **`Ctrl + '+'`** / **`Ctrl + '-'`** | *Usa el menú desplegable superior* |
 | **🖥️ Alternar Pantalla Completa** | **`[F11]`** | *Usa el menú desplegable superior* |
 
@@ -374,7 +440,7 @@ El proyecto organiza sus minijuegos y laboratorios experimentales en subcarpetas
 | **3.2** | [`3.2_combat_weapons/`](minigames/3.2_combat_weapons/) | **2D / 3D Sistemas de Combate** | Balística de proyectiles cinéticos, morteros parabólicos, hitscan con penetración, resortes de retroceso y dispersión, recargas activas, arcos de daño por fotogramas (*frame data*), ventanas de parry y daño de área RTS. |
 | **3.3** | [`3.3_enemies_ai/`](minigames/3.3_enemies_ai/) | **2D / 3D IA y Comportamientos** | Dirección autónoma de enemigos, bandadas *boids*, campos de flujo Dijkstra para hordas, árboles de comportamiento visualizados, tablas de amenaza *aggro*, jefes por fases y formaciones militares RTS. |
 | **3.4** | [`3.4_progression_economy/`](minigames/3.4_progression_economy/) | **2D Economía y Progresión** | Modelos matemáticos de progresión: tablas de botín con muestreo CDF, curvas de nivel polinomiales/exponenciales, redes de crafteo DAG, simulador de *pity* gacha y flujos macroeconómicos 4X. |
-| **3.5** | [`3.5_world_exploration/`](minigames/3.5_world_exploration/) | **2D / 3D Mundos y Entorno** | Generación procedimental y exploración: cavernas por autómatas celulares, mazmorras BSP, vóxeles 3D con DDA de Amanatides-Woo, niebla de guerra de doble capa y generación de biomas hexagonales. |
+| **3.5** | [`3.5_world_procgen/`](minigames/3.5_world_procgen/) | **2D / 3D Mundos y Entorno** | Generación procedimental y exploración: cavernas por autómatas celulares, mazmorras BSP, vóxeles 3D con DDA de Amanatides-Woo, niebla de guerra de doble capa y generación de biomas hexagonales. |
 | **3.6** | [`3.6_movement_camera/`](minigames/3.6_movement_camera/) | **2D / 3D Físicas y Cámaras** | Sensación cinemática (*game feel*): Coyote time y almacenamiento de saltos (*jump buffer*), péndulos Verlet para garfios, controladores 3D tipo Quake, cámaras con resorte anti-oclusión y cámaras RTS. |
 | **3.7** | [`3.7_puzzle_stealth/`](minigames/3.7_puzzle_stealth/) | **2D / 3D Lógica y Sigilo** | Lógica discreta e interacciones sistémicas: puzles Sokoban con detección de bloqueos y pila Deshacer/Rehacer, sensores de iluminación de sigilo, fluidos celulares, ganzúas y cajas de selección (*marquee*). |
 
@@ -404,6 +470,20 @@ Nada de metaprogramación dinámica          Acceso directo a variables y entero
 | `init_window(1280, 720, "Título")` | `InitWindow(1280, 720, "Título");` |
 | `draw_sphere(pos, radio, color)` | `DrawSphere(pos, radio, color);` |
 
+### 📏 Presupuesto de Líneas y Criterio de Legibilidad
+
+Para que el aprendizaje sea ágil, modular y libre de sobrecarga cognitiva o dispersión de tokens, todo el código sigue directrices de tamaño claras:
+
+- **Minijuegos (Secciones 3.0 a 3.7)**: Mínimo (*floor*) **300 líneas**, Objetivo (*target*) **300–1.500 líneas**, Techo máximo (*ceiling*) **1.800 líneas**.
+- **Recursos Procedurales (SFX, BGM, Modelos 3D, Sprites 2D)**: Mínimo (*floor*) **200 líneas**, Objetivo (*target*) **200–800 líneas**, Techo máximo (*ceiling*) **1.000 líneas**.
+
+> [!IMPORTANT]
+> **Control de Tokens e Integridad Pedagógica**:
+> - Los límites son pautas orientativas para el control de tokens y alcance.
+> - **Nunca rellenes artificialmente un archivo** para alcanzar el mínimo con código innecesario o comentarios de relleno.
+> - **Nunca comprimas código** ni elimines comentarios explicativos para forzarlo a caber bajo el techo máximo.
+> - **Criterio de Legibilidad**: Cada archivo debe poder entenderse leyéndose linealmente de arriba hacia abajo, sin necesidad de saltar a otros archivos; **la claridad siempre triunfa sobre el conteo de líneas**.
+
 ---
 ---
 
@@ -415,18 +495,53 @@ Game_Mechanics_Library/
 ├── AGENTS.md                  # 🤖 Reglas de arquitectura y plantilla pedagógica en 5 bloques
 ├── config.json                # ⚙️ Preferencias persistentes de interfaz (fuente, tamaño, ventana)
 ├── launcher.py                # 🚀 Lanzador visual interactivo y catálogo general
+├── tasks.py                   # 📊 Editor gráfico interactivo de tareas y hojas de cálculo (Raylib GUI)
+├── audit_minigame.py          # 🔍 Validador y auditor automatizado de calidad de minijuegos
+├── tasks/                     # 📋 Directorio central de hojas de seguimiento CSV
+│   ├── minigames.csv          #    106 prototipos planificados y construidos (Secciones 3.0 a 3.7)
+│   ├── SFXs.csv               #    73 sintetizadores SFX procedurales (6 categorías)
+│   ├── BGMs.csv               #    18 pistas BGM algorítmicas (12 vibras emocionales)
+│   ├── models_3D.csv          #    29 modelos procedurales 3D
+│   └── sprites_2D.csv         #    29 sprites vectoriales 2D
 ├── requirements.txt           # 📦 Única dependencia del proyecto: raylib (pyray)
-├── patterns.md                # 📚 Enciclopedia teórica de patrones de diseño de videojuegos
-├── minigames.md               # 📋 Registro detallado de todos los minijuegos construidos y planificados
-├── assets.md                  # 🎨 Documentación de modelos 3D y sprites 2D procedurales y audio
-├── utils.md                   # 🧮 Documentación de colisiones no-nativas, rejillas y matemáticas
+├── rules/                     # 📜 Guías arquitectónicas, catálogos y patrones
+│   ├── patterns.md            # 📚 Enciclopedia teórica de patrones de diseño de videojuegos
+│   ├── minigames.md           # 📋 Registro detallado de todos los minijuegos construidos y planificados
+│   ├── assets.md              # 🎨 Índice router de recursos y modelos procedurales
+│   ├── audio.md               # 🎵 Registro de efectos de sonido (SFX) y música (BGM)
+│   ├── models_3D.md           # 🧊 Registro de modelos 3D procedurales por primitivas
+│   ├── sprites_2D.md          # 👾 Registro de sprites 2D procedurales por primitivas
+│   └── utils.md               # 🧮 Documentación de colisiones no-nativas, rejillas y matemáticas
 │
 ├── assets/                    # 🎨 Biblioteca de recursos matemáticos (¡Cero archivos externos!)
-│   ├── models_3d/             #    Modelos 3D por primitivas (humanoide, cuadrúpedo, dron, torreta)
-│   ├── sprites_2d/            #    Sprites 2D por primitivas geométricas animadas
-│   └── audio/                 #    Sintetizador en memoria RAM de efectos de sonido (SFX) y música (BGM)
+│   ├── __init__.py            #    Exportador central y registro de recursos procedurales
+│   ├── models_3D/             #    Modelos 3D por primitivas (.gitkeep)
+│   ├── sprites_2D/            #    Sprites 2D por primitivas geométricas animadas (.gitkeep)
+│   └── audio/                 #    Sintetizadores de audio procedural en memoria RAM
+│       ├── synth_sfx.py       #    Registro dinámico y SoundLibrary de carga selectiva en RAM
+│       ├── SFX/               #    Efectos de sonido procedurales por categoría
+│       │   ├── combat/        #       SFX de combate y armas (.gitkeep)
+│       │   ├── creature/      #       SFX de criaturas y monstruos (.gitkeep)
+│       │   ├── environment/   #       SFX ambientales (.gitkeep)
+│       │   ├── movement/      #       SFX de movimiento y locomoción (.gitkeep)
+│       │   ├── progression/   #       SFX de progreso e ítems (.gitkeep)
+│       │   └── ui_hud/        #       SFX de interfaz y HUD (.gitkeep)
+│       └── BGM/               #    Pistas musicales algorítmicas por vibras emocionales
+│           ├── calm/          #       Ambiente calmo y travesía (.gitkeep)
+│           ├── cheerful/      #       Taberna alegre y festiva (.gitkeep)
+│           ├── curious/       #       Puzle curioso e introspectivo (.gitkeep)
+│           ├── eerie/         #       Mazmorra misteriosa y catacumbas (.gitkeep)
+│           ├── energetic/     #       Acción enérgica, carreras y synth pulse (.gitkeep)
+│           ├── futuristic/    #       Sintetizador ciberpunk futurista (.gitkeep)
+│           ├── industrial/    #       Astillero y maquinaria industrial (.gitkeep)
+│           ├── intense/       #       Jefes y asedio intenso (.gitkeep)
+│           ├── mystical/      #       Misterio cósmico y espacial (.gitkeep)
+│           ├── nostalgic/     #       Arcade retro y chiptune nostálgico (.gitkeep)
+│           ├── suspenseful/   #       Sigilo y espionaje con suspenso (.gitkeep)
+│           └── triumphant/    #       Fanfarria de victoria triunfante (.gitkeep)
 │
 ├── utils/                     # 🧮 Utilidades matemáticas y de entrada
+│   ├── __init__.py            #    Exportador central de utilidades y gestor de UI
 │   ├── collisions.py          #    Cápsula rotada 3D/2D, SAT OBB y proyecciones de segmentos
 │   ├── spatial_grid.py        #    Rejillas espaciales 2D y 3D (SpatialGrid2D / SpatialGrid3D)
 │   ├── ai_pursuit.py          #    Algoritmos de dirección (Seek, Intercept), A* y línea de visión (LOS)
@@ -435,29 +550,14 @@ Game_Mechanics_Library/
 │   └── gamepad_input.py       #    Mapeo simultáneo de Teclado/Ratón y Mando con zona muerta radial
 │
 └── minigames/                 # 🎮 Prototipos y laboratorios de aprendizaje clasificados
-    ├── 3.0_core_prototypes/   #    Prototipos completos multi-patrón (Space Swarm, Mecha Colosseum, Drone Defense)
-    │   ├── drone_defense_3d.py
-    │   ├── mecha_colosseum.py
-    │   └── space_swarm.py
-    ├── 3.1_menus_ui/          #    Laboratorios de interfaz, menús e inventarios táctiles
-    │   ├── attache_case.py
-    │   ├── gear_compare.py
-    │   ├── merchant_stall.py
-    │   ├── minimap_compass.py
-    │   ├── overloaded_mule.py
-    │   ├── paper_doll.py
-    │   ├── skill_web.py
-    │   ├── tabbed_status_menu.py
-    │   ├── tetris_backpack.py
-    │   ├── title_screen_cursor.py
-    │   ├── weapon_wheel.py
-    │   └── workbench.py
-    ├── 3.2_combat_weapons/    #    Sistemas de combate, balística y armas (en desarrollo)
-    ├── 3.3_enemies_ai/        #    Comportamientos de enemigos e IA (en desarrollo)
-    ├── 3.4_progression_economy/#   Economía, crafteo y progresión RPG (en desarrollo)
-    ├── 3.5_world_exploration/ #    Generación procedimental de mundos (en desarrollo)
-    ├── 3.6_movement_camera/   #    Físicas de movimiento y cámaras kinemáticas (en desarrollo)
-    └── 3.7_puzzle_stealth/    #    Puzzles, sigilo y sistemas lógicos (en desarrollo)
+    ├── 3.0_core_prototypes/   #    Prototipos completos multi-patrón (.gitkeep)
+    ├── 3.1_menus_ui/          #    Laboratorios de interfaz, menús e inventarios táctiles (.gitkeep)
+    ├── 3.2_combat_weapons/    #    Sistemas de combate, balística y armas (.gitkeep)
+    ├── 3.3_enemies_ai/        #    Comportamientos de enemigos e IA (.gitkeep)
+    ├── 3.4_progression_economy/#   Economía, crafteo y progresión RPG (.gitkeep)
+    ├── 3.5_world_procgen/     #    Generación procedimental de mundos (.gitkeep)
+    ├── 3.6_movement_camera/   #    Físicas de movimiento y cámaras kinemáticas (.gitkeep)
+    └── 3.7_puzzle_stealth/    #    Puzzles, sigilo y sistemas lógicos (.gitkeep)
 ```
 
 ---

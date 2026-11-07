@@ -1,6 +1,6 @@
 {
   "font_name": "Consolas",
   "font_size_offset": 0,
-  "window_size": "1600x900",
-  "fullscreen": false
+  "window_size": "1920x1080",
+  "fullscreen": true
 }
