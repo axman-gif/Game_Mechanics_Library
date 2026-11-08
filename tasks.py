@@ -21,7 +21,7 @@ Features:
   - Safe row insertion (Above, Below, Duplicate, Delete) with zero-corruption guarantees.
   - Full integration with `utils/ui_settings.py` (Font switching, Font size Ctrl+/-,
     Window resolution, and Fullscreen F11).
-  - Headless CLI queries and mutations (`--list`, `--get`, `--set-status`, `--check`, `--sync-statuses`, `--smoke-test`).
+  - Headless CLI queries and mutations (`--list`, `--get`, `--set-status`, `--check`, `--descriptions`, `--check-prerequisites`, `--sync-statuses`, `--smoke-test`).
 
 Usage:
   python -B tasks.py
@@ -31,6 +31,8 @@ Usage:
   python -B tasks.py --get <catalog> <id_or_file>
   python -B tasks.py --set-status <catalog> <id_or_file> <status>
   python -B tasks.py --check <catalog> <name_or_func>
+  python -B tasks.py --descriptions [catalog] [--status <pending|done>] [--limit <n>]
+  python -B tasks.py --check-prerequisites <minigame_id_or_title>
 """
 
 import sys
@@ -474,6 +476,209 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                 print(f"  - {m}")
         else:
             print(f"[AVAILABLE] '{target_name}' not found in {cat_arg}")
+        return True
+
+    if "--descriptions" in args:
+        idx = args.index("--descriptions")
+        cat_arg = args[idx + 1] if idx + 1 < len(args) and not args[idx + 1].startswith("--") else None
+        status_filter = None
+        limit_val = None
+        if "--status" in args:
+            st_idx = args.index("--status")
+            if st_idx + 1 < len(args):
+                status_filter = args[st_idx + 1].lower().strip()
+        if "--limit" in args:
+            l_idx = args.index("--limit")
+            if l_idx + 1 < len(args) and args[l_idx + 1].isdigit():
+                limit_val = int(args[l_idx + 1])
+
+        target_paths = resolve_csv_paths(cat_arg) if cat_arg else [os.path.join(tasks_dir, c) for c in CANONICAL_CATALOGS]
+        count = 0
+        for path in target_paths:
+            if not os.path.exists(path):
+                continue
+            cat_name = os.path.basename(path)
+            with open(path, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    st = (r.get("status") or "").strip().lower()
+                    if status_filter and st != status_filter:
+                        continue
+                    r_id = r.get("id", "")
+                    r_desc = r.get("description", "")
+                    print(f"{cat_name} | {r_id} | [{st}] | {r_desc}")
+                    count += 1
+                    if limit_val and count >= limit_val:
+                        break
+            if limit_val and count >= limit_val:
+                break
+        print(f"[Total descriptions: {count}]")
+        return True
+
+    if "--check-prerequisites" in args or "--check-assets" in args:
+        flag = "--check-prerequisites" if "--check-prerequisites" in args else "--check-assets"
+        idx = args.index(flag)
+        if idx + 1 >= len(args):
+            print(f"[ERROR] Usage: python -B tasks.py {flag} <minigame_id_or_title>")
+            return True
+        query = args[idx + 1].lower().strip()
+
+        # 1. Locate minigame in tasks/minigames.csv
+        mg_path = os.path.join(tasks_dir, "minigames.csv")
+        if not os.path.exists(mg_path):
+            print("[ERROR] tasks/minigames.csv not found.")
+            return True
+
+        target_mg = None
+        with open(mg_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                r_id = (r.get("id") or "").lower()
+                r_title = (r.get("title") or "").lower()
+                r_file = (r.get("target_file") or "").lower()
+                if query == r_id or query == r_file or query.replace("\\", "/") in r_file or query in r_title:
+                    target_mg = {
+                        "id": r.get("id", ""),
+                        "title": r.get("title", ""),
+                        "dimension": r.get("dimension", ""),
+                        "section": r.get("section", ""),
+                        "target_file": r.get("target_file", ""),
+                        "patterns": r.get("patterns", ""),
+                        "status": r.get("status", ""),
+                        "description": r.get("description", ""),
+                    }
+                    break
+
+        if not target_mg:
+            print(f"[NOT FOUND] Minigame matching '{query}' not found in tasks/minigames.csv")
+            return True
+
+        print(f"================================================================================")
+        print(f"ASSET PREREQUISITE CHECK FOR: {target_mg['title']} ({target_mg['id']})")
+        print(f"Dimension  : {target_mg['dimension']}")
+        print(f"Section    : {target_mg['section']}")
+        print(f"File       : {target_mg['target_file']}")
+        print(f"Status     : {target_mg['status']}")
+        print(f"Patterns   : {target_mg['patterns']}")
+        print(f"Description: {target_mg['description']}")
+        print(f"================================================================================")
+
+        # 2. Read ONLY id, status, and description from each asset catalog
+        asset_catalogs = {
+            "models_3D.csv": [],
+            "sprites_2D.csv": [],
+            "SFXs.csv": [],
+            "BGMs.csv": [],
+        }
+        for cat_file in asset_catalogs:
+            cp = os.path.join(tasks_dir, cat_file)
+            if not os.path.exists(cp):
+                continue
+            with open(cp, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    asset_catalogs[cat_file].append({
+                        "id": r.get("id", ""),
+                        "status": (r.get("status") or "").strip().lower(),
+                        "description": r.get("description", ""),
+                        "func": r.get("function_name", ""),
+                        "concept": r.get("concept_name", ""),
+                    })
+
+        # 3. Analyze potential visual assets based on dimension and description keywords
+        mg_desc_lower = target_mg["description"].lower()
+        mg_title_lower = target_mg["title"].lower()
+        mg_text = f"{mg_desc_lower} {mg_title_lower}"
+        dim = target_mg["dimension"].upper()
+
+        matching_assets = []
+        missing_assets = []
+        ready_assets = []
+
+        # Check visual assets
+        visual_cat = "models_3D.csv" if "3D" in dim else "sprites_2D.csv"
+        for item in asset_catalogs[visual_cat]:
+            item_keys = [
+                item["id"].lower(),
+                item["concept"].lower(),
+                item["func"].lower(),
+            ]
+            words = [w for w in re.split(r"[\s_]+", " ".join(item_keys)) if len(w) > 3]
+            match_found = any(w in mg_text for w in words)
+            if match_found:
+                matching_assets.append((visual_cat, item))
+                if item["status"] == "done":
+                    ready_assets.append((visual_cat, item))
+                else:
+                    missing_assets.append((visual_cat, item))
+
+        # Check SFX assets
+        for item in asset_catalogs["SFXs.csv"]:
+            item_keys = [item["id"].lower(), item["func"].lower()]
+            words = [w for w in re.split(r"[\s_]+", " ".join(item_keys)) if len(w) > 3 and w not in ("sfx", "combat", "audio")]
+            if any(w in mg_text for w in words):
+                matching_assets.append(("SFXs.csv", item))
+                if item["status"] == "done":
+                    ready_assets.append(("SFXs.csv", item))
+                else:
+                    missing_assets.append(("SFXs.csv", item))
+
+        # Check BGM assets
+        for item in asset_catalogs["BGMs.csv"]:
+            item_keys = [item["id"].lower(), item["func"].lower()]
+            words = [w for w in re.split(r"[\s_]+", " ".join(item_keys)) if len(w) > 3 and w not in ("bgm", "audio")]
+            if any(w in mg_text for w in words):
+                matching_assets.append(("BGMs.csv", item))
+                if item["status"] == "done":
+                    ready_assets.append(("BGMs.csv", item))
+                else:
+                    missing_assets.append(("BGMs.csv", item))
+
+        # Print catalog inventory counts
+        print("\n--- Asset Catalog Summary (id, status, description) ---")
+        for cname, items in asset_catalogs.items():
+            done_cnt = sum(1 for it in items if it["status"] == "done")
+            pend_cnt = sum(1 for it in items if it["status"] == "pending")
+            print(f"  {cname:15}: {done_cnt:2} done, {pend_cnt:2} pending (total {len(items)})")
+
+        if matching_assets:
+            print(f"\n--- Relevant Assets Detected for this Minigame ({len(matching_assets)} total) ---")
+            for cname, it in matching_assets:
+                status_badge = "[DONE]" if it["status"] == "done" else "[PENDING]"
+                name = it["func"] or it["concept"] or it["id"]
+                print(f"  {status_badge:9} {cname:14} {it['id']:25} {name}")
+                print(f"             Description: {it['description'][:90]}...")
+
+        # 4. Enforce Quality Gate Evaluation
+        print("\n================================================================================")
+        if missing_assets:
+            print("[GATE VERDICT: HALT CRAFTSMAN SPAWNING - ASSETS MISSING]")
+            print(f"The following {len(missing_assets)} asset(s) are REQUIRED but currently PENDING:")
+            for cname, it in missing_assets:
+                print(f"  - [{cname}] {it['id']} ({it['func'] or it['concept']}) -> status: pending")
+                print(f"    Reason: {it['description']}")
+            print("\n>>> QUALITY PRESERVATION EXPLANATION:")
+            print("In accordance with Rule 10 (Assets-Only Minigames: Zero Inlined or Fabricated Assets),")
+            print("the Lead Orchestrator CANNOT invoke the craftsman subagent until all required assets exist.")
+            print("Withholding the craftsman preserves library architecture by preventing:")
+            print("  1. Inlined procedural wave synthesizers inside game logic.")
+            print("  2. Ad-hoc monolithic primitive drawings that duplicate modular assets.")
+            print("  3. Silent placeholders or broken visuals that compromise educational clarity.")
+            print("\nRecommended Next Step:")
+            print("  Build the missing assets first via `/teamwork` or individual asset prompts before building this minigame.")
+            print("================================================================================")
+        else:
+            print("[GATE VERDICT: CLEARED FOR CRAFTSMAN SPAWNING - ALL ASSETS READY]")
+            print("All required visual and audio assets exist on disk (status == done).")
+            print("\n>>> INJECTED CRAFTSMAN SPECIFICATIONS:")
+            if ready_assets:
+                print("Pass these exact asset contracts to the craftsman subagent prompt:")
+                for cname, it in ready_assets:
+                    print(f"  - {cname}: {it['id']} -> {it['func'] or it['concept']}")
+            else:
+                print("  No missing assets detected in catalog. Use verified assets from assets/audio/asset_loader.py.")
+            print("================================================================================")
+
         return True
 
     return False

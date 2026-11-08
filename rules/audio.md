@@ -22,8 +22,11 @@ All audio task tracking, synthesizer inventory, and progress statuses are mainta
    - Individual procedural sound effects are standalone modules organized by category into `assets/audio/SFX/<category>/<name>.py`.
    - Individual procedural background music tracks are standalone modules organized by emotional vibe into `assets/audio/BGM/<vibe>/<name>.py`.
    - The central discovery registry and selective in-RAM loader is located at `assets/audio/synth_sfx.py`.
-5. **Decoupled Minigame Integration (Instructions in `rules/minigames.md`)**:
-   Minigames do not synthesize ad-hoc audio. Minigames declare strictly two lists (`SFXS = [...]` and `BGMS = [...]`) and load them via `SoundLibrary`. All instructions for importing and using audio inside minigames are located in [`rules/minigames.md`](minigames.md) Section 3.5.
+5. **Decoupled Minigame Integration & Orchestrator Prerequisite Gate**:
+   Minigames do not synthesize ad-hoc audio. Minigames declare strictly two lists (`SFXS = [...]` and `BGMS = [...]`) and load them via `SoundLibrary` (see [`rules/minigames.md`](minigames.md) Section 3.5).
+   - **Lead Orchestrator Prerequisite Check**: Before spawning a minigame craftsman, the Orchestrator runs a Python script reading strictly `id`, `status`, and `description` across `tasks/SFXs.csv` and `tasks/BGMs.csv`.
+   - **Quality Preservation Gate**: If any required sound effect or background track is missing or pending, craftsman invocation for that minigame is halted. The Orchestrator reports the missing audio cues and explains how this preserves audio quality (preventing inlined waveform hacks or silent placeholders).
+   - **Specification Injection**: Once verified (`status == done`), the exact audio cue names are injected into the minigame craftsman prompt for inclusion in `SFXS = [...]` and `BGMS = [...]`.
 6. **Device Lifecycle Cleanliness**:
    Always call `init_audio_device()` before synthesizing or loading audio into hardware memory. Always call `unload_all()` followed by `close_audio_device()` at application shutdown to prevent memory leaks or audio driver hangs.
 7. **Line Limits & Sizing Guidance**:

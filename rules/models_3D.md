@@ -60,8 +60,11 @@ Related documentation guides:
 8. **Standalone Previewer & Automated `--smoke-test`**:
    Every 3D model module must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/models_3D/<model_file>.py` opens an interactive 3D Orbit Viewer (`ModelViewerApp`) with mouse drag orbit, zoom, play/pause, and palette swapping. When invoked with `--smoke-test`, it renders 3 frames headlessly and exits cleanly with code `0`.
 
-9. **Assets-Only Minigames Rule**:
-   Minigames must use only assets that ALREADY exist inside the `assets/` package. If a minigame specification references a 3D model that does not yet exist in `assets/models_3D/`, craftsmen must stop and report the missing asset dependency to the orchestrator without writing minigame code.
+9. **Assets-Only Minigames Rule & Orchestrator Prerequisite Gate**:
+   Minigames must use only assets that ALREADY exist inside the `assets/` package.
+   - **Lead Orchestrator Prerequisite Check**: Before spawning a 3D minigame craftsman, the Orchestrator runs a Python script reading strictly `id`, `status`, and `description` from `tasks/models_3D.csv`.
+   - **Quality Preservation Gate**: If any required 3D model is missing or pending, craftsman invocation for that minigame is halted immediately. The Orchestrator explains to the user which model is missing and how withholding the craftsman preserves visual quality (preventing crude, monolithic inlined shapes that break modularity).
+   - **Specification Injection**: Once verified (`status == done`), the exact drawing function `draw_<name>_3d(position, rotation_y, anim_timer, scale, palette)` and default palette `DEFAULT_<NAME>_PALETTE` are injected into the minigame craftsman prompt.
 
 ---
 

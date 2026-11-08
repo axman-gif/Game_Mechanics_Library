@@ -74,6 +74,14 @@ Specifications, templates, and tracking are decomposed into three dedicated rule
 
 *(Note: Link targets resolve from this document's folder: rulebooks use `audio.md`, `models_3D.md`, `sprites_2D.md`, while spreadsheets use `../tasks/<catalog>.csv`.)*
 
+### 🔒 Mandatory Asset Prerequisite Verification Gate (Upstream Pipeline)
+Procedural visual models, 2D sprites, sound effects, and music are strictly **upstream dependencies** for all minigames:
+1. **Lightweight Headless Inspection**: When a user requests a minigame, the Lead Orchestrator runs a Python script parsing strictly `id`, `status`, and `description` from all `tasks/*.csv` files (via `python -B tasks.py --check-prerequisites <minigame_id>`).
+2. **Quality Preservation Rule**: If **even a single (1) asset** required by the minigame is missing or pending (`status == pending`):
+   - The Orchestrator **halts craftsman invocation** for that minigame.
+   - The Orchestrator explains to the user which assets are missing and how withholding the craftsman preserves the library's code quality and visual/audio polish (preventing inlined waveforms, ad-hoc primitive drawings, or broken placeholders under **Rule 10**).
+3. **Specification Injection**: Once all required assets exist (`status == done`), the Orchestrator injects the exact asset signatures (`draw_<name>_3d`, `draw_<name>_2d`, `SFXS = [...]`, `BGMS = [...]`) into the subagent craftsman prompt.
+
 ---
 
 ## 🧩 Unified Asset Contract & Standard Signatures

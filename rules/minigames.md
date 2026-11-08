@@ -47,6 +47,24 @@ To preserve subagent context budgets and prevent code bloat while ensuring deep 
 
 > **Crucial Invariant on Line Limits**: These limits are **guidance for token control**, not arbitrary quotas. **Never pad a file** with redundant whitespace, meaningless loops, or dummy comments just to reach the floor. Conversely, **never compress code**, truncate functions, or drop educational comments to fit under the ceiling. If code is clear, well-commented, and implements the pattern genuinely, clarity always prevails.
 
+### 1.5 Lead Orchestrator Asset Prerequisite Verification Gate & Quality Invariant
+Minigames in this repository are strictly decoupled consumers of the procedural visual and audio asset library. They do not define local art or waveforms. To preserve this architectural purity:
+
+1. **Pre-Flight Inspection Script (Strictly `id`, `status`, `description`)**:
+   Whenever a user requests 1 or a batch of minigames, the Lead Orchestrator runs a lightweight Python script (via `python -B tasks.py --check-prerequisites <minigame_id>` or `--descriptions`) that inspects strictly the `id`, `status`, and `description` columns across all catalogs (`minigames.csv`, `models_3D.csv`, `sprites_2D.csv`, `SFXs.csv`, `BGMs.csv`).
+2. **Missing Asset Gate (Quality Preservation)**:
+   If **even a single (1) asset** (3D model, 2D sprite, SFX, or BGM) needed by a minigame is missing or pending (`status == pending`):
+   - The Lead Orchestrator **MUST NOT** invoke the subagent craftsman for that minigame.
+   - The Orchestrator halts/skips craftsman invocation and reports to the user:
+     a) The exact list of missing assets (catalog, ID, and description).
+     b) Why withholding the craftsman preserves the pedagogical quality and visual/audio standards of the minigame (preventing inlined procedural sound synthesizers, monolithic primitive geometry hacks, and silent/invisible placeholders, strictly adhering to **Rule 10**).
+     c) Instructions to build the missing assets first before assembling the minigame.
+3. **Ready Minigames & Specification Injection**:
+   When all required assets are verified on disk (`status == done`), the Orchestrator proceeds to spawn an isolated subagent craftsman (1 craftsman per minigame), injecting the exact asset contracts into the subagent prompt:
+   - Visual model/sprite drawing signatures: `draw_<name>_3d` or `draw_<name>_2d` with palette keys.
+   - Audio cue declarations: `SFXS = [...]` and `BGMS = [...]`.
+   - Unified discovery import: `from assets.audio.asset_loader import *`.
+
 ---
 
 ## 2. Canonical 5-Block Minigame Template (Authoritative Copy)
@@ -443,9 +461,9 @@ from utils import *
 ```
 
 #### 2. Declaring Required Audio Lists:
-Every minigame specifies strictly two lists at module level:
+Every minigame specifies strictly two lists at module level (populated directly from the verified specifications injected by the Lead Orchestrator):
 ```python
-# Declare only the audio cues required by this prototype:
+# Declare only the audio cues verified ready by the Lead Orchestrator:
 SFXS = ["laser", "hit", "explosion"]
 BGMS = ["synth_pulse"]
 ```

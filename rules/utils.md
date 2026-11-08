@@ -4,6 +4,7 @@ This document is the official registry of non-native math, collision, spatial pa
 **Rule for AI Agents & Developers**:
 1. Always consult this file before implementing custom physics, math, pathfinding, or steering algorithms. Reuse existing utilities to maintain consistency and save tokens.
 2. **C++ & Cross-Language Transferability**: All algorithms and data structures must be written using explicit struct-like classes, fixed/indexed arrays, and standard `for`/`while` loops—avoiding Python-only features (`@decorator`, `yield`, magic methods, or comprehension tricks) so learners can port them 1-to-1 to C++ and other game programming languages.
+3. **Modular Integration with Assets Pipeline**: Utilities (such as spatial hash grids, predictive steering, and rotated capsule collisions) are designed to operate alongside modular procedural assets. Entities simulated via utilities are rendered using verified models/sprites and synthesized audio cues verified through the Lead Orchestrator's Asset Prerequisite Verification Gate (`python -B tasks.py --check-prerequisites`).
 
 ---
 

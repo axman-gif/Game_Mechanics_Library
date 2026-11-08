@@ -10,6 +10,9 @@ This document provides an exhaustive, practical reference of game programming an
 >
 > **Subagent Creative Autonomy & Pattern Registration**:
 > Existing patterns in this catalog provide a rigorous foundational reference, but subagents and developers are **not** restricted to existing patterns. Subagents are granted creative freedom to architect and demonstrate novel game design patterns. Whenever a new pattern is introduced, the subagent documents its mathematical and architectural principles and the Lead Orchestrator registers the new pattern in this catalog.
+>
+> **Decoupling & Modular Asset Invariant**:
+> Architectural patterns in this catalog (such as Decoupling, Flyweight, Service Locator, and Component Pattern) rely on a strict separation of concerns. Minigames implement game design patterns in pure logic, consuming visual and audio assets exclusively as modular external services from `assets/`. The repository enforces an upfront **Asset Prerequisite Verification Gate**: minigames are only scheduled or built once all required assets are verified on disk (`status == done`), preventing game logic from degrading into monolithic scripts with inlined synthesis loops or crude local geometry hacks.
 
 ---
 

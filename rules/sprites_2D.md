@@ -49,6 +49,11 @@ def draw_<name>_2d(
    - **Readability Criterion**: A file must be understandable reading top to bottom, without jumping back and forth to other files. **Clarity always wins over line count.**
 8. **Standalone Previewer & Automated `--smoke-test`**:
    Every sprite file must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/sprites_2D/<file>.py` launches an interactive preview application (`SpritePreviewApp`). Running with `--smoke-test` renders 3 frames headlessly and exits with code `0`.
+9. **Assets-Only Minigames Rule & Orchestrator Prerequisite Gate**:
+   Minigames must use only assets that ALREADY exist inside the `assets/` package.
+   - **Lead Orchestrator Prerequisite Check**: Before spawning a 2D minigame craftsman, the Orchestrator runs a Python script reading strictly `id`, `status`, and `description` from `tasks/sprites_2D.csv`.
+   - **Quality Preservation Gate**: If any required 2D sprite is missing or pending, craftsman invocation for that minigame is halted immediately. The Orchestrator explains to the user which sprite is missing and how withholding the craftsman preserves vector visual quality (preventing raw, monolithic circles and boxes drawn locally in the minigame).
+   - **Specification Injection**: Once verified (`status == done`), the exact drawing function `draw_<name>_2d(position, facing_angle_rad, anim_timer, scale, palette)` and default palette `DEFAULT_<NAME>_PALETTE` are injected into the minigame craftsman prompt.
 ---
 
 ## 2. Standard 2D Sprite Code Template
