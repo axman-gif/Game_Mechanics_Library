@@ -532,7 +532,7 @@ Task tracking and lifecycle management for all 3D models are maintained exclusiv
 
 ### 5.1 Token-Saving Decoupled Architecture
 - **Craftsman subagents NEVER read or parse CSV files into context.** Reading full tracking spreadsheets burns 4,000 to 8,000 tokens per turn. Instead, the Lead Orchestrator queries task specifications and injects the target row fields (`target_file`, `concept_name`, `primitives_used`, `animation_features`, `palette_keys`, `description`) directly into the subagent dispatch prompt.
-- **Lifecycle status progression**: `pending` $\rightarrow$ `in_progress` $\rightarrow$ `built`. Status transitions are managed solely by the Orchestrator via `tasks.py`.
+- **Binary task status model**: Strictly binary `pending` (file absent from disk) and `done` (file present on disk). Statuses are automatically synchronized across catalogs via `python -B tasks.py --sync-statuses`.
 - **Package Registration**: Upon building and verifying a 3D model, the Orchestrator registers the canonical drawing function and default palette in `assets/__init__.py`.
 
 ### 5.2 Orchestrator Headless CLI Queries (<50ms, <50 tokens)
@@ -548,8 +548,8 @@ python -B tasks.py --get models_3D m3d_char_exo_knight
 # Check if a model concept name already exists (prevents duplicates)
 python -B tasks.py --check models_3D "Exo Knight"
 
-# Mark a 3D model as built after verification
-python -B tasks.py --set-status models_3D m3d_char_exo_knight built
+# Synchronize 3D model disk presence to task status automatically
+python -B tasks.py --sync-statuses models_3D
 ```
 
 ---
@@ -559,4 +559,4 @@ python -B tasks.py --set-status models_3D m3d_char_exo_knight built
 To inspect, sort, and edit [`tasks/models_3D.csv`](../tasks/models_3D.csv) without risking CSV delimiter, newline, or UTF-8 BOM encoding corruption:
 1. **Interactive Tasks Editor (`tasks.py`)**: Run `python -B tasks.py` to open the graphical Raylib task manager with hot-switching, sorting, cell editing, horizontal scrolling, and "Adjusted Text" (Wrap Text).
 2. **Never alter column header names**: The first row must keep `id,category,concept_name,function_name,target_file,primitives_used,animation_features,palette_keys,status,description`.
-3. **Allowed status values**: `pending`, `in_progress`, `built`.
+3. **Allowed status values**: strictly binary `pending` (file absent from disk) and `done` (file present on disk). Statuses are automatically synchronized via `python -B tasks.py --sync-statuses`.

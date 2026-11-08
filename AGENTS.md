@@ -90,7 +90,7 @@ To eliminate context dilution, prevent degradation in code depth, avoid attentio
      - The Orchestrator validates the total batch count $N \le 8$.
      - **Strict Task Uniqueness Invariant**: Under NO circumstances may more than one subagent take the same task or generate the same file ($Agent_i \leftrightarrow TargetFile_i$).
      - Automatically routes targets to their canonical directories (`minigames/3.x_*`, `assets/audio/SFX/<category>/`, `assets/audio/BGM/<vibe>/`, `assets/models_3D/`, `assets/sprites_2D/`) without requiring manual paths from the user.
-     - **Exclusive Task Lifecycle**: The Orchestrator sets task status from `pending` to `in_progress` via `python -B tasks.py --set-status <catalog> <task_id> in_progress` when assigning to a subagent.
+     - **Exclusive Task Lifecycle**: Status is derived automatically from disk presence (`pending` when absent, `done` when present). Craftsmen subagents do not edit task spreadsheets.
   2. **Concurrent Spawning of $N$ Isolated Subagents (0-Token Context)**:
      - The Orchestrator issues $N$ concurrent `invoke_subagent` calls in a single turn.
      - **Decoupled Orchestration**: The Orchestrator does not micromanage internal code details. It equips each subagent with:
@@ -106,7 +106,7 @@ To eliminate context dilution, prevent degradation in code depth, avoid attentio
      - Subagents have full creative freedom to introduce novel design patterns. When a subagent creates a new pattern, it documents its mathematical and architectural rationale and registers it in [`rules/patterns.md`](rules/patterns.md).
   4. **Documentation & Release Synchronization**:
      - Upon receiving completion reports from all parallel subagents, the Orchestrator:
-       - Updates task status in `tasks/minigames.csv`, `tasks/SFXs.csv`, `tasks/BGMs.csv`, `tasks/models_3D.csv`, or `tasks/sprites_2D.csv` from `in_progress` to `built` exclusively via `python -B tasks.py --set-status <catalog> <id> built`.
+       - Synchronizes task status across `tasks/minigames.csv`, `tasks/SFXs.csv`, `tasks/BGMs.csv`, `tasks/models_3D.csv`, and `tasks/sprites_2D.csv` automatically via `python -B tasks.py --sync-statuses`.
        - Registers any newly built procedural assets in `assets/__init__.py` (Orchestrator ONLY).
        - Updates [`rules/patterns.md`](rules/patterns.md) if any subagents introduced new design patterns (no other `rules/*.md` files require editing during builds).
        - Runs `python -B launcher.py --smoke-test` to verify launcher dropdown synchronization across all categories.
@@ -146,12 +146,11 @@ To prevent context dilution and avoid blowing token budgets when inspecting larg
    ```
 3. **Direct Spec Injection to Craftsmen (0 CSV tokens spent by Craftsmen)**:
    When spawning a craftsman via `invoke_subagent`, the Orchestrator extracts the target row's fields (`target_file`, `title`, `dimension`, `patterns`, `description`) via `tasks.py --get` and embeds them directly into the prompt. Craftsmen subagents NEVER need to read or parse CSV files.
-4. **Exclusive CSV Task Lifecycle (pending -> in_progress -> built)**:
-   Task status transitions follow a strict lifecycle managed **exclusively by the Lead Orchestrator** using `tasks.py`:
-   - `pending` $\rightarrow$ Default initial state in tracking catalogs.
-   - `in_progress` $\rightarrow$ Set by Orchestrator upon dispatching subagents (`python -B tasks.py --set-status <catalog> <task_id> in_progress`).
-   - `built` $\rightarrow$ Set by Orchestrator upon subagent verification (`python -B tasks.py --set-status <catalog> <task_id> built`).
-   - **Craftsmen subagents MUST NEVER edit CSV files or execute `--set-status`**. Only the Orchestrator modifies task status and registers assets in `assets/__init__.py`.
+4. **Binary Task Lifecycle & Automated Synchronization (`pending` / `done`)**:
+   Task status tracking is strictly binary and managed **automatically by the Lead Orchestrator** using `tasks.py`:
+   - `pending` $\rightarrow$ Default state when `target_file` does not exist on disk.
+   - `done` $\rightarrow$ Set automatically when `target_file` exists on disk via `python -B tasks.py --sync-statuses`.
+   - **Craftsmen subagents MUST NEVER edit CSV files or change statuses**. The Orchestrator executes `python -B tasks.py --sync-statuses` upon batch completion and registers assets in `assets/__init__.py`.
 5. **Collision Prevention Check**:
    Before creating a procedural asset, the Orchestrator or subagent checks if a function or concept name is already registered:
    ```bash
@@ -186,7 +185,7 @@ To prevent context dilution and avoid blowing token budgets when inspecting larg
 ### Rule 3: Mandatory 5-Block Pedagogical Anatomy (Single Authoritative Template)
 Every minigame script in `minigames/` must follow the standardized **5-Block Pedagogical Anatomy**.
 The **single authoritative template** for minigames is defined in [`rules/minigames.md`](rules/minigames.md). All minigames implement these 5 blocks:
-- **Block 1: Header Docstring & Metadata**: Canonical script header specifying Title, Section (e.g. `3.2`), Pattern Category, Dimension (`2D` or `3D`), Problem Solved, Mathematical/Algorithmic Concept, and Dual Controls summary.
+- **Block 1: Header Docstring & Metadata**: Canonical script header specifying Title, Difficulty tier (`1 - Beginner` to `5 - Master`), Section (e.g. `3.2`), Pattern Category, Dimension (`2D` or `3D`), Problem Solved, Mathematical/Algorithmic Concept, and Dual Controls summary.
 - **Block 2: Core Pattern Implementation**: Isolated, self-contained pattern classes and functions with novice-friendly comments explaining mathematical rationale and direct C++ mapping (struct fields, fixed-size arrays, explicit indices).
 - **Block 3: World Simulation & Entities**: Concrete game entities, environment setup, and asset integration demonstrating the pattern in action.
 - **Block 4: Telemetry & X-Ray Debug Overlay**: Visual telemetry panel and world-space debug inspector toggled via `[Tab]` / Gamepad `Y` (`Triangle`), with live pattern parameter/behavior toggle via `[F1]` / Gamepad `LB` (`L1`).
@@ -253,9 +252,9 @@ Because this repository exists to **teach** game design patterns:
 
 ### Rule 9: Catalog Classification & Launcher Dropdown Synchronization
 Every minigame script MUST be classified under its designated section (`3.0` or `3.1` through `3.7`):
-1. **Docstring Section Tag**: Declare `Section          : <3.x Category>` in the script header docstring so `launcher.py`'s AST parser assigns it to the corresponding 3.x dropdown menu filter automatically.
+1. **Docstring Tags**: Declare `Difficulty       : <1 - Beginner | 2 - Novice | 3 - Intermediate | 4 - Advanced | 5 - Master>` and `Section          : <3.x Category>` in the script header docstring so `launcher.py`'s AST parser and audits validate the prototype automatically.
 2. **Task Tracking via `tasks/minigames.csv`**:
-   - Task completion is tracked exclusively in `tasks/minigames.csv` by the Lead Orchestrator using `python -B tasks.py --set-status minigames <target_file_or_id> built`.
+   - Task completion is tracked exclusively in `tasks/minigames.csv` by the Lead Orchestrator via `python -B tasks.py --sync-statuses minigames`.
    - `rules/minigames.md` is a reference catalog and does NOT need manual edits when building minigames.
 3. **Pattern Reference**:
    - Reference existing patterns from [`rules/patterns.md`](rules/patterns.md). If a novel pattern was created, register it in [`rules/patterns.md`](rules/patterns.md).

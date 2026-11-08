@@ -490,9 +490,9 @@ python -B tasks.py --get sprites_2D s2d_top_tactical_ops
 python -B tasks.py --check sprites_2D "Tactical Ops"
 ```
 
-### 5.4 Mark a 2D Sprite as Built (Fast CLI)
+### 5.4 Synchronize 2D Sprite Status Automatically (Fast CLI)
 ```bash
-python -B tasks.py --set-status sprites_2D s2d_top_tactical_ops built
+python -B tasks.py --sync-statuses sprites_2D
 ```
 
 ### 5.5 Fallback: Python Standard Library `csv` One-Liners
@@ -500,7 +500,7 @@ python -B tasks.py --set-status sprites_2D s2d_top_tactical_ops built
 # Query pending in top_down category
 python -B -c "import csv; f=open('tasks/sprites_2D.csv', encoding='utf-8-sig'); r=csv.DictReader(f); print(next(dict(id=x['id'], func=x['function_name'], file=x['target_file']) for x in r if x['category']=='top_down' and x['status']=='pending'))"
 
-# Count pending vs built 2D sprites
+# Count pending vs done 2D sprites
 python -B -c "import csv; from collections import Counter; f=open('tasks/sprites_2D.csv', encoding='utf-8-sig'); c=Counter((x['category'], x['status']) for x in csv.DictReader(f)); [print(f'{k[0]} [{k[1]}]: {v}') for k, v in sorted(c.items())]"
 ```
 
@@ -511,4 +511,4 @@ python -B -c "import csv; from collections import Counter; f=open('tasks/sprites
 To inspect, sort, and edit [`tasks/sprites_2D.csv`](../tasks/sprites_2D.csv) without risking CSV delimiter or encoding corruption:
 1. **Interactive Tasks Editor (`tasks.py`)**: Run `python -B tasks.py` to open the graphical Raylib task manager with hot-switching, sorting, cell editing, horizontal scrolling, and "Adjusted Text" (Wrap Text).
 2. **Never alter column header names**: The first row must keep `id,category,concept_name,function_name,target_file,primitives_used,animation_features,palette_keys,status,description`.
-3. **Allowed status values**: `pending`, `in_progress`, `built`.
+3. **Allowed status values**: strictly binary `pending` (file absent from disk) and `done` (file present on disk). Statuses are automatically synchronized via `python -B tasks.py --sync-statuses`.

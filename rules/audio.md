@@ -593,10 +593,11 @@ python -B tasks.py --check SFXs create_laser_sfx
 python -B tasks.py --check BGMs create_synth_pulse_bgm
 ```
 
-### 4.4 Mark an Audio Asset as Built (Orchestrator Only)
+### 4.4 Synchronize Audio Asset Status Automatically (Orchestrator Only)
 ```bash
-python -B tasks.py --set-status SFXs sfx_combat_laser built
-python -B tasks.py --set-status BGMs bgm_synth_pulse built
+# Synchronize disk file presence to task status across SFXs and BGMs
+python -B tasks.py --sync-statuses SFXs
+python -B tasks.py --sync-statuses BGMs
 ```
 
 ---
@@ -609,4 +610,4 @@ To inspect, sort, and edit [`tasks/SFXs.csv`](../tasks/SFXs.csv) and [`tasks/BGM
    - `tasks/SFXs.csv`: `id,type,category,function_name,target_file,audio_specs,status,description`
    - `tasks/BGMs.csv`: `id,type,category,vibe,function_name,target_file,audio_specs,status,description`
 3. **Canonical 1-Word Vibes**: `calm`, `cheerful`, `curious`, `eerie`, `energetic`, `futuristic`, `industrial`, `intense`, `mystical`, `nostalgic`, `suspenseful`, `triumphant`.
-4. **Allowed status values**: `pending`, `in_progress`, `built`.
+4. **Allowed status values**: strictly binary `pending` (file absent from disk) and `done` (file present on disk). Statuses are automatically synchronized via `python -B tasks.py --sync-statuses`.

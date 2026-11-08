@@ -5,7 +5,7 @@ This document defines the architectural standards, design principles, quality in
 All prototype inventory, tracking statuses, and subagent assignments are maintained exclusively in the companion spreadsheet:
 👉 [**`tasks/minigames.csv`**](../tasks/minigames.csv) (106 planned prototypes across sections 3.0 to 3.7)
 
-> **Architectural Documentation Notice**: This document is **read-only** during development and prototype creation. It serves as the single source of truth for minigame structure and code conventions. Status tracking (`pending` -> `in_progress` -> `built`) occurs **only** in [`tasks/minigames.csv`](../tasks/minigames.csv) via `tasks.py`, executed exclusively by the Lead Orchestrator. Subagents and craftsmen must never edit this file or the tracking spreadsheet.
+> **Architectural Documentation Notice**: This document is **read-only** during development and prototype creation. It serves as the single source of truth for minigame structure and code conventions. Status tracking (strictly binary `pending` / `done`) is managed automatically across [`tasks/minigames.csv`](../tasks/minigames.csv) via `python -B tasks.py --sync-statuses`, executed exclusively by the Lead Orchestrator upon batch completion. Subagents and craftsmen must never edit this file or the tracking spreadsheet.
 
 ---
 
@@ -81,6 +81,7 @@ Every minigame in `minigames/` must be a **single, standalone Python script** lo
 """
 <Prototype Title> - <Target Design Pattern(s)>
 ==============================================
+Difficulty       : <1 - Beginner | 2 - Novice | 3 - Intermediate | 4 - Advanced | 5 - Master>
 Section          : <3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, or 3.7>
 Pattern Category : <Category from rules/patterns.md>
 Dimension        : <2D or 3D>
@@ -561,23 +562,29 @@ The 106 planned prototypes in [`tasks/minigames.csv`](../tasks/minigames.csv) ar
 Task tracking and prototype assignments are decoupled from this architectural rulebook to prevent file merge conflicts during autonomous multi-agent sessions.
 
 ### 6.1 Exclusive CSV Task Lifecycle
-1. Prototype tasks reside strictly in [`tasks/minigames.csv`](../tasks/minigames.csv).
-2. Allowed statuses are strictly: `pending` -> `in_progress` -> `built`.
-3. **Only the Lead Orchestrator** updates task statuses using the headless `tasks.py` CLI tool.
+1. Prototype tasks reside strictly in [`tasks/minigames.csv`](../tasks/minigames.csv) with columns: `id`, `section`, `difficulty`, `title`, `dimension`, `target_file`, `patterns`, `status`, `description`.
+2. Allowed statuses are strictly binary: `pending` (target file does not exist on disk) and `done` (target file exists on disk).
+3. Statuses are synchronized automatically by the Lead Orchestrator upon batch completion by executing:
+   ```bash
+   python -B tasks.py --sync-statuses minigames
+   ```
 4. Craftsmen and subagents receive their target prototype assignment directly in their dispatch prompt and **must never** open or modify `tasks/minigames.csv`.
 
 ### 6.2 Orchestrator Headless CLI Queries (<50 tokens)
-The Lead Orchestrator queries and updates prototype status without loading large CSV files into LLM context:
+The Lead Orchestrator queries prototype status and synchronizes tasks without loading large CSV files into LLM context:
 
 ```bash
 # Query pending prototypes in Section 3.2
 python -B tasks.py --list minigames --section 3.2 --status pending --limit 3
 
+# Query prototypes by difficulty tier
+python -B tasks.py --list minigames --difficulty beginner
+
 # Fetch complete task specifications for a prototype by ID
 python -B tasks.py --get minigames mg_3201_mortar_arc
 
-# Mark a prototype as built after automated verification passes
-python -B tasks.py --set-status minigames mg_3201_mortar_arc built
+# Synchronize disk file presence to task status automatically
+python -B tasks.py --sync-statuses minigames
 ```
 
 ### 6.3 Human Tasks Editor (`tasks.py`)

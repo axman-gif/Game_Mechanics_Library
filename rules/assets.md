@@ -327,9 +327,9 @@ When an AI craftsman subagent is assigned to build an asset:
 6. **Step 6: Orchestrator-Exclusive Lifecycle & Registration**:
    Subagent craftsmen **do not** edit tracking spreadsheets (`tasks/*.csv`) or `assets/__init__.py`. Craftsmen send a concise completion report to the Lead Orchestrator.
    The **Lead Orchestrator exclusively**:
-   - Updates task status on disk:
+   - Automatically synchronizes task status across catalogs upon batch completion:
      ```bash
-     python -B tasks.py --set-status <catalog> <task_id> built
+     python -B tasks.py --sync-statuses
      ```
    - Registers the new asset interface into `assets/__init__.py` to maintain unified exports.
 
@@ -354,4 +354,4 @@ When an AI craftsman subagent is assigned to build an asset:
 7. **Readability Criterion**: Every file must be understandable reading top to bottom, without jumping across files; clarity wins over line count.
 8. **Strict Sizing Bounds**: Target 200 to 800 lines (Floor: **200 lines**, Ceiling: **1,000 lines**). Sizing is guidance for token control—never pad code to reach the floor, and never compress code or omit comments to stay under the ceiling.
 9. **Standalone Preview & Smoke Test**: Every asset file must execute interactively when run directly (`python -B <file>.py`) and terminate cleanly after 3 frames when invoked with `--smoke-test`.
-10. **Task Catalog Integrity**: Task statuses are updated exclusively by the Orchestrator via `python -B tasks.py` to prevent CSV corruption.
+10. **Task Catalog Integrity**: Task statuses are strictly binary (`pending` / `done`) and synchronized automatically by the Orchestrator via `python -B tasks.py --sync-statuses` to prevent CSV corruption.

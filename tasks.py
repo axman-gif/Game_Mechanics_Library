@@ -8,22 +8,29 @@ sort, and maintain all project tracking spreadsheets located in `tasks/`.
 Features:
   - Hot runtime switching between all CSV catalogs in `tasks/`
     (minigames.csv, SFXs.csv, BGMs.csv, models_3D.csv, sprites_2D.csv).
+  - Automated disk status synchronization (`--sync-statuses [catalog]`).
+  - Binary status restriction (`pending` and `done`).
+  - Pedagogical difficulty column support (`1 - Beginner` to `5 - Master`).
   - Strictly hides internal technical columns (`id` and `target_file`) from the
     visual table while preserving and auto-generating them faithfully on disk.
   - Alphanumeric column sorting (Ascending, Descending, Original Row Order).
   - Search / Filter bar for rapid keyword queries.
-  - Cell editing for text and dropdown enum fields (status, dimension, section).
+  - Cell editing for text and dropdown enum fields (status, difficulty, dimension, section).
   - Dedicated multi-select checklist modal for `patterns` populated dynamically
     from `rules/patterns.md` with real-time text search.
   - Safe row insertion (Above, Below, Duplicate, Delete) with zero-corruption guarantees.
-  - Enforced schema immutability (strictly no column additions) to protect AI agents.
   - Full integration with `utils/ui_settings.py` (Font switching, Font size Ctrl+/-,
     Window resolution, and Fullscreen F11).
-  - Headless smoke test verification (`--smoke-test`).
+  - Headless CLI queries and mutations (`--list`, `--get`, `--set-status`, `--check`, `--sync-statuses`, `--smoke-test`).
 
 Usage:
   python -B tasks.py
   python -B tasks.py --smoke-test
+  python -B tasks.py --sync-statuses [catalog]
+  python -B tasks.py --list [catalog] [--difficulty <tier>] [--status <pending|done>]
+  python -B tasks.py --get <catalog> <id_or_file>
+  python -B tasks.py --set-status <catalog> <id_or_file> <status>
+  python -B tasks.py --check <catalog> <name_or_func>
 """
 
 import sys
@@ -68,15 +75,25 @@ COLOR_TEXT_MAIN = Color(235, 242, 255, 255)
 COLOR_TEXT_DIM = Color(145, 160, 185, 255)
 COLOR_TEXT_MUTED = Color(95, 110, 135, 255)
 
-COLOR_BADGE_BUILT = Color(35, 140, 75, 255)
-COLOR_BADGE_IN_PROGRESS = Color(200, 145, 25, 255)
+COLOR_BADGE_DONE = Color(35, 140, 75, 255)
 COLOR_BADGE_PENDING = Color(65, 80, 110, 255)
+COLOR_BADGE_BUILT = COLOR_BADGE_DONE  # Backwards compatibility alias
+
+# Canonical tracking spreadsheets in tasks/
+CANONICAL_CATALOGS: List[str] = [
+    "minigames.csv",
+    "SFXs.csv",
+    "BGMs.csv",
+    "models_3D.csv",
+    "sprites_2D.csv",
+]
 
 # Internal technical columns strictly hidden from the visual editing table
 HIDDEN_COLUMNS: Set[str] = {"id", "target_file"}
 
 # Canonical Column Widths for clean table layout
 DEFAULT_COL_WIDTHS: Dict[str, int] = {
+    "difficulty": 140,
     "section": 90,
     "dimension": 90,
     "status": 120,
@@ -159,9 +176,92 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                 if os.path.exists(fallback):
                     paths.append(fallback)
             return paths
+        elif c_lower in ("models_3d", "models3d", "models", "model"):
+            return [os.path.join(tasks_dir, "models_3D.csv")]
+        elif c_lower in ("sprites_2d", "sprites2d", "sprites", "sprite"):
+            return [os.path.join(tasks_dir, "sprites_2D.csv")]
+        elif c_lower in ("minigames", "minigame", "games", "game"):
+            return [os.path.join(tasks_dir, "minigames.csv")]
         else:
             clean = cat_name if cat_name.endswith(".csv") else f"{cat_name}.csv"
+            if os.path.isdir(tasks_dir):
+                for f in os.listdir(tasks_dir):
+                    if f.lower() == clean.lower():
+                        return [os.path.join(tasks_dir, f)]
             return [os.path.join(tasks_dir, clean)]
+
+    if "--sync-statuses" in args:
+        idx = args.index("--sync-statuses")
+        cat_arg = None
+        if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
+            cat_arg = args[idx + 1]
+
+        if cat_arg:
+            target_paths = resolve_csv_paths(cat_arg)
+        else:
+            target_paths = [os.path.join(tasks_dir, c) for c in CANONICAL_CATALOGS]
+
+        total_tasks = 0
+        total_done = 0
+        total_pending = 0
+        total_updated = 0
+        catalogs_synced = 0
+
+        for path in target_paths:
+            if not os.path.exists(path):
+                print(f"[WARN] Catalog file not found: {path}")
+                continue
+
+            rel_name = os.path.relpath(path, repo_root).replace("\\", "/")
+            fieldnames = []
+            rows = []
+            with open(path, "r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                fieldnames = list(reader.fieldnames or [])
+                for r in reader:
+                    rows.append(r)
+
+            cat_done = 0
+            cat_pending = 0
+            cat_updated = 0
+
+            for r in rows:
+                target_file = (r.get("target_file") or "").strip()
+                if target_file:
+                    full_path = target_file if os.path.isabs(target_file) else os.path.join(repo_root, target_file)
+                    full_path = os.path.normpath(full_path)
+                    file_exists = os.path.isfile(full_path)
+                else:
+                    file_exists = False
+
+                expected_status = "done" if file_exists else "pending"
+                cur_status = (r.get("status") or "").strip().lower()
+
+                if cur_status != expected_status:
+                    cat_updated += 1
+
+                r["status"] = expected_status
+
+                if expected_status == "done":
+                    cat_done += 1
+                else:
+                    cat_pending += 1
+
+            with open(path, "w", encoding="utf-8-sig", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+                writer.writeheader()
+                writer.writerows(rows)
+
+            print(f"[SYNC] {rel_name}: {len(rows)} tasks -> {cat_done} done, {cat_pending} pending ({cat_updated} updated)")
+
+            total_tasks += len(rows)
+            total_done += cat_done
+            total_pending += cat_pending
+            total_updated += cat_updated
+            catalogs_synced += 1
+
+        print(f"[SYNC COMPLETE] Total synced: {total_tasks} tasks across {catalogs_synced} catalog(s) ({total_done} done, {total_pending} pending, {total_updated} updated).")
+        return True
 
     if "--list" in args:
         idx = args.index("--list")
@@ -173,6 +273,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
         status_filter = None
         type_filter = None
         vibe_filter = None
+        difficulty_filter = None
         limit_val = None
 
         if "--section" in args:
@@ -186,7 +287,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
         if "--status" in args:
             st_idx = args.index("--status")
             if st_idx + 1 < len(args):
-                status_filter = args[st_idx + 1].lower()
+                status_filter = args[st_idx + 1].lower().strip()
         if "--type" in args:
             t_idx = args.index("--type")
             if t_idx + 1 < len(args):
@@ -195,6 +296,10 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             v_idx = args.index("--vibe")
             if v_idx + 1 < len(args):
                 vibe_filter = args[v_idx + 1].lower()
+        if "--difficulty" in args:
+            d_idx = args.index("--difficulty")
+            if d_idx + 1 < len(args):
+                difficulty_filter = args[d_idx + 1].lower().strip()
         if "--limit" in args:
             l_idx = args.index("--limit")
             if l_idx + 1 < len(args) and args[l_idx + 1].isdigit():
@@ -223,11 +328,17 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                         continue
                     if category_filter and r.get("category") != category_filter:
                         continue
-                    if status_filter and r.get("status", "").lower() != status_filter:
-                        continue
+                    if status_filter:
+                        r_st = r.get("status", "").lower().strip()
+                        if status_filter == "done" and r_st in ("done", "built"):
+                            pass
+                        elif r_st != status_filter:
+                            continue
                     if type_filter and r.get("type", "").upper() != type_filter:
                         continue
                     if vibe_filter and r.get("vibe", "").lower() != vibe_filter:
+                        continue
+                    if difficulty_filter and difficulty_filter not in r.get("difficulty", "").lower():
                         continue
 
                     r_id = r.get("id", "")
@@ -235,11 +346,15 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                     r_file = r.get("target_file", "")
 
                     if "minigames" in cat_name:
+                        r_diff = r.get("difficulty", "")
                         r_sec = r.get("section", "")
                         r_title = r.get("title", "")
                         r_dim = r.get("dimension", "")
                         r_pat = r.get("patterns", "")
-                        print(f"{r_id} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
+                        if r_diff:
+                            print(f"{r_id} | {r_diff} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
+                        else:
+                            print(f"{r_id} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
                     elif "bgm" in cat_name:
                         r_type = r.get("type", "BGM")
                         r_cat = r.get("category", "")
@@ -301,7 +416,10 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             return True
         cat_arg = args[idx + 1]
         target_key = args[idx + 2]
-        new_status = args[idx + 3].lower()
+        new_status = args[idx + 3].lower().strip()
+        if new_status not in ("pending", "done"):
+            print(f"[ERROR] Invalid status '{new_status}'. Permitted status values are strictly: 'pending', 'done'")
+            return True
         paths = resolve_csv_paths(cat_arg)
         updated = False
         target_path_updated = ""
@@ -467,7 +585,7 @@ class TasksEditor:
 
     def _discover_csv_files(self):
         """Scans the tasks/ directory for all CSV files."""
-        candidates = ["minigames.csv", "SFXs.csv", "BGMs.csv", "models_3D.csv", "sprites_2D.csv"]
+        candidates = CANONICAL_CATALOGS
         found = []
         # Preferred order first
         for name in candidates:
@@ -663,13 +781,18 @@ class TasksEditor:
         suffix = f"{int(time.time() * 10) % 100000:05d}"
 
         if "minigames" in fname:
-            # Infer section from neighboring row if possible
+            # Infer section and difficulty from neighboring row if possible
             sec = "3.2"
             rows = data["rows"]
             if 0 <= insert_position_hint < len(rows):
                 sec = rows[insert_position_hint].get("section", "3.2")
             sec_clean = sec.replace(".", "")
             new_row["id"] = f"mg_{sec_clean}_{suffix}_custom"
+            if "difficulty" in fieldnames:
+                diff = "2 - Novice"
+                if 0 <= insert_position_hint < len(rows):
+                    diff = rows[insert_position_hint].get("difficulty", "2 - Novice") or "2 - Novice"
+                new_row["difficulty"] = diff
             new_row["section"] = sec
             new_row["title"] = f"New Prototype {suffix}"
             new_row["dimension"] = "2D"
@@ -763,6 +886,13 @@ class TasksEditor:
             new_row["target_file"] = f"tasks/task_{suffix}.py"
             new_row["status"] = "pending"
             new_row["description"] = "Custom task description."
+
+        if "difficulty" in fieldnames and not new_row.get("difficulty"):
+            diff = "2 - Novice"
+            rows = data.get("rows", [])
+            if 0 <= insert_position_hint < len(rows):
+                diff = rows[insert_position_hint].get("difficulty", "2 - Novice") or "2 - Novice"
+            new_row["difficulty"] = diff
 
         return new_row
 
@@ -881,7 +1011,22 @@ class TasksEditor:
             self.active_modal = "patterns_select"
 
         elif col_name == "status":
-            self.enum_options = ["pending", "in_progress", "built"]
+            self.enum_options = ["pending", "done"]
+            self.enum_target_row = actual_row_idx
+            self.enum_target_col = col_name
+            self.enum_selected_idx = 0
+            if current_val in self.enum_options:
+                self.enum_selected_idx = self.enum_options.index(current_val)
+            self.active_modal = "enum_select"
+
+        elif col_name == "difficulty":
+            self.enum_options = [
+                "1 - Beginner",
+                "2 - Novice",
+                "3 - Intermediate",
+                "4 - Advanced",
+                "5 - Master",
+            ]
             self.enum_target_row = actual_row_idx
             self.enum_target_col = col_name
             self.enum_selected_idx = 0
@@ -1384,11 +1529,10 @@ class TasksEditor:
         data = self.get_current_data()
         rows = data.get("rows", [])
         total = len(rows)
-        pending = sum(1 for r in rows if r.get("status") == "pending")
-        in_prog = sum(1 for r in rows if r.get("status") == "in_progress")
-        built = sum(1 for r in rows if r.get("status") == "built")
+        done = sum(1 for r in rows if r.get("status") in ("done", "built"))
+        pending = sum(1 for r in rows if r.get("status") not in ("done", "built"))
 
-        stats_str = f"Total: {total} | Built: {built} | In Progress: {in_prog} | Pending: {pending}"
+        stats_str = f"Total: {total} | Done: {done} | Pending: {pending}"
         draw_text(stats_str, SCREEN_WIDTH - 420, by + 7, 12, COLOR_TEXT_MUTED)
 
     def _draw_table(self):
@@ -1571,12 +1715,9 @@ class TasksEditor:
     def _draw_status_badge(self, status: str, x: int, y: int, w: int, h: int):
         """Draws colored status pill badge."""
         st = status.lower().strip()
-        if st == "built":
-            col = COLOR_BADGE_BUILT
-            label = "Built"
-        elif st == "in_progress":
-            col = COLOR_BADGE_IN_PROGRESS
-            label = "In Progress"
+        if st in ("done", "built"):
+            col = COLOR_BADGE_DONE
+            label = "Done"
         else:
             col = COLOR_BADGE_PENDING
             label = "Pending"

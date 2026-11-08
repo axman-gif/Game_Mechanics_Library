@@ -207,6 +207,190 @@ The library organizes minigames and experimental laboratories into designated su
 | **3.6** | [`3.6_movement_camera/`](minigames/3.6_movement_camera/) | **2D / 3D Movement** | Movement kinematics and game feel: Coyote time and jump buffers, Verlet pendulum grapples, 3D Quake-style strafing controllers, spring-arm orbit cameras, trauma screen shake, and RTS panning cameras. |
 | **3.7** | [`3.7_puzzle_stealth/`](minigames/3.7_puzzle_stealth/) | **2D / 3D Systems** | Discrete logic and systemic interactions: Sokoban deadlock detection with undo/redo stacks, stealth illumination sensors, cellular fluid automata, lockpicking sweet spots, and RTS marquee box selection. |
 
+### 🎯 5-Tier Difficulty Rating System
+
+Every prototype is calibrated to an explicit difficulty rating indicating algorithmic and mathematical complexity:
+
+- `1 - Beginner`: Single-formula mechanics, discrete HUD timers, or isolated UI/audio feedback (e.g. Active Reload, XP Curves, Trauma Shake).
+- `2 - Novice`: Straightforward 2D kinematics, basic trigonometric vectors, and classic game loops (e.g. Parabolic Mortar, Shotgun Choke, Coyote Time).
+- `3 - Intermediate`: Foundational game programming patterns, spatial data structures, and procedural generation (e.g. Object Pools, Spatial Grids, Behavior Trees, BSP Dungeons, Verlet Grappling).
+- `4 - Advanced`: High-complexity multi-agent systems, dynamic flow fields, 3D kinematics, and multi-pattern loops (e.g. Dijkstra Flow Fields, Tactical Cover AI, Quake Kinematics, RTS Marquee/Formations).
+- `5 - Master`: Apex architectural systems featuring cutting-edge algorithms (e.g. Procedural Inverse Kinematics in 3D, 6-DOF Inertial Flight Interception, Amanatides-Woo Fast Voxel DDA).
+
+### 🗂️ Interactive Minigame Catalog (106 Prototypes)
+
+Click any category below to expand its full prototype roster with difficulty ratings, target patterns, and source files:
+
+<details>
+<summary><b>Section 3.0: Core Multi-Pattern Prototypes (7 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_301_orbital_siege` | Orbital Siege 2D | **4 - Advanced** | 2D | N-Body Gravitational Well, Object Pool, Spatial Partitioning (SpatialGrid2D), State Machine (FSM), Wave Director | [`minigames/3.0_core_prototypes/orbital_siege.py`](minigames/3.0_core_prototypes/orbital_siege.py) |
+| `mg_302_titan_strider` | Titan Strider 3D | **5 - Master** | 3D | Procedural Inverse Kinematics, Behavior Tree (BT), Rotated Capsule Collisions (Capsule3D), Multi-Phase Boss, Camera Rig (TraumaShake) | [`minigames/3.0_core_prototypes/titan_strider.py`](minigames/3.0_core_prototypes/titan_strider.py) |
+| `mg_303_subterranean_drill` | Subterranean Drill Rig 2D | **4 - Advanced** | 2D | Destructible Tile Grid, A* Pathfinding Burrowers, Cellular Particle Fall, Resource Pressure Loop, Command Pattern | [`minigames/3.0_core_prototypes/subterranean_drill_rig.py`](minigames/3.0_core_prototypes/subterranean_drill_rig.py) |
+| `mg_304_gunship_interceptor` | Gunship Interceptor 3D | **5 - Master** | 3D | 6-DOF Inertial Flight Kinematics, Lead-Pursuit Intercept Math, Swept-Volume Raymarching, Spatial Partitioning (SpatialGrid3D), Audio Synthesis | [`minigames/3.0_core_prototypes/gunship_interceptor.py`](minigames/3.0_core_prototypes/gunship_interceptor.py) |
+| `mg_305_chrono_infiltrator` | Chrono Infiltrator 2D | **4 - Advanced** | 2D | Command Pattern (Circular History Ring Buffer), Raycast Vision Cones, Alert Level State Machine, Spatial Hashing (SpatialGrid2D) | [`minigames/3.0_core_prototypes/chrono_infiltrator.py`](minigames/3.0_core_prototypes/chrono_infiltrator.py) |
+| `mg_306_tactical_commander` | Tactical Commander TBS 2D | **4 - Advanced** | 2D | Hexagonal Axial Coordinate System, Action Points (AP) Budget, Bresenham Line-of-Sight Grid, Zone of Control (ZoC), Initiative Turn Queue | [`minigames/3.0_core_prototypes/tactical_commander_tbs.py`](minigames/3.0_core_prototypes/tactical_commander_tbs.py) |
+| `mg_307_frontline_outpost` | Frontline Outpost RTS 2D | **4 - Advanced** | 2D | Marquee Box Selection, Multi-Agent Flow Field Pathfinding, Worker Harvesting FSM, Footprint Placement Grid, Dual-Layer Fog of War | [`minigames/3.0_core_prototypes/frontline_outpost_rts.py`](minigames/3.0_core_prototypes/frontline_outpost_rts.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.1: Menus & UI (17 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3101_wrist_comm` | Diegetic Wrist Comm 3D | **4 - Advanced** | 3D | Diegetic World-Space Interface, Damped Spring Parallax, Offscreen Texture Projection (FBO), Localized Radar Coordinate Pipeline | [`minigames/3.1_menus_ui/diegetic_wrist_comm.py`](minigames/3.1_menus_ui/diegetic_wrist_comm.py) |
+| `mg_3102_inventory_grid` | Micro-Inventory Grid 2D | **3 - Intermediate** | 2D | Polyomino Cell Packing & First-Fit Heuristics | [`minigames/3.1_menus_ui/micro_inventory_grid.py`](minigames/3.1_menus_ui/micro_inventory_grid.py) |
+| `mg_3103_weapon_workbench` | Modular Weapon Workbench 2D | **4 - Advanced** | 2D | Socket-Attachment Graph & Pure Stat Pipeline | [`minigames/3.1_menus_ui/modular_weapon_workbench.py`](minigames/3.1_menus_ui/modular_weapon_workbench.py) |
+| `mg_3104_lock_on_reticle` | Tactical Lock-On Reticle 3D | **3 - Intermediate** | 3D | Screen-Space Reticle Projection & Viewport Clamping | [`minigames/3.1_menus_ui/tactical_lock_on_reticle.py`](minigames/3.1_menus_ui/tactical_lock_on_reticle.py) |
+| `mg_3105_radial_action_pie` | Radial Action Pie 2D | **2 - Novice** | 2D | Angular Sector Partitioning & Bullet-Time Dilation | [`minigames/3.1_menus_ui/radial_action_pie.py`](minigames/3.1_menus_ui/radial_action_pie.py) |
+| `mg_3106_floating_combat_splats` | Floating Combat Splats 2D | **2 - Novice** | 2D | Zero-Allocation Pool & Trajectory Curves | [`minigames/3.1_menus_ui/floating_combat_splats.py`](minigames/3.1_menus_ui/floating_combat_splats.py) |
+| `mg_3107_tech_constellation` | Interactive Tech Constellation 2D | **3 - Intermediate** | 2D | Directed Acyclic Graph (DAG) Reachability & Virtual Canvas | [`minigames/3.1_menus_ui/interactive_tech_constellation.py`](minigames/3.1_menus_ui/interactive_tech_constellation.py) |
+| `mg_3108_hotbar_gcd` | Tactical Hotbar GCD 2D | **1 - Beginner** | 2D | Dual-Tier Global Cooldown (GCD) & Action Dispatcher | [`minigames/3.1_menus_ui/tactical_hotbar_gcd.py`](minigames/3.1_menus_ui/tactical_hotbar_gcd.py) |
+| `mg_3109_dialogue_yarn` | Dialogue Yarn Engine 2D | **3 - Intermediate** | 2D | Branching Dialogue Tree & Conditional Gating | [`minigames/3.1_menus_ui/dialogue_yarn_engine.py`](minigames/3.1_menus_ui/dialogue_yarn_engine.py) |
+| `mg_3110_settings_rack` | Audio-Visual Settings Rack 2D | **3 - Intermediate** | 2D | Command Pattern & Persisted Setting Dispatcher | [`minigames/3.1_menus_ui/settings_rack.py`](minigames/3.1_menus_ui/settings_rack.py) |
+| `mg_3111_skyline_compass` | Skyline Compass Strip 3D | **3 - Intermediate** | 3D | Horizontal Degree Tape & Proximity Waypoint Projection | [`minigames/3.1_menus_ui/skyline_compass_strip.py`](minigames/3.1_menus_ui/skyline_compass_strip.py) |
+| `mg_3112_lagging_chip_health` | Lagging Chip Health Bar 2D | **1 - Beginner** | 2D | Multi-Tiered HUD Gauge & Catchup Damping | [`minigames/3.1_menus_ui/lagging_chip_health.py`](minigames/3.1_menus_ui/lagging_chip_health.py) |
+| `mg_3113_strategy_ledger` | 4X Grand Strategy Ledger 2D | **4 - Advanced** | 2D | Maximalist Multi-Panel Dashboard & Column Sorting | [`minigames/3.1_menus_ui/strategy_ledger.py`](minigames/3.1_menus_ui/strategy_ledger.py) |
+| `mg_3114_minimalist_radial` | Immersive Minimalist Radial 2D | **2 - Novice** | 2D | Minimalist HUD-Less Action Rings & Idle Fade | [`minigames/3.1_menus_ui/immersive_minimalist_radial.py`](minigames/3.1_menus_ui/immersive_minimalist_radial.py) |
+| `mg_3115_pointer_viewport` | Unified Pointer Viewport 2D | **2 - Novice** | 2D | Cross-Platform Touch/Mouse Navigation & Virtual Canvas | [`minigames/3.1_menus_ui/unified_pointer_viewport.py`](minigames/3.1_menus_ui/unified_pointer_viewport.py) |
+| `mg_3116_isometric_tile_cursor` | Isometric Tile Cursor 2D | **3 - Intermediate** | 2D | Screen-to-Isometric Coordinate Inversion | [`minigames/3.1_menus_ui/isometric_tile_cursor.py`](minigames/3.1_menus_ui/isometric_tile_cursor.py) |
+| `mg_3117_hex_coordinate_inspector` | Hex Coordinate Inspector 2D | **3 - Intermediate** | 2D | Axial & Cube Coordinate Space Math | [`minigames/3.1_menus_ui/hex_coordinate_inspector.py`](minigames/3.1_menus_ui/hex_coordinate_inspector.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.2: Combat & Weapons (17 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3201_mortar_arc` | Ballistic Mortar Arc 2D | **2 - Novice** | 2D | Parabolic Kinematics & Closed-Form Trajectory Solver | [`minigames/3.2_combat_weapons/ballistic_mortar_arc.py`](minigames/3.2_combat_weapons/ballistic_mortar_arc.py) |
+| `mg_3202_hitscan_penetration` | Hitscan Penetration Rig 3D | **3 - Intermediate** | 3D | Multi-Stage Raycast & Material Density Attenuation | [`minigames/3.2_combat_weapons/hitscan_penetration_rig.py`](minigames/3.2_combat_weapons/hitscan_penetration_rig.py) |
+| `mg_3203_shotgun_choke` | Shotgun Dispersion Choke 2D | **2 - Novice** | 2D | Gaussian Distribution Cone & Pellet Grouping | [`minigames/3.2_combat_weapons/shotgun_dispersion_choke.py`](minigames/3.2_combat_weapons/shotgun_dispersion_choke.py) |
+| `mg_3204_recoil_bloom` | Recoil Bloom & Recovery 3D | **3 - Intermediate** | 3D | Exponential Spring Dissipation & Angular Bloom | [`minigames/3.2_combat_weapons/recoil_bloom_recovery.py`](minigames/3.2_combat_weapons/recoil_bloom_recovery.py) |
+| `mg_3205_active_reload` | Active Reload Timing 2D | **1 - Beginner** | 2D | Timing Window State Machine & Cooldown Modulation | [`minigames/3.2_combat_weapons/active_reload_timing.py`](minigames/3.2_combat_weapons/active_reload_timing.py) |
+| `mg_3206_melee_frame_data` | Melee Frame Data Arc 2D | **3 - Intermediate** | 2D | Frame-Accurate Attack Lifecycle & Swept Polygon Hitbox | [`minigames/3.2_combat_weapons/melee_frame_data_arc.py`](minigames/3.2_combat_weapons/melee_frame_data_arc.py) |
+| `mg_3207_parry_timing` | Parry Timing & Stagger 2D | **2 - Novice** | 2D | Counter-Window Detection & Poise Breakdown | [`minigames/3.2_combat_weapons/parry_timing_stagger.py`](minigames/3.2_combat_weapons/parry_timing_stagger.py) |
+| `mg_3208_elemental_reaction` | Elemental Reaction Matrix 2D | **3 - Intermediate** | 2D | Combinatorial Status Pipeline & Aura Persistence | [`minigames/3.2_combat_weapons/elemental_reaction_matrix.py`](minigames/3.2_combat_weapons/elemental_reaction_matrix.py) |
+| `mg_3209_predictive_intercept` | Predictive Intercept Targeter 3D | **3 - Intermediate** | 3D | Quadratic Intercept Math & Lead Reticle Calculation | [`minigames/3.2_combat_weapons/predictive_intercept_targeter.py`](minigames/3.2_combat_weapons/predictive_intercept_targeter.py) |
+| `mg_3210_pro_nav_missile` | Proportional Navigation Missile 2D | **3 - Intermediate** | 2D | Pro-Nav Guidance Laws & Countermeasure Decoys | [`minigames/3.2_combat_weapons/pro_nav_missile.py`](minigames/3.2_combat_weapons/pro_nav_missile.py) |
+| `mg_3211_ricochet_laser` | Specular Ricochet Laser 2D | **2 - Novice** | 2D | Geometric Normal Reflection & Ray Marching | [`minigames/3.2_combat_weapons/specular_ricochet_laser.py`](minigames/3.2_combat_weapons/specular_ricochet_laser.py) |
+| `mg_3212_hit_stop_juice` | Impact Feel & Hit-Stop Lab 2D | **2 - Novice** | 2D | Micro-Freeze Frame, Trauma Shake & White Flash | [`minigames/3.2_combat_weapons/impact_feel_hit_stop.py`](minigames/3.2_combat_weapons/impact_feel_hit_stop.py) |
+| `mg_3213_cartridge_hopper` | Modular Cartridge Hopper 2D | **2 - Novice** | 2D | Strategy Pattern Projectile Dispatcher | [`minigames/3.2_combat_weapons/modular_cartridge_hopper.py`](minigames/3.2_combat_weapons/modular_cartridge_hopper.py) |
+| `mg_3214_directional_shield` | Directional Shield Flank 2D | **2 - Novice** | 2D | Angular Guard Arc & Dot Product Facing Check | [`minigames/3.2_combat_weapons/directional_shield_flank.py`](minigames/3.2_combat_weapons/directional_shield_flank.py) |
+| `mg_3215_zone_of_control` | Grid Zone of Control & Flank 2D | **3 - Intermediate** | 2D | Zone of Control (ZoC) & Flanking Multiplier Matrix | [`minigames/3.2_combat_weapons/grid_zone_of_control.py`](minigames/3.2_combat_weapons/grid_zone_of_control.py) |
+| `mg_3216_rts_siege_battery` | RTS Siege Battery Splash 2D | **3 - Intermediate** | 2D | Ground-Target Ballistics & Quadratic Area Splash | [`minigames/3.2_combat_weapons/rts_siege_battery.py`](minigames/3.2_combat_weapons/rts_siege_battery.py) |
+| `mg_3217_supercover_raycaster` | Grid Supercover Raycaster 2D | **3 - Intermediate** | 2D | Supercover Grid Traversal & Cover Mitigation | [`minigames/3.2_combat_weapons/grid_supercover_raycaster.py`](minigames/3.2_combat_weapons/grid_supercover_raycaster.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.3: Enemies & AI (15 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3301_boid_flocking` | Boid Flocking & Predator Panic 2D | **3 - Intermediate** | 2D | Reynolds Steering Behaviors (Separation, Cohesion, Alignment) | [`minigames/3.3_enemies_ai/boid_flocking.py`](minigames/3.3_enemies_ai/boid_flocking.py) |
+| `mg_3302_flow_field_horde` | Dijkstra Flow Field Horde 2D | **4 - Advanced** | 2D | Flow Field / Distance Integration Grid | [`minigames/3.3_enemies_ai/flow_field_horde.py`](minigames/3.3_enemies_ai/flow_field_horde.py) |
+| `mg_3303_tactical_cover_ai` | Tactical Cover & Flank AI 3D | **4 - Advanced** | 3D | Utility AI Cover Scoring & Line-of-Sight Evaluation | [`minigames/3.3_enemies_ai/tactical_cover_ai.py`](minigames/3.3_enemies_ai/tactical_cover_ai.py) |
+| `mg_3304_behavior_tree` | Visualized Behavior Tree 2D | **3 - Intermediate** | 2D | Hierarchical Behavior Tree (Selector, Sequence, Decorator) | [`minigames/3.3_enemies_ai/visualized_behavior_tree.py`](minigames/3.3_enemies_ai/visualized_behavior_tree.py) |
+| `mg_3305_threat_table` | Raid Boss Threat Table 3D | **3 - Intermediate** | 3D | Aggro Table & Threat Accumulation Pipeline | [`minigames/3.3_enemies_ai/raid_boss_threat_table.py`](minigames/3.3_enemies_ai/raid_boss_threat_table.py) |
+| `mg_3306_colossus_boss` | Multi-Stage Colossus Boss 3D | **4 - Advanced** | 3D | Multi-Phase State Machine & Attack Choreography | [`minigames/3.3_enemies_ai/colossus_boss.py`](minigames/3.3_enemies_ai/colossus_boss.py) |
+| `mg_3307_ghost_pursuers` | Ghost Pursuer Archetypes 2D | **2 - Novice** | 2D | Diverse Target-Tile Targeting Heuristics | [`minigames/3.3_enemies_ai/ghost_pursuer_archetypes.py`](minigames/3.3_enemies_ai/ghost_pursuer_archetypes.py) |
+| `mg_3308_squad_blackboard` | Squad Blackboard Coordination 2D | **4 - Advanced** | 2D | Shared Blackboard & Combat Token Allocation | [`minigames/3.3_enemies_ai/squad_blackboard.py`](minigames/3.3_enemies_ai/squad_blackboard.py) |
+| `mg_3309_stealth_sensory` | Stealth Sensory Cones 2D | **3 - Intermediate** | 2D | Raycast Vision Polygons & Acoustic Hearing Rings | [`minigames/3.3_enemies_ai/stealth_sensory_cones.py`](minigames/3.3_enemies_ai/stealth_sensory_cones.py) |
+| `mg_3310_tension_director` | Dynamic Tension AI Director 2D | **4 - Advanced** | 2D | AI Director & Emotional Tension Curves | [`minigames/3.3_enemies_ai/dynamic_tension_director.py`](minigames/3.3_enemies_ai/dynamic_tension_director.py) |
+| `mg_3311_telegraphed_hazard` | Telegraphed Hazard Forecast 2D | **2 - Novice** | 2D | Attack Forecasting & Fill-Progress Telegraphs | [`minigames/3.3_enemies_ai/telegraphed_hazard_forecast.py`](minigames/3.3_enemies_ai/telegraphed_hazard_forecast.py) |
+| `mg_3312_territorial_leash` | Territorial Leash Anchor 3D | **2 - Novice** | 3D | Tether Radius & Soft Reset State Machine | [`minigames/3.3_enemies_ai/territorial_leash_anchor.py`](minigames/3.3_enemies_ai/territorial_leash_anchor.py) |
+| `mg_3313_formation_steering` | RTS Formation Steering 2D | **4 - Advanced** | 2D | Rigid/Elastic Formation Slots & Offset Steering | [`minigames/3.3_enemies_ai/rts_formation_steering.py`](minigames/3.3_enemies_ai/rts_formation_steering.py) |
+| `mg_3314_tbs_utility_brain` | TBS Utility Tactical Brain 2D | **4 - Advanced** | 2D | Goal-Oriented Action Utility Curves & Scoring | [`minigames/3.3_enemies_ai/tbs_utility_tactical_brain.py`](minigames/3.3_enemies_ai/tbs_utility_tactical_brain.py) |
+| `mg_3315_harvester_cycle` | Harvester Resource Cycle FSM 2D | **2 - Novice** | 2D | Finite State Machine Worker Gathering Cycle | [`minigames/3.3_enemies_ai/harvester_cycle_fsm.py`](minigames/3.3_enemies_ai/harvester_cycle_fsm.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.4: Progression & Economy (12 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3401_loot_pinata` | Cumulative Loot Piñata 2D | **2 - Novice** | 2D | Cumulative Distribution Function (CDF) Sampling & Histograms | [`minigames/3.4_progression_economy/cumulative_loot_pinata.py`](minigames/3.4_progression_economy/cumulative_loot_pinata.py) |
+| `mg_3402_xp_curves` | Mathematical XP Curves 2D | **1 - Beginner** | 2D | Level Progression Curves & Diminishing Returns | [`minigames/3.4_progression_economy/mathematical_xp_curves.py`](minigames/3.4_progression_economy/mathematical_xp_curves.py) |
+| `mg_3403_crafting_dag` | Crafting Dependency DAG 2D | **3 - Intermediate** | 2D | Directed Acyclic Graph Recipe Solver & Atomic Deductions | [`minigames/3.4_progression_economy/crafting_dag.py`](minigames/3.4_progression_economy/crafting_dag.py) |
+| `mg_3404_merchant_exchange` | Dynamic Merchant Exchange 2D | **3 - Intermediate** | 2D | Supply & Demand Price Floating & Arbitrage Prevention | [`minigames/3.4_progression_economy/dynamic_merchant_exchange.py`](minigames/3.4_progression_economy/dynamic_merchant_exchange.py) |
+| `mg_3405_passive_relics` | Passive Relic Synergy Stack 2D | **3 - Intermediate** | 2D | Observer Pattern Item Hook Pipeline | [`minigames/3.4_progression_economy/passive_relic_synergy.py`](minigames/3.4_progression_economy/passive_relic_synergy.py) |
+| `mg_3406_gacha_pity` | Gacha Pity Simulator 2D | **1 - Beginner** | 2D | Soft Pity Thresholds & 50/50 Guarantee Engine | [`minigames/3.4_progression_economy/gacha_pity_simulator.py`](minigames/3.4_progression_economy/gacha_pity_simulator.py) |
+| `mg_3407_weapon_integrity` | Weapon Integrity & Repair 2D | **2 - Novice** | 2D | Item Durability Degradation & Scrap Salvage | [`minigames/3.4_progression_economy/weapon_integrity_repair.py`](minigames/3.4_progression_economy/weapon_integrity_repair.py) |
+| `mg_3408_deckbuilder_hand` | Deckbuilder Hand Cycle 2D | **3 - Intermediate** | 2D | Deck, Hand, Discard & Exhaust Pile State Engine | [`minigames/3.4_progression_economy/deckbuilder_hand_cycle.py`](minigames/3.4_progression_economy/deckbuilder_hand_cycle.py) |
+| `mg_3409_idle_forge` | Incremental Idle Forge 2D | **1 - Beginner** | 2D | Exponential Growth Curves & Offline Accumulation | [`minigames/3.4_progression_economy/incremental_idle_forge.py`](minigames/3.4_progression_economy/incremental_idle_forge.py) |
+| `mg_3410_attribute_respec` | RPG Attribute Respec 2D | **1 - Beginner** | 2D | Primary-to-Secondary Derived Stat Pipeline | [`minigames/3.4_progression_economy/rpg_attribute_respec.py`](minigames/3.4_progression_economy/rpg_attribute_respec.py) |
+| `mg_3411_tech_tree_research` | RTS Tech Tree Research Lab 2D | **3 - Intermediate** | 2D | Technology DAG Queue & Global Modifier Propagation | [`minigames/3.4_progression_economy/rts_tech_tree_research.py`](minigames/3.4_progression_economy/rts_tech_tree_research.py) |
+| `mg_3412_resource_ledger` | 4X Resource Flow Ledger 2D | **4 - Advanced** | 2D | Multi-Commodity Inflow/Outflow Matrix & Deficit Penalties | [`minigames/3.4_progression_economy/resource_flow_ledger.py`](minigames/3.4_progression_economy/resource_flow_ledger.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.5: World & Exploration (13 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3501_cellular_caverns` | Cellular Automata Caverns 2D | **3 - Intermediate** | 2D | Cellular Automata Smoothing & Flood-Fill Connectivity | [`minigames/3.5_world_procgen/cellular_caverns.py`](minigames/3.5_world_procgen/cellular_caverns.py) |
+| `mg_3502_bsp_dungeon` | BSP Dungeon Architect 2D | **3 - Intermediate** | 2D | Binary Space Partitioning (BSP) & Room Linkage | [`minigames/3.5_world_procgen/bsp_dungeon_architect.py`](minigames/3.5_world_procgen/bsp_dungeon_architect.py) |
+| `mg_3503_voxel_dda` | Voxel Raymarching DDA 3D | **5 - Master** | 3D | Fast Voxel Traversal (Amanatides-Woo DDA) & Hidden Face Culling | [`minigames/3.5_world_procgen/voxel_raymarching_dda.py`](minigames/3.5_world_procgen/voxel_raymarching_dda.py) |
+| `mg_3504_chunk_streamer` | Infinite Chunk Streamer 2D | **3 - Intermediate** | 2D | Hash Grid Spatial Streaming & Memory Management | [`minigames/3.5_world_procgen/infinite_chunk_streamer.py`](minigames/3.5_world_procgen/infinite_chunk_streamer.py) |
+| `mg_3505_layered_noise_heightmap` | Layered Noise Heightmap 3D | **4 - Advanced** | 3D | Multi-Octave Fractal Noise Terrain & Normal Baking | [`minigames/3.5_world_procgen/layered_noise_heightmap.py`](minigames/3.5_world_procgen/layered_noise_heightmap.py) |
+| `mg_3506_celestial_orbit` | Dynamic Celestial Orbit 3D | **3 - Intermediate** | 3D | Day-Night Celestial Orbit & Sky Dome Gradient | [`minigames/3.5_world_procgen/dynamic_celestial_orbit.py`](minigames/3.5_world_procgen/dynamic_celestial_orbit.py) |
+| `mg_3507_biome_hazard` | Hazardous Biome Suit 3D | **3 - Intermediate** | 3D | Environmental Hazard Zones & Exposure Decay | [`minigames/3.5_world_procgen/hazardous_biome_suit.py`](minigames/3.5_world_procgen/hazardous_biome_suit.py) |
+| `mg_3508_destructible_terrain` | Destructible Terrain Mask 2D | **3 - Intermediate** | 2D | Bitmask Terrain Deformation & Sand Physics | [`minigames/3.5_world_procgen/destructible_terrain_mask.py`](minigames/3.5_world_procgen/destructible_terrain_mask.py) |
+| `mg_3509_ability_gate` | Lock-and-Key Ability Gate 2D | **2 - Novice** | 2D | Metroidvania Progression Graph & Reachability | [`minigames/3.5_world_procgen/ability_gate_graph.py`](minigames/3.5_world_procgen/ability_gate_graph.py) |
+| `mg_3510_obstacle_runner` | Infinite Lane Obstacle Runner 3D | **2 - Novice** | 3D | Segment Pooling & Dynamic Obstacle Weaving | [`minigames/3.5_world_procgen/infinite_lane_runner.py`](minigames/3.5_world_procgen/infinite_lane_runner.py) |
+| `mg_3511_dual_layer_fog` | Dual-Layer Fog of War 2D | **3 - Intermediate** | 2D | Three-State Visibility Bitmask & Dynamic Sight Radii | [`minigames/3.5_world_procgen/dual_layer_fog.py`](minigames/3.5_world_procgen/dual_layer_fog.py) |
+| `mg_3512_hex_biomes` | Hex World Biome Generator 2D | **3 - Intermediate** | 2D | Procedural Hex Map & Elevation Moisture Matrix | [`minigames/3.5_world_procgen/hex_world_biomes.py`](minigames/3.5_world_procgen/hex_world_biomes.py) |
+| `mg_3513_building_placement` | RTS Building Placement Grid 2D | **2 - Novice** | 2D | Multi-Cell Footprint Clearance & Ghost Snapping | [`minigames/3.5_world_procgen/rts_building_placement.py`](minigames/3.5_world_procgen/rts_building_placement.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.6: Movement & Camera (12 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3601_platformer_forgiveness` | Platformer Forgiveness Lab 2D | **2 - Novice** | 2D | Coyote Time, Jump Buffering & Corner Assist | [`minigames/3.6_movement_camera/platformer_forgiveness.py`](minigames/3.6_movement_camera/platformer_forgiveness.py) |
+| `mg_3602_grappling_cable` | Pendulum Grappling Cable 2D | **3 - Intermediate** | 2D | Verlet Rope Integration & Angular Momentum Swing | [`minigames/3.6_movement_camera/pendulum_grappling_cable.py`](minigames/3.6_movement_camera/pendulum_grappling_cable.py) |
+| `mg_3603_kinematic_controller` | Kinematic Character Rig 3D | **4 - Advanced** | 3D | Ground Friction, Air Strafe & Ledge Step-Up | [`minigames/3.6_movement_camera/kinematic_character_rig.py`](minigames/3.6_movement_camera/kinematic_character_rig.py) |
+| `mg_3604_toroidal_drifter` | Newtonian Toroidal Drifter 2D | **2 - Novice** | 2D | Thruster Vectors, Inertial Momentum & Screen Wrapping | [`minigames/3.6_movement_camera/newtonian_toroidal_drifter.py`](minigames/3.6_movement_camera/newtonian_toroidal_drifter.py) |
+| `mg_3605_spring_arm_camera` | Third-Person Spring Arm 3D | **3 - Intermediate** | 3D | Spherical Orbit Camera & Occlusion Spherecast | [`minigames/3.6_movement_camera/third_person_spring_arm.py`](minigames/3.6_movement_camera/third_person_spring_arm.py) |
+| `mg_3606_wall_run_parkour` | Wall Run & Parkour Cling 3D | **4 - Advanced** | 3D | Wall Surface Normal Raycasts & Kinetic Parkour | [`minigames/3.6_movement_camera/wall_run_parkour.py`](minigames/3.6_movement_camera/wall_run_parkour.py) |
+| `mg_3607_trauma_shake` | Trauma Screen Shake Rig 2D/3D | **1 - Beginner** | 2D | Polynomial Trauma Math (Trauma^2 / Trauma^3) & Noise Decay | [`minigames/3.6_movement_camera/trauma_screen_shake.py`](minigames/3.6_movement_camera/trauma_screen_shake.py) |
+| `mg_3608_arcade_kart_slip` | Arcade Kart Slip Angle 3D | **4 - Advanced** | 3D | Arcade Vehicle Steering, Lateral Friction & Drift Boost | [`minigames/3.6_movement_camera/arcade_kart_slip.py`](minigames/3.6_movement_camera/arcade_kart_slip.py) |
+| `mg_3609_smart_framing_camera` | Smart Framing Virtual Camera 2D | **2 - Novice** | 2D | Lookahead Framing, Deadzones & Multi-Target Zoom | [`minigames/3.6_movement_camera/smart_framing_camera.py`](minigames/3.6_movement_camera/smart_framing_camera.py) |
+| `mg_3610_dash_ghost_trail` | Kinematic Dash Ghost Trail 2D | **2 - Novice** | 2D | Directional Burst Dash, I-Frames & Alpha Trails | [`minigames/3.6_movement_camera/dash_ghost_trail.py`](minigames/3.6_movement_camera/dash_ghost_trail.py) |
+| `mg_3611_rts_camera_rig` | RTS Strategic Camera Rig 2D | **2 - Novice** | 2D | Screen-Edge Panning, Glide Momentum & Minimap Teleport | [`minigames/3.6_movement_camera/rts_camera_rig.py`](minigames/3.6_movement_camera/rts_camera_rig.py) |
+| `mg_3612_tbs_ap_path_noodle` | TBS Action Point Path Noodle 2D | **3 - Intermediate** | 2D | A* Grid Pathfinding, AP Cost Preview & Elevation Traversal | [`minigames/3.6_movement_camera/tbs_ap_path_noodle.py`](minigames/3.6_movement_camera/tbs_ap_path_noodle.py) |
+
+</details>
+
+<details>
+<summary><b>Section 3.7: Puzzle, Stealth & Other (13 prototypes)</b></summary>
+
+| ID | Title | Difficulty | Dim | Demonstrated Patterns | Target File |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `mg_3701_sokoban_deadlock` | Sokoban Deadlock Solver 2D | **3 - Intermediate** | 2D | Command Pattern Undo/Redo & Heuristic Deadlock Detection | [`minigames/3.7_puzzle_stealth/sokoban_deadlock.py`](minigames/3.7_puzzle_stealth/sokoban_deadlock.py) |
+| `mg_3702_stealth_lux` | Stealth Lux Illumination 3D | **3 - Intermediate** | 3D | Light Sampling Sensor & Stance Multipliers | [`minigames/3.7_puzzle_stealth/stealth_lux_illumination.py`](minigames/3.7_puzzle_stealth/stealth_lux_illumination.py) |
+| `mg_3703_fluid_automata` | Fluid Cellular Automata 2D | **3 - Intermediate** | 2D | Falling Sand Simulation & Liquid Equalization | [`minigames/3.7_puzzle_stealth/fluid_cellular_automata.py`](minigames/3.7_puzzle_stealth/fluid_cellular_automata.py) |
+| `mg_3704_lockpick_sweet_spot` | Lockpick Sweet Spot 2D | **1 - Beginner** | 2D | Angle Deviation Thresholds & Tension Vibration | [`minigames/3.7_puzzle_stealth/lockpick_sweet_spot.py`](minigames/3.7_puzzle_stealth/lockpick_sweet_spot.py) |
+| `mg_3705_rhythm_judgment` | Rhythm Judgment Track 2D | **1 - Beginner** | 2D | Millisecond Audio Sync & Hit-Window Tolerances | [`minigames/3.7_puzzle_stealth/rhythm_judgment_track.py`](minigames/3.7_puzzle_stealth/rhythm_judgment_track.py) |
+| `mg_3706_prism_laser_network` | Prism Beam Network 2D | **3 - Intermediate** | 2D | Raycast Laser Splitters, Color Filters & Receptors | [`minigames/3.7_puzzle_stealth/prism_beam_network.py`](minigames/3.7_puzzle_stealth/prism_beam_network.py) |
+| `mg_3707_match3_cascade` | Cascading Match-3 Engine 2D | **3 - Intermediate** | 2D | Grid Swap Adjacency, Flood Clear & Gravity Refill | [`minigames/3.7_puzzle_stealth/match3_cascade_engine.py`](minigames/3.7_puzzle_stealth/match3_cascade_engine.py) |
+| `mg_3708_time_rewind` | Circular Time Rewind 2D | **3 - Intermediate** | 2D | Fixed-Memory Ring Buffer & Reverse Playback | [`minigames/3.7_puzzle_stealth/circular_time_rewind.py`](minigames/3.7_puzzle_stealth/circular_time_rewind.py) |
+| `mg_3709_pipe_pressure` | Pipe Circuit Pressure 2D | **2 - Novice** | 2D | Grid Breadth-First Search (BFS) Connectivity & Flow | [`minigames/3.7_puzzle_stealth/pipe_circuit_pressure.py`](minigames/3.7_puzzle_stealth/pipe_circuit_pressure.py) |
+| `mg_3710_tactile_juice` | Tactile Juice Sandbox 2D | **1 - Beginner** | 2D | Game Feel Micro-Interactions (Squash, Tween, Shake) | [`minigames/3.7_puzzle_stealth/tactile_juice_sandbox.py`](minigames/3.7_puzzle_stealth/tactile_juice_sandbox.py) |
+| `mg_3711_marquee_selector` | Marquee Box Multi-Selector 2D | **2 - Novice** | 2D | Screen-Space Bounding Box Query & Selection State | [`minigames/3.7_puzzle_stealth/marquee_box_selector.py`](minigames/3.7_puzzle_stealth/marquee_box_selector.py) |
+| `mg_3712_initiative_timeline` | Dynamic Initiative Timeline 2D | **2 - Novice** | 2D | Grandia-Style Action Timeline & Cast Interruption | [`minigames/3.7_puzzle_stealth/dynamic_initiative_timeline.py`](minigames/3.7_puzzle_stealth/dynamic_initiative_timeline.py) |
+| `mg_3713_territory_influence` | Territory Influence Border 2D | **3 - Intermediate** | 2D | Cellular Cultural Influence & Voronoi Border Expansion | [`minigames/3.7_puzzle_stealth/territory_influence_border.py`](minigames/3.7_puzzle_stealth/territory_influence_border.py) |
+
+</details>
+
 ---
 
 ## 💡 The "No-Magic" C++ Porting Philosophy
@@ -255,7 +439,7 @@ To maintain lightweight, token-efficient documentation and provide an intuitive 
 
 | Registry Spreadsheet | Description & Content | Total Planned Items |
 | :--- | :--- | :---: |
-| [**`tasks/minigames.csv`**](tasks/minigames.csv) | All standalone prototypes across Sections 3.0 to 3.7 with patterns and status | **106 prototypes** |
+| [**`tasks/minigames.csv`**](tasks/minigames.csv) | All standalone prototypes across Sections 3.0 to 3.7 with difficulty ratings, patterns, and binary status | **106 prototypes** |
 | [**`tasks/SFXs.csv`**](tasks/SFXs.csv) | Procedural SFX synthesizers across 6 modular categories | **73 SFX items** |
 | [**`tasks/BGMs.csv`**](tasks/BGMs.csv) | Algorithmic streaming BGM tracks categorized by emotional vibe | **18 BGM tracks** |
 | [**`tasks/models_3D.csv`**](tasks/models_3D.csv) | 3D procedural primitive models with primitives, animation, and palette keys | **29 models** |
@@ -271,20 +455,20 @@ python -B tasks.py
 - **Desktop Spreadsheet Fallback**: You can also open `tasks/*.csv` in LibreOffice Calc, Excel, or Google Sheets with UTF-8 BOM encoding.
 - **Alphanumeric explicit identifiers**: Keys like `mg_orbital_siege` and `"sec_3_0"` prevent Excel from auto-converting numbers into dates or truncated decimals.
 - **Universal compatibility**: All text fields are RFC 4180 quoted and saved in UTF-8. The Python scripts automatically detect and accept both comma (`,`) and semicolon (`;`) separators as well as Windows Excel BOM headers.
-- **Status column**: Simply update the `status` column to `pending`, `in_progress`, or `built`.
+- **Status column**: Strictly binary `pending` (target file absent from disk) and `done` (target file present on disk). Statuses are automatically synchronized across all 5 catalogs via `python -B tasks.py --sync-statuses`.
 
-### ⚡ How AI Subagents Query Tasks via Python Built-in `csv`
-Subagents do not parse massive markdown catalogs. Instead, they run instantaneous, single-line Python standard library `csv` queries that return compact dictionaries (<50 tokens):
+### ⚡ Automated Status Synchronization & Fast CLI Queries
+Subagents do not parse massive markdown catalogs, and craftsmen subagents never edit CSV task statuses manually. Instead, the Lead Orchestrator queries tasks using compact CLI calls (<50 tokens) and automatically synchronizes disk presence to CSV status upon batch completion:
 
 ```bash
-# 1. Grab the next pending task in a category:
-python -B -c "import csv; f=open('tasks/minigames.csv', encoding='utf-8-sig'); r=csv.DictReader(f); print(next(dict(id=x['id'], title=x['title'], file=x['target_file']) for x in r if x['section']=='3.2' and x['status']=='pending'))"
+# 1. Synchronize disk presence across all task catalogs automatically:
+python -B tasks.py --sync-statuses
 
-# 2. Check task details by ID:
-python -B -c "import csv; f=open('tasks/SFXs.csv', encoding='utf-8-sig'); r=csv.DictReader(f); print(next(x for x in r if x['id']=='sfx_plan_arc_lightning'))"
+# 2. Query minigames by difficulty tier:
+python -B tasks.py --list minigames --difficulty beginner
 
-# 3. View pending count summary across categories:
-python -B -c "import csv; from collections import Counter; f=open('tasks/models_3D.csv', encoding='utf-8-sig'); c=Counter(x['category'] for x in csv.DictReader(f) if x['status']=='pending'); print(dict(c))"
+# 3. Query the next pending task in a specific section:
+python -B tasks.py --list minigames --section 3.2 --status pending --limit 1
 ```
 
 ---
