@@ -22,7 +22,8 @@ The graphics and audio are intentionally built using **procedural primitives** (
      - `3.7 Puzzle, Stealth & Other`
 2. **Check Existing Visual & Audio Assets**: Consult the decomposed asset guidelines and tracking spreadsheets in `tasks/` (saving tokens by querying exclusively via `tasks.py --list`; never read raw CSV files into context):
    - [`rules/audio.md`](rules/audio.md), [`tasks/SFXs.csv`](tasks/SFXs.csv), & [`tasks/BGMs.csv`](tasks/BGMs.csv): For procedural sound effects (`assets/audio/SFX/<category>/<name>.py`) and background music tracks (`assets/audio/BGM/<vibe>/<name>.py`).
-   - [`assets/audio/synth_sfx.py`](assets/audio/synth_sfx.py): Central dynamic audio discovery registry (`SFX_REGISTRY`, `BGM_REGISTRY`) and selective in-RAM loader (`SoundLibrary`).
+   - [`assets/audio/asset_loader.py`](assets/audio/asset_loader.py): Central dynamic asset discovery registry (`models_3D`, `sprites_2D`, `audio`, `sfx`, `bgm`) and dynamic asset loading hub.
+   - [`assets/audio/synth_sfx.py`](assets/audio/synth_sfx.py): In-memory audio synthesis engine and selective in-RAM loader (`SoundLibrary`).
    - [`rules/minigames.md`](rules/minigames.md) Section 3.5: Authoritative guide for minigame audio imports, selective in-RAM loading via `SFXS = [...]` and `BGMS = [...]`, per-frame `sfx.update()`, and clean teardown.
    - [`rules/models_3D.md`](rules/models_3D.md) & [`tasks/models_3D.csv`](tasks/models_3D.csv): For 3D procedural primitive models (`assets/models_3D/`).
    - [`rules/sprites_2D.md`](rules/sprites_2D.md) & [`tasks/sprites_2D.csv`](tasks/sprites_2D.csv): For 2D procedural primitive sprites (`assets/sprites_2D/`).
@@ -101,13 +102,13 @@ To eliminate context dilution, prevent degradation in code depth, avoid attentio
      - **Zero In-Chat Code Spillage**: Each subagent writes code directly to disk via file writing tools. Subagents do NOT print large source files into chat text.
      - **Non-Blocking Verification**: Each subagent verifies its own file directly (e.g. `$env:PYTHONDONTWRITEBYTECODE="1"; python -B audit_minigame.py minigames/<subfolder>/<script_name>.py` or the appropriate `--smoke-test`).
      - **Strict 1-Retry Policy**: If verification fails, the subagent performs at most one (1) retry fix. If it fails a second time, it halts and reports the failure.
-     - **Concise Completion Report**: Each subagent sends a 5-line summary message back to the Orchestrator (File path, Line count, Demonstrated patterns, Audit status) and terminates. Craftsmen NEVER edit CSV files or `assets/__init__.py`.
+     - **Concise Completion Report**: Each subagent sends a 5-line summary message back to the Orchestrator (File path, Line count, Demonstrated patterns, Audit status) and terminates. Craftsmen NEVER edit CSV files or core loader files.
   3. **Creative Pattern Discovery & Registration**:
      - Subagents have full creative freedom to introduce novel design patterns. When a subagent creates a new pattern, it documents its mathematical and architectural rationale and registers it in [`rules/patterns.md`](rules/patterns.md).
   4. **Documentation & Release Synchronization**:
      - Upon receiving completion reports from all parallel subagents, the Orchestrator:
        - Synchronizes task status across `tasks/minigames.csv`, `tasks/SFXs.csv`, `tasks/BGMs.csv`, `tasks/models_3D.csv`, and `tasks/sprites_2D.csv` automatically via `python -B tasks.py --sync-statuses`.
-       - Registers any newly built procedural assets in `assets/__init__.py` (Orchestrator ONLY).
+       - Newly created procedural assets are automatically discovered dynamically by `assets/audio/asset_loader.py`.
        - Updates [`rules/patterns.md`](rules/patterns.md) if any subagents introduced new design patterns (no other `rules/*.md` files require editing during builds).
        - Runs `python -B launcher.py --smoke-test` to verify launcher dropdown synchronization across all categories.
        - Reports a consolidated summary table of all built files to the user.
@@ -150,7 +151,7 @@ To prevent context dilution and avoid blowing token budgets when inspecting larg
    Task status tracking is strictly binary and managed **automatically by the Lead Orchestrator** using `tasks.py`:
    - `pending` $\rightarrow$ Default state when `target_file` does not exist on disk.
    - `done` $\rightarrow$ Set automatically when `target_file` exists on disk via `python -B tasks.py --sync-statuses`.
-   - **Craftsmen subagents MUST NEVER edit CSV files or change statuses**. The Orchestrator executes `python -B tasks.py --sync-statuses` upon batch completion and registers assets in `assets/__init__.py`.
+   - **Craftsmen subagents MUST NEVER edit CSV files or change statuses**. The Orchestrator executes `python -B tasks.py --sync-statuses` upon batch completion. Asset discovery is handled automatically by `asset_loader.py`.
 5. **Collision Prevention Check**:
    Before creating a procedural asset, the Orchestrator or subagent checks if a function or concept name is already registered:
    ```bash
@@ -176,7 +177,7 @@ To prevent context dilution and avoid blowing token budgets when inspecting larg
 - In **EVERY** script, you **MUST** import in this exact order:
   ```python
   from pyray import *
-  from assets import *
+  from assets.audio.asset_loader import *
   from utils import *
   ```
 - Importing `from utils import *` after `from pyray import *` automatically enables the repository's **Global Top-Bar Settings Dropdowns** (`Font`, `Font Size [Ctrl +/-]`, and `Window Size / Fullscreen [F11]`) backed by `config.json`. Keep the top-bar region `x = 450..980, y = 14..48` free of HUD text so the dropdown bar (`draw_ui_settings_bar(450, 16)`) never overlaps your HUD.
@@ -263,7 +264,7 @@ Every minigame script MUST be classified under its designated section (`3.0` or 
    - Orchestrator verifies launcher dropdown discovery during release synchronization via `python -B launcher.py --smoke-test`.
 
 ### Rule 10: Assets-Only Minigames (Zero Inlined or Fabricated Assets)
-- Minigames MUST use ONLY procedural visual and audio assets that already exist and are registered in `assets/` (imported via `from assets import *`).
+- Minigames MUST use ONLY procedural visual and audio assets that already exist and are discovered in `assets/` (imported via `from assets.audio.asset_loader import *`).
 - **Missing Asset Halt**: If a minigame specification or design requires an asset (3D model, 2D sprite, SFX synthesizer, or BGM track) that does NOT already exist in `assets/`, the agent **MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**.
 - The agent must report the missing asset dependencies back to the user or orchestrator so the assets can be built first (or scheduled in a `/teamwork` batch before the minigame).
 - Minigames must **NEVER** inline procedural asset synthesis, define local sound wave generators, or draw ad-hoc complex entity models that belong in the modular asset catalog.
@@ -316,10 +317,10 @@ Every minigame script MUST be classified under its designated section (`3.0` or 
 │   └── sprites_2D.csv         <-- 29 2D procedural vector sprites
 │
 ├── assets/                    <-- Reusable procedural visual and audio assets
-│   ├── __init__.py            <-- Central asset loader, SoundLibrary & catalog exporter
 │   ├── models_3D/             <-- 3D procedural primitive models (.gitkeep)
 │   ├── sprites_2D/            <-- 2D procedural vector sprites (.gitkeep)
 │   └── audio/                 <-- Procedural in-memory SFX and BGM synthesizers
+│       ├── asset_loader.py    <-- Universal asset discovery dictionary registry & dynamic loader
 │       ├── synth_sfx.py       <-- Central dynamic audio discovery registry & selective in-RAM SoundLibrary
 │       ├── SFX/               <-- Dedicated modular sound effect synthesizers by category
 │       │   ├── combat/        <-- Combat and weapon SFX (.gitkeep)

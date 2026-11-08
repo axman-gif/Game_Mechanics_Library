@@ -424,16 +424,15 @@ if __name__ == "__main__":
 
 ### 3.1 Importing 2D Sprites in Minigames
 
-Minigames can import procedural sprites using either granular per-module imports or bulk package imports:
+Minigames can import procedural sprites using either key-based loaders or granular per-module imports:
 
 ```python
-# Option A: Granular Import (Explicit dependency tracking)
-from assets.sprites_2D.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
+# Option A: Key-Based Loader via asset_loader (Standard minigame pattern)
+from assets.audio.asset_loader import sprites_2D, load_sprite_2d
+draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE = load_sprite_2d("tactical_ops")
 
-# Option B: Bulk Package Import (Convenient for prototypes using multiple sprites)
-from assets import *
-# Or category-level import:
-from assets.sprites_2D import *
+# Option B: Granular Import (Explicit dependency tracking)
+from assets.sprites_2D.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
 ```
 
 ### 3.2 Invocation Inside Minigame Draw Loop

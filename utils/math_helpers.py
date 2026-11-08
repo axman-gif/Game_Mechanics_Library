@@ -13,7 +13,25 @@ Written cleanly for beginners.
 
 import math
 import random
-from pyray import Vector2, Vector3
+from pyray import Vector2, Vector3, Color
+
+# ==============================================================================
+# CFFI SAFE TYPE CASTING HELPERS
+# ==============================================================================
+
+def safe_color(r: float, g: float, b: float, a: float = 255.0) -> Color:
+    """
+    Safely creates a Raylib Color struct by clamping and casting each channel
+    to an unsigned 8-bit integer (0..255).
+    
+    Prevents Raylib CFFI 'unsigned char' type errors when passing floats or
+    out-of-bounds values.
+    """
+    cr = int(max(0, min(255, round(float(r)))))
+    cg = int(max(0, min(255, round(float(g)))))
+    cb = int(max(0, min(255, round(float(b)))))
+    ca = int(max(0, min(255, round(float(a)))))
+    return Color(cr, cg, cb, ca)
 
 # ==============================================================================
 # INTERPOLATION & CLAMPING

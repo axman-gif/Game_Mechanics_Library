@@ -472,11 +472,29 @@ if __name__ == "__main__":
 
 ## 3. Minigame Integration & Usage
 
-### 3.1 Granular vs. Bulk Import Patterns
+### 3.1 Key-Based vs. Granular Import Patterns
 
-Minigames can import 3D procedural models using either granular imports (for strict namespace isolation) or bulk package imports (`from assets import *`):
+Minigames can import 3D procedural models using either key-based loading via `models_3D` or granular imports:
 
-**Granular Import (Recommended for isolated prototypes)**:
+**Key-Based Loader (Standard minigame pattern)**:
+```python
+from assets.audio.asset_loader import models_3D, load_model_3d
+
+# Load drawing function and default palette by key:
+draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE = load_model_3d("exo_knight")
+
+# Inside Minigame draw():
+begin_mode_3d(self.camera)
+draw_exo_knight_3d(
+    position=self.player.position,
+    rotation_y=self.player.yaw_degrees,
+    anim_timer=self.player.walk_timer,
+    scale=1.0
+)
+end_mode_3d()
+```
+
+**Granular Import (For isolated prototypes)**:
 ```python
 from assets.models_3D.exo_knight import draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE
 
@@ -488,21 +506,6 @@ draw_exo_knight_3d(
     anim_timer=self.boss.stride_timer,
     scale=1.5,
     palette=DEFAULT_EXO_KNIGHT_PALETTE
-)
-end_mode_3d()
-```
-
-**Bulk Import (Standard minigame pattern)**:
-```python
-from assets import *
-
-# Inside Minigame draw():
-begin_mode_3d(self.camera)
-draw_exo_knight_3d(
-    position=self.player.position,
-    rotation_y=self.player.yaw_degrees,
-    anim_timer=self.player.walk_timer,
-    scale=1.0
 )
 end_mode_3d()
 ```
@@ -533,7 +536,7 @@ Task tracking and lifecycle management for all 3D models are maintained exclusiv
 ### 5.1 Token-Saving Decoupled Architecture
 - **Craftsman subagents NEVER read or parse CSV files into context.** Reading full tracking spreadsheets burns 4,000 to 8,000 tokens per turn. Instead, the Lead Orchestrator queries task specifications and injects the target row fields (`target_file`, `concept_name`, `primitives_used`, `animation_features`, `palette_keys`, `description`) directly into the subagent dispatch prompt.
 - **Binary task status model**: Strictly binary `pending` (file absent from disk) and `done` (file present on disk). Statuses are automatically synchronized across catalogs via `python -B tasks.py --sync-statuses`.
-- **Package Registration**: Upon building and verifying a 3D model, the Orchestrator registers the canonical drawing function and default palette in `assets/__init__.py`.
+- **Package Registration**: Upon building and verifying a 3D model, the file is automatically discovered dynamically by `assets/audio/asset_loader.py` into the `models_3D` dictionary.
 
 ### 5.2 Orchestrator Headless CLI Queries (<50ms, <50 tokens)
 The Orchestrator queries tasks using the headless `tasks.py` CLI:

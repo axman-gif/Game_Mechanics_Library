@@ -16,7 +16,7 @@ sys.dont_write_bytecode = True
 REQUIRED_STRINGS = [
     "sys.dont_write_bytecode = True",
     "from pyray import *",
-    "from assets import *",
+    "from assets.audio.asset_loader import *",
     "from utils import *",
     "BLOCK 1: CORE PATTERN IMPLEMENTATION",
     "BLOCK 2: WORLD SIMULATION & ENTITIES",

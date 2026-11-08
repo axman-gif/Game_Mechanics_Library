@@ -48,6 +48,7 @@ C++ Architectural Equivalent (raylib.h):
 import sys
 import os
 import importlib.util
+import struct as py_struct  # Aliased to prevent collision with pyray.struct
 from typing import Dict, List, Optional, Any
 
 # 1. Enforce zero __pycache__ generation
@@ -70,6 +71,64 @@ BGM_DIR = os.path.join(AUDIO_DIR, "BGM")
 # Global Discovery Registries (mapping cue_name -> absolute file path)
 SFX_REGISTRY: Dict[str, str] = {}
 BGM_REGISTRY: Dict[str, str] = {}
+
+
+# ==============================================================================
+# AUDIO DEVICE & BUFFER RESILIENCE HELPERS (Problems 3 & 5)
+# ==============================================================================
+def safe_init_audio_device() -> bool:
+    """
+    Defensively initializes Raylib's audio subsystem.
+    Returns True if audio hardware is ready for synthesis/playback,
+    or False if running in a headless / dummy environment without an audio device.
+    """
+    try:
+        if not is_audio_device_ready():
+            init_audio_device()
+        return is_audio_device_ready()
+    except Exception:
+        return False
+
+
+def pack_riff_wav_mono_16bit(sample_rate: int, raw_samples: list) -> bytes:
+    """
+    Packs signed 16-bit PCM integer samples (-32767 to 32767) into an in-memory
+    canonical 44-byte RIFF/WAVE container.
+    
+    Guarantees:
+      - Signed 16-bit clamping to prevent Raylib CFFI buffer overflow.
+      - Exact 44-byte RIFF container struct layout: <4sI4s4sIHHIIHH4sI.
+      - Returns immutable bytes pinned in Python memory during LoadWaveFromMemory().
+    """
+    num_samples = len(raw_samples)
+    pcm_bytes = bytearray()
+    for i in range(num_samples):
+        val = raw_samples[i]
+        clamped = max(-32767, min(32767, int(val)))
+        pcm_bytes.extend(py_struct.pack('<h', clamped))
+
+    riff_id = b'RIFF'
+    wave_id = b'WAVE'
+    fmt_id = b'fmt '
+    fmt_size = 16
+    audio_format = 1        # PCM
+    num_channels = 1        # Mono
+    byte_rate = sample_rate * num_channels * 2
+    block_align = num_channels * 2
+    bits_per_sample = 16
+    data_id = b'data'
+    data_size = len(pcm_bytes)
+    total_chunk_size = 36 + data_size
+
+    header = py_struct.pack(
+        '<4sI4s4sIHHIIHH4sI',
+        riff_id, total_chunk_size, wave_id,
+        fmt_id, fmt_size, audio_format,
+        num_channels, sample_rate, byte_rate,
+        block_align, bits_per_sample,
+        data_id, data_size
+    )
+    return bytes(header + pcm_bytes)
 
 
 # ==============================================================================
@@ -349,6 +408,8 @@ class SoundLibrary:
         - If 'name' is in self.sounds: plays as a one-shot Sound.
         - If 'name' is in self.music: streams as looping or one-shot Music.
         """
+        if not is_audio_device_ready():
+            return  # Headless / dummy safety guard
         vol = max(0.0, min(1.0, volume))
         pit = max(0.5, min(2.0, pitch))
 
@@ -373,6 +434,8 @@ class SoundLibrary:
         """
         Stops playback of a specific cue or stops all active sounds and music.
         """
+        if not is_audio_device_ready():
+            return
         if name is not None:
             key = normalize_asset_key(name)
             if key in self.sounds or name in self.sounds:
@@ -392,6 +455,8 @@ class SoundLibrary:
 
     def pause(self, name: str) -> None:
         """Pauses a playing sound or music track."""
+        if not is_audio_device_ready():
+            return
         key = normalize_asset_key(name)
         if key in self.sounds or name in self.sounds:
             snd = self.sounds.get(key) or self.sounds.get(name)
@@ -402,6 +467,8 @@ class SoundLibrary:
 
     def resume(self, name: str) -> None:
         """Resumes a paused sound or music track."""
+        if not is_audio_device_ready():
+            return
         key = normalize_asset_key(name)
         if key in self.sounds or name in self.sounds:
             snd = self.sounds.get(key) or self.sounds.get(name)
@@ -412,6 +479,8 @@ class SoundLibrary:
 
     def is_playing(self, name: str) -> bool:
         """Returns True if the specified sound or music stream is currently playing."""
+        if not is_audio_device_ready():
+            return False
         key = normalize_asset_key(name)
         if key in self.sounds or name in self.sounds:
             snd = self.sounds.get(key) or self.sounds.get(name)
@@ -423,6 +492,8 @@ class SoundLibrary:
 
     def set_volume(self, name: str, volume: float) -> None:
         """Adjusts the playback volume of a loaded sound or music stream."""
+        if not is_audio_device_ready():
+            return
         vol = max(0.0, min(1.0, volume))
         key = normalize_asset_key(name)
         if key in self.sounds or name in self.sounds:
@@ -434,6 +505,8 @@ class SoundLibrary:
 
     def set_pitch(self, name: str, pitch: float) -> None:
         """Adjusts the playback pitch / speed of a loaded sound or music stream."""
+        if not is_audio_device_ready():
+            return
         pit = max(0.5, min(2.0, pitch))
         key = normalize_asset_key(name)
         if key in self.sounds or name in self.sounds:
@@ -448,11 +521,17 @@ class SoundLibrary:
         Feeds streaming music buffers frame-by-frame.
         MUST be called once per frame in the minigame's update() loop.
         """
+        if not is_audio_device_ready():
+            return
         if self.active_music is not None:
             update_music_stream(self.active_music)
 
     def unload(self, name: str) -> None:
         """Frees an individual sound or music asset from memory."""
+        if not is_audio_device_ready():
+            self.sounds.pop(name, None)
+            self.music.pop(name, None)
+            return
         key = normalize_asset_key(name)
         if key in self.sounds or name in self.sounds:
             snd = self.sounds.pop(key, None) or self.sounds.pop(name, None)
@@ -470,6 +549,11 @@ class SoundLibrary:
         Safely unloads all loaded Sound and Music handles from hardware memory.
         Guards against double-free if an asset was registered under multiple alias keys.
         """
+        if not is_audio_device_ready():
+            self.sounds.clear()
+            self.music.clear()
+            self.active_music = None
+            return
         unloaded_sound_ids = set()
         for snd in list(self.sounds.values()):
             snd_id = id(snd)

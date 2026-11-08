@@ -30,7 +30,7 @@ from typing import List, Dict
 # 3. Mandatory Raylib & modular imports
 from pyray import *
 try:
-    from assets import *
+    from assets.audio.asset_loader import *
 except Exception:
     pass
 from utils import *

@@ -156,7 +156,7 @@ draw_cylinder(pos, 0.8, 0.8, 1.8, 16, color)
 
 To maintain strict modular decoupling across the repository:
 
-> **Minigames inside `minigames/` MUST consume ONLY procedural assets that already exist in `assets/` and are exported via `assets/__init__.py`.**
+> **Minigames inside `minigames/` MUST consume ONLY procedural assets that already exist in `assets/` and are discovered via `assets/audio/asset_loader.py`.**
 
 - **No Ad-Hoc Inline Assets**: Minigame scripts must never draw complex multi-part custom entities directly in their world blocks, nor synthesize ad-hoc audio waves locally.
 - **Missing Asset Protocol**: If a minigame design requires a visual model, 2D sprite, SFX, or BGM track that does not yet exist in `assets/`:
@@ -215,14 +215,29 @@ from utils import *
 
 ## 🚀 Unified Import & Minigame Usage
 
-Minigames inside `minigames/` can import assets using either bulk or granular imports:
+Minigames inside `minigames/` can import assets using the central asset loader dictionaries or granular imports:
 
-### Bulk Import (Recommended for Prototypes):
+### Bulk Import via Central Asset Loader (Recommended for Minigames):
 ```python
-from assets import *
+from assets.audio.asset_loader import *
+# Exposes dictionary registries: models_3D, sprites_2D, audio, sfx, bgm
+# and dynamic loaders: import_asset_by_key, load_model_3d, load_sprite_2d
 ```
 
-### Granular Import (For Isolated Testing):
+### Key-Based Dynamic Loading in Minigames:
+```python
+# 3D Model by key
+draw_knight, knight_palette = load_model_3d("exo_knight")
+
+# 2D Sprite by key
+draw_ops, ops_palette = load_sprite_2d("tactical_ops")
+
+# Audio cues by key via SoundLibrary
+SFXS = ["laser"]
+BGMS = ["synth_pulse"]
+```
+
+### Granular Direct Import:
 ```python
 # 3D Models
 from assets.models_3D.exo_knight import draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE
@@ -325,13 +340,13 @@ When an AI craftsman subagent is assigned to build an asset:
    ```
 
 6. **Step 6: Orchestrator-Exclusive Lifecycle & Registration**:
-   Subagent craftsmen **do not** edit tracking spreadsheets (`tasks/*.csv`) or `assets/__init__.py`. Craftsmen send a concise completion report to the Lead Orchestrator.
+   Subagent craftsmen **do not** edit tracking spreadsheets (`tasks/*.csv`) or core registries. Craftsmen send a concise completion report to the Lead Orchestrator.
    The **Lead Orchestrator exclusively**:
    - Automatically synchronizes task status across catalogs upon batch completion:
      ```bash
      python -B tasks.py --sync-statuses
      ```
-   - Registers the new asset interface into `assets/__init__.py` to maintain unified exports.
+   - Newly built assets are automatically discovered dynamically by `assets/audio/asset_loader.py`.
 
 ---
 
@@ -340,6 +355,7 @@ When an AI craftsman subagent is assigned to build an asset:
 1. **Zero External Media Files**: No `.png`, `.jpg`, `.bmp`, `.wav`, `.mp3`, `.ogg`, `.obj`, or `.fbx` files.
 2. **C++ Transferability**: Plain classes with explicit `__init__`, fixed arrays, explicit loops, zero decorators, zero generators, zero lambdas, zero magic dunders.
 3. **Canonical Directories & Files**:
+   - `assets/audio/asset_loader.py` for dynamic discovery dictionary registries (`models_3D`, `sprites_2D`, `audio`, `sfx`, `bgm`)
    - `assets/audio/synth_sfx.py` for procedural audio synthesis engine & `SoundLibrary`
    - `assets/audio/SFX/<category>/` for dedicated modular sound effects
    - `assets/audio/BGM/<vibe>/` for algorithmic background music tracks categorized by emotional vibe

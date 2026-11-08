@@ -43,6 +43,7 @@ from .ai_pursuit import (
 
 from .math_helpers import (
     clamp,
+    safe_color,
     lerp,
     lerp_v2,
     lerp_v3,
@@ -120,7 +121,7 @@ __all__ = [
     "seek_3d", "predict_intercept_3d", "has_line_of_sight_grid",
     "find_path_astar", "find_path_bfs",
     # Math & Easing
-    "clamp", "lerp", "lerp_v2", "lerp_v3", "approach",
+    "clamp", "safe_color", "lerp", "lerp_v2", "lerp_v3", "approach",
     "damp", "damp_v2", "damp_v3", "distance_2d", "distance_3d",
     "normalize_2d", "normalize_3d", "angle_to_vector_2d", "vector_to_angle_2d",
     "ease_in_quad", "ease_out_quad", "ease_in_out_quad", "ease_out_bounce", "ease_out_elastic",

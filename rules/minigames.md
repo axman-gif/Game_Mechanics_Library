@@ -116,7 +116,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 # 3. Mandatory Raylib, Asset, and Utility imports in exact order
 from pyray import *
-from assets import *
+from assets.audio.asset_loader import *
 from utils import *
 
 SCREEN_WIDTH = 1280
@@ -397,7 +397,7 @@ Minigames import procedural assets and utilities using clean, standardized inter
 ```python
 # Canonical import pattern at the top of every minigame
 from pyray import *
-from assets import *
+from assets.audio.asset_loader import *
 from utils import *
 ```
 
@@ -435,11 +435,11 @@ Audio is managed through `SoundLibrary` (`assets/audio/synth_sfx.py`), which dyn
 #### 1. Importing the Audio Subsystem:
 ```python
 from pyray import *
-from assets import *   # Automatically exports SoundLibrary, SFX_REGISTRY, BGM_REGISTRY
+from assets.audio.asset_loader import *   # Automatically exports models_3D, sprites_2D, audio, sfx, bgm, SoundLibrary
 from utils import *
 
 # Or via granular import:
-# from assets.audio.synth_sfx import SoundLibrary, SFX_REGISTRY, BGM_REGISTRY
+# from assets.audio.asset_loader import models_3D, sprites_2D, audio, sfx, bgm, SoundLibrary
 ```
 
 #### 2. Declaring Required Audio Lists:
