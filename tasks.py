@@ -99,6 +99,8 @@ DEFAULT_COL_WIDTHS: Dict[str, int] = {
     "section": 90,
     "dimension": 90,
     "status": 120,
+    "buildable": 100,
+    "requisites": 240,
     "type": 95,
     "category": 130,
     "vibe": 120,
@@ -223,6 +225,23 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                 for r in reader:
                     rows.append(r)
 
+            # If syncing minigames, also build asset dictionary to sync 'buildable' status
+            is_minigames = "minigames" in os.path.basename(path).lower()
+            asset_statuses: Dict[str, str] = {}
+            if is_minigames and "buildable" in fieldnames:
+                for asset_cat in ("SFXs.csv", "BGMs.csv", "models_3D.csv", "sprites_2D.csv"):
+                    ac_path = os.path.join(tasks_dir, asset_cat)
+                    if os.path.exists(ac_path):
+                        with open(ac_path, "r", encoding="utf-8-sig") as af:
+                            for ar in csv.DictReader(af):
+                                aid = (ar.get("id") or "").strip().lower()
+                                ast = (ar.get("status") or "").strip().lower()
+                                afunc = (ar.get("function_name") or "").strip().lower()
+                                if aid:
+                                    asset_statuses[aid] = ast
+                                if afunc:
+                                    asset_statuses[afunc] = ast
+
             cat_done = 0
             cat_pending = 0
             cat_updated = 0
@@ -243,6 +262,20 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                     cat_updated += 1
 
                 r["status"] = expected_status
+
+                # Sync buildable status for minigames
+                if is_minigames and "buildable" in fieldnames:
+                    req_str = (r.get("requisites") or "").strip()
+                    if req_str:
+                        req_ids = [rid.strip().lower() for rid in req_str.split(",") if rid.strip()]
+                        all_ready = len(req_ids) > 0 and all(asset_statuses.get(rid) == "done" for rid in req_ids)
+                        expected_buildable = "yes" if all_ready else "no"
+                    else:
+                        expected_buildable = (r.get("buildable") or "no").strip().lower()
+
+                    if (r.get("buildable") or "").strip().lower() != expected_buildable:
+                        r["buildable"] = expected_buildable
+                        cat_updated += 1
 
                 if expected_status == "done":
                     cat_done += 1
@@ -276,6 +309,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
         type_filter = None
         vibe_filter = None
         difficulty_filter = None
+        buildable_filter = None
         limit_val = None
 
         if "--section" in args:
@@ -290,6 +324,10 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             st_idx = args.index("--status")
             if st_idx + 1 < len(args):
                 status_filter = args[st_idx + 1].lower().strip()
+        if "--buildable" in args:
+            b_idx = args.index("--buildable")
+            if b_idx + 1 < len(args):
+                buildable_filter = args[b_idx + 1].lower().strip()
         if "--type" in args:
             t_idx = args.index("--type")
             if t_idx + 1 < len(args):
@@ -336,6 +374,8 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                             pass
                         elif r_st != status_filter:
                             continue
+                    if buildable_filter and r.get("buildable", "").lower().strip() != buildable_filter:
+                        continue
                     if type_filter and r.get("type", "").upper() != type_filter:
                         continue
                     if vibe_filter and r.get("vibe", "").lower() != vibe_filter:
@@ -353,10 +393,13 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                         r_title = r.get("title", "")
                         r_dim = r.get("dimension", "")
                         r_pat = r.get("patterns", "")
+                        r_bld = r.get("buildable", "no")
+                        r_req = r.get("requisites", "")
+                        req_str = f" | reqs: {r_req}" if r_req else ""
                         if r_diff:
-                            print(f"{r_id} | {r_diff} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
+                            print(f"{r_id} | {r_diff} | {r_sec} | {r_title} | {r_dim} | {r_file} | buildable: {r_bld} | {r_status}{req_str}")
                         else:
-                            print(f"{r_id} | {r_sec} | {r_title} | {r_dim} | {r_file} | {r_pat} | {r_status}")
+                            print(f"{r_id} | {r_sec} | {r_title} | {r_dim} | {r_file} | buildable: {r_bld} | {r_status}{req_str}")
                     elif "bgm" in cat_name:
                         r_type = r.get("type", "BGM")
                         r_cat = r.get("category", "")
@@ -545,6 +588,8 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                         "target_file": r.get("target_file", ""),
                         "patterns": r.get("patterns", ""),
                         "status": r.get("status", ""),
+                        "buildable": r.get("buildable", "no"),
+                        "requisites": r.get("requisites", ""),
                         "description": r.get("description", ""),
                     }
                     break
@@ -553,12 +598,16 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             print(f"[NOT FOUND] Minigame matching '{query}' not found in tasks/minigames.csv")
             return True
 
+        req_str = (target_mg.get("requisites") or "").strip()
+
         print(f"================================================================================")
         print(f"ASSET PREREQUISITE CHECK FOR: {target_mg['title']} ({target_mg['id']})")
         print(f"Dimension  : {target_mg['dimension']}")
         print(f"Section    : {target_mg['section']}")
         print(f"File       : {target_mg['target_file']}")
         print(f"Status     : {target_mg['status']}")
+        print(f"Buildable  : {target_mg['buildable']}")
+        print(f"Requisites : {req_str if req_str else '(None defined)'}")
         print(f"Patterns   : {target_mg['patterns']}")
         print(f"Description: {target_mg['description']}")
         print(f"================================================================================")
@@ -585,98 +634,71 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                         "concept": r.get("concept_name", ""),
                     })
 
-        # 3. Analyze potential visual assets based on dimension and description keywords
-        mg_desc_lower = target_mg["description"].lower()
-        mg_title_lower = target_mg["title"].lower()
-        mg_text = f"{mg_desc_lower} {mg_title_lower}"
-        dim = target_mg["dimension"].upper()
+        # 3. Check explicit requisites
+        if not req_str:
+            print("\n[STATUS: REQUISITES NOT DEFINED YET]")
+            print(f"Minigame '{target_mg['title']}' has no asset requisites mapped in tasks/minigames.csv.")
+            print("Buildable status is currently: 'no'.")
+            print("Populate the 'requisites' column with comma-separated asset IDs to evaluate buildability.")
+            print("================================================================================")
+            return True
 
-        matching_assets = []
+        req_ids = [rid.strip() for rid in req_str.split(",") if rid.strip()]
         missing_assets = []
         ready_assets = []
 
-        # Check visual assets
-        visual_cat = "models_3D.csv" if "3D" in dim else "sprites_2D.csv"
-        for item in asset_catalogs[visual_cat]:
-            item_keys = [
-                item["id"].lower(),
-                item["concept"].lower(),
-                item["func"].lower(),
-            ]
-            words = [w for w in re.split(r"[\s_]+", " ".join(item_keys)) if len(w) > 3]
-            match_found = any(w in mg_text for w in words)
-            if match_found:
-                matching_assets.append((visual_cat, item))
-                if item["status"] == "done":
-                    ready_assets.append((visual_cat, item))
-                else:
-                    missing_assets.append((visual_cat, item))
+        for rid in req_ids:
+            found = False
+            for cat_name, cat_items in asset_catalogs.items():
+                match = next((item for item in cat_items if item["id"].lower() == rid.lower() or item["func"].lower() == rid.lower()), None)
+                if match:
+                    found = True
+                    if match["status"] == "done":
+                        ready_assets.append((cat_name, match))
+                    else:
+                        missing_assets.append((cat_name, match))
+                    break
+            if not found:
+                missing_assets.append(("NOT_FOUND", {"id": rid, "status": "missing", "func": rid, "concept": "", "description": "Asset ID not found in any catalog"}))
 
-        # Check SFX assets
-        for item in asset_catalogs["SFXs.csv"]:
-            item_keys = [item["id"].lower(), item["func"].lower()]
-            words = [w for w in re.split(r"[\s_]+", " ".join(item_keys)) if len(w) > 3 and w not in ("sfx", "combat", "audio")]
-            if any(w in mg_text for w in words):
-                matching_assets.append(("SFXs.csv", item))
-                if item["status"] == "done":
-                    ready_assets.append(("SFXs.csv", item))
-                else:
-                    missing_assets.append(("SFXs.csv", item))
-
-        # Check BGM assets
-        for item in asset_catalogs["BGMs.csv"]:
-            item_keys = [item["id"].lower(), item["func"].lower()]
-            words = [w for w in re.split(r"[\s_]+", " ".join(item_keys)) if len(w) > 3 and w not in ("bgm", "audio")]
-            if any(w in mg_text for w in words):
-                matching_assets.append(("BGMs.csv", item))
-                if item["status"] == "done":
-                    ready_assets.append(("BGMs.csv", item))
-                else:
-                    missing_assets.append(("BGMs.csv", item))
-
-        # Print catalog inventory counts
-        print("\n--- Asset Catalog Summary (id, status, description) ---")
-        for cname, items in asset_catalogs.items():
-            done_cnt = sum(1 for it in items if it["status"] == "done")
-            pend_cnt = sum(1 for it in items if it["status"] == "pending")
-            print(f"  {cname:15}: {done_cnt:2} done, {pend_cnt:2} pending (total {len(items)})")
-
-        if matching_assets:
-            print(f"\n--- Relevant Assets Detected for this Minigame ({len(matching_assets)} total) ---")
-            for cname, it in matching_assets:
-                status_badge = "[DONE]" if it["status"] == "done" else "[PENDING]"
-                name = it["func"] or it["concept"] or it["id"]
-                print(f"  {status_badge:9} {cname:14} {it['id']:25} {name}")
-                print(f"             Description: {it['description'][:90]}...")
+        print(f"\n--- Explicit Requisites Evaluated ({len(req_ids)} total) ---")
+        for cat_name, it in ready_assets:
+            name = it.get("func") or it.get("concept") or it.get("id")
+            print(f"  [DONE]    {cat_name:14} {it['id']:25} {name}")
+        for cat_name, it in missing_assets:
+            name = it.get("func") or it.get("concept") or it.get("id")
+            print(f"  [PENDING] {cat_name:14} {it['id']:25} {name}")
 
         # 4. Enforce Quality Gate Evaluation
         print("\n================================================================================")
         if missing_assets:
-            print("[GATE VERDICT: HALT CRAFTSMAN SPAWNING - ASSETS MISSING]")
+            print("[GATE VERDICT: HALT ENGINEER SPAWNING - ASSETS PENDING]")
             print(f"The following {len(missing_assets)} asset(s) are REQUIRED but currently PENDING:")
             for cname, it in missing_assets:
-                print(f"  - [{cname}] {it['id']} ({it['func'] or it['concept']}) -> status: pending")
-                print(f"    Reason: {it['description']}")
+                print(f"  - [{cname}] {it['id']} ({it.get('func') or it.get('concept', '')}) -> status: {it['status']}")
+                if it.get("description"):
+                    print(f"    Reason: {it['description']}")
             print("\n>>> QUALITY PRESERVATION EXPLANATION:")
             print("In accordance with Rule 10 (Assets-Only Minigames: Zero Inlined or Fabricated Assets),")
-            print("the Lead Orchestrator CANNOT invoke the craftsman subagent until all required assets exist.")
-            print("Withholding the craftsman preserves library architecture by preventing:")
+            print("the Lead Orchestrator CANNOT invoke the engineer subagent until all required assets exist.")
+            print("Withholding the engineer preserves library architecture by preventing:")
             print("  1. Inlined procedural wave synthesizers inside game logic.")
             print("  2. Ad-hoc monolithic primitive drawings that duplicate modular assets.")
             print("  3. Silent placeholders or broken visuals that compromise educational clarity.")
             print("\nRecommended Next Step:")
-            print("  Build the missing assets first via `/teamwork` or individual asset prompts before building this minigame.")
+            print("  Build the missing assets first via batch prompts (e.g. create missing assets) or individual prompts before building this minigame.")
             print("================================================================================")
         else:
-            print("[GATE VERDICT: CLEARED FOR CRAFTSMAN SPAWNING - ALL ASSETS READY]")
+            print("[GATE VERDICT: CLEARED FOR ENGINEER SPAWNING - ALL ASSETS READY]")
             print("All required visual and audio assets exist on disk (status == done).")
-            print("\n>>> INJECTED CRAFTSMAN SPECIFICATIONS:")
+            print("Buildable: yes")
+            print("\n>>> INJECTED ENGINEER SPECIFICATIONS:")
             if ready_assets:
-                print("Pass these exact asset contracts to the craftsman subagent prompt:")
+                print("Pass these exact asset contracts to the engineer subagent prompt:")
                 for cname, it in ready_assets:
-                    print(f"  - {cname}: {it['id']} -> {it['func'] or it['concept']}")
+                    print(f"  - {cname}: {it['id']} -> {it.get('func') or it.get('concept', '')}")
             else:
-                print("  No missing assets detected in catalog. Use verified assets from assets/audio/asset_loader.py.")
+                print("  No external assets required. Use verified assets from assets/audio/asset_loader.py.")
             print("================================================================================")
 
         return True
@@ -751,6 +773,12 @@ class TasksEditor:
         self.is_dragging_hscroll = False
         self.drag_hscroll_start_mx = 0
         self.drag_hscroll_start_scroll_x = 0
+
+        # Dynamic column resizing state (Excel-style)
+        self.resizing_col_idx: Optional[int] = None
+        self.resize_start_mx: int = 0
+        self.resize_start_w: int = 0
+        self.just_resized: bool = False
 
         # Status & notification banner
         self.status_banner = "Welcome to Tasks Editor. Use [Ctrl+S] to save changes, [Tab] to switch files."
@@ -845,6 +873,7 @@ class TasksEditor:
             "is_dirty": False,
             "sort_col": None,
             "sort_dir": 0,  # 0: original, 1: asc, -1: desc
+            "col_widths": {c: DEFAULT_COL_WIDTHS.get(c, max(100, len(c) * 14)) for c in visible_cols},
         }
 
     def get_current_fname(self) -> str:
@@ -1224,6 +1253,15 @@ class TasksEditor:
                 self.enum_selected_idx = self.enum_options.index(current_val)
             self.active_modal = "enum_select"
 
+        elif col_name == "buildable":
+            self.enum_options = ["yes", "no"]
+            self.enum_target_row = actual_row_idx
+            self.enum_target_col = col_name
+            self.enum_selected_idx = 0
+            if current_val in self.enum_options:
+                self.enum_selected_idx = self.enum_options.index(current_val)
+            self.active_modal = "enum_select"
+
         elif col_name == "difficulty":
             self.enum_options = [
                 "1 - Beginner",
@@ -1438,7 +1476,8 @@ class TasksEditor:
             if is_mouse_button_down(MOUSE_BUTTON_LEFT):
                 data = self.get_current_data()
                 vis_cols = data.get("visible_cols", [])
-                col_widths = [DEFAULT_COL_WIDTHS.get(c, 160) for c in vis_cols]
+                col_widths_dict = data.get("col_widths", {})
+                col_widths = [col_widths_dict.get(c, DEFAULT_COL_WIDTHS.get(c, max(100, len(c) * 14))) for c in vis_cols]
                 total_grid_w = sum(col_widths)
                 table_w = SCREEN_WIDTH - 40
                 max_scroll_x = max(0, total_grid_w - table_w)
@@ -1758,10 +1797,12 @@ class TasksEditor:
             draw_text("No visible columns found in this catalog.", table_x + 20, table_y + 30, 14, COLOR_TEXT_MUTED)
             return
 
-        # Calculate column widths
+        # Calculate dynamic column widths from data store
+        col_widths_dict = data.setdefault("col_widths", {})
         col_widths = []
         for c in visible_cols:
-            w = DEFAULT_COL_WIDTHS.get(c, 160)
+            w = col_widths_dict.get(c, DEFAULT_COL_WIDTHS.get(c, max(100, len(c) * 14)))
+            col_widths_dict[c] = w
             col_widths.append(w)
 
         total_grid_w = sum(col_widths)
@@ -1770,6 +1811,45 @@ class TasksEditor:
 
         mx, my = get_mouse_x(), get_mouse_y()
         clicked = is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+
+        # Interactive Excel-style column resizing logic
+        hovered_divider_ci = None
+        if self.active_modal is None and ui_settings.open_dropdown is None:
+            if self.resizing_col_idx is not None:
+                set_mouse_cursor(MOUSE_CURSOR_RESIZE_EW)
+                if is_mouse_button_down(MOUSE_BUTTON_LEFT):
+                    col_to_resize = visible_cols[self.resizing_col_idx]
+                    delta = mx - self.resize_start_mx
+                    new_w = max(40, self.resize_start_w + delta)
+                    col_widths_dict[col_to_resize] = new_w
+                    col_widths[self.resizing_col_idx] = new_w
+                    total_grid_w = sum(col_widths)
+                else:
+                    self.resizing_col_idx = None
+                    self.just_resized = True
+                    set_mouse_cursor(MOUSE_CURSOR_DEFAULT)
+            else:
+                chk_cx = table_x - self.scroll_x
+                for ci, col_name in enumerate(visible_cols):
+                    cw = col_widths[ci]
+                    div_x = chk_cx + cw
+                    if (table_x <= div_x <= table_x + table_w) and (table_y <= my <= table_y + header_h):
+                        if abs(mx - div_x) <= 5:
+                            hovered_divider_ci = ci
+                            break
+                    chk_cx += cw
+
+                if hovered_divider_ci is not None:
+                    set_mouse_cursor(MOUSE_CURSOR_RESIZE_EW)
+                    if clicked:
+                        self.resizing_col_idx = hovered_divider_ci
+                        self.resize_start_mx = mx
+                        self.resize_start_w = col_widths[hovered_divider_ci]
+                elif not self.is_dragging_hscroll:
+                    set_mouse_cursor(MOUSE_CURSOR_DEFAULT)
+
+        if is_mouse_button_released(MOUSE_BUTTON_LEFT):
+            self.just_resized = False
 
         max_scroll_x = max(0, total_grid_w - table_w)
 
@@ -1809,7 +1889,7 @@ class TasksEditor:
             cw = col_widths[ci]
             h_hover = (cur_cx <= mx <= cur_cx + cw) and (table_y <= my <= table_y + header_h)
 
-            if h_hover:
+            if h_hover and hovered_divider_ci is None and self.resizing_col_idx is None:
                 draw_rectangle(cur_cx, table_y, cw, header_h, COLOR_HOVER_ROW)
 
             # Sort indicator
@@ -1819,10 +1899,16 @@ class TasksEditor:
 
             col_label = f"{col_name.upper()}{sort_ind}"
             draw_text(col_label, cur_cx + 8, table_y + 8, 12, COLOR_ACCENT if sort_ind else COLOR_TEXT_MAIN)
-            draw_line(cur_cx + cw - 1, table_y, cur_cx + cw - 1, table_y + header_h, COLOR_PANEL_BORDER)
+
+            # Draw column divider with resize highlight
+            is_div_active = (hovered_divider_ci == ci or self.resizing_col_idx == ci)
+            div_col = COLOR_ACCENT if is_div_active else COLOR_PANEL_BORDER
+            div_w = 3 if is_div_active else 1
+            draw_rectangle(cur_cx + cw - div_w, table_y, div_w, header_h, div_col)
 
             if h_hover and clicked and self.active_modal is None and ui_settings.open_dropdown is None:
-                self.sort_by_column(col_name)
+                if hovered_divider_ci is None and self.resizing_col_idx is None and not self.just_resized:
+                    self.sort_by_column(col_name)
 
             cur_cx += cw
         end_scissor_mode()
@@ -1875,11 +1961,15 @@ class TasksEditor:
 
                 cell_val = str(row_data.get(col_name, ""))
 
-                # Status Badge rendering
+                # Badge rendering (status & buildable)
                 if col_name == "status":
                     badge_h = 20 if self.wrap_text else (row_h - 8)
                     badge_y = ry + (row_h - badge_h) // 2 if self.wrap_text else (ry + 4)
                     self._draw_status_badge(cell_val, cur_cx + 8, badge_y, cw - 16, badge_h)
+                elif col_name == "buildable":
+                    badge_h = 20 if self.wrap_text else (row_h - 8)
+                    badge_y = ry + (row_h - badge_h) // 2 if self.wrap_text else (ry + 4)
+                    self._draw_buildable_badge(cell_val, cur_cx + 8, badge_y, cw - 16, badge_h)
                 else:
                     txt_col = COLOR_TEXT_MAIN if not is_selected_cell else Color(255, 255, 255, 255)
                     if self.wrap_text:
@@ -1929,6 +2019,18 @@ class TasksEditor:
 
         draw_rectangle(x, y, w, h, col)
         draw_text(label, x + (w - len(label) * 7) // 2, y + 2, 11, COLOR_TEXT_MAIN)
+
+    def _draw_buildable_badge(self, val: str, x: int, y: int, w: int, h: int):
+        """Draws colored buildable pill badge (yes/no)."""
+        is_yes = (val.lower().strip() == "yes")
+        col = Color(28, 95, 60, 255) if is_yes else Color(95, 38, 38, 255)
+        label = "Yes" if is_yes else "No"
+        draw_rectangle(x, y, w, h, col)
+        draw_rectangle_lines(x, y, w, h, Color(48, 160, 95, 255) if is_yes else Color(165, 65, 65, 255))
+        tw = measure_text(label, 11)
+        tx = x + max(2, (w - tw) // 2)
+        ty = y + max(1, (h - 11) // 2)
+        draw_text(label, tx, ty, 11, COLOR_TEXT_MAIN)
 
     def _draw_status_bar(self):
         """Renders bottom status bar with hidden metadata inspection and keybindings."""
