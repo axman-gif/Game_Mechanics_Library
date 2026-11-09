@@ -161,6 +161,20 @@ python -B tasks.py
 - **Pattern Selector Modal**: Select patterns directly from `rules/patterns.md` via a searchable multi-select checklist.
 - **Safe Row Editing**: Insert rows above or below, duplicate rows, and sort alphanumerically with guaranteed schema immutability.
 
+### Option D: The Interactive Procedural Asset Viewer & Workbench (`assets/audio/asset_viewer.py`)
+To inspect, preview, audition, and test all 100% procedural assets across the repository without launching a full minigame:
+```bash
+python -B assets/audio/asset_viewer.py
+```
+- **4 Specialized Asset Tabs**:
+  - **3D Models** (`assets/models_3D/`): Interactive 3D orbit camera, play/pause walking animations, stop/reset timer, speed, scale, yaw rotation slider, floor grid, wireframe toggle, and swappable semantic color palettes (Default, Stealth, Cyberpunk, Desert).
+  - **2D Sprites** (`assets/sprites_2D/`): 2D zoom & pan canvas, play/pause procedural vector animations, facing angle dial/slider ($0^\circ \dots 360^\circ$ / radians), transparency checkerboard grid, scale, and swappable palettes (Default, Neon, Crimson, Emerald).
+  - **SFX Sounds** (`assets/audio/SFX/`): One-shot trigger with `[Space]`, stop with `[S]`, loop toggle, volume & pitch sliders, real-time PCM oscilloscope waveform display with scanning playhead, and synthesis telemetry.
+  - **BGM Tracks** (`assets/audio/BGM/`): Streaming music player with Play, Pause, Resume, Stop, draggable progress scrubber, volume & pitch/tempo sliders, tempo beat pulse flash indicator, and dynamic 24-band animated graphic equalizer / spectrum visualizer.
+- **Live In-Memory Discovery**: Powered directly by `assets/audio/asset_loader.py`. Press **`[F5]`** at any time to dynamically rescan disk files and discover newly created assets without restarting.
+- **Ready-to-Use Minigame Code**: The right inspector panel shows the exact Python code snippet to import and use any selected asset in your minigames.
+- **Automated Smoke Test**: Run `python -B assets/audio/asset_viewer.py --smoke-test` to verify all 4 tabs and audio streaming headlessly in CI/CD.
+
 ---
 
 ## 🎮 Global Controls (Keyboard, Mouse & Gamepad)
@@ -591,6 +605,29 @@ python -B minigames/<subcarpeta_de_categoria>/<nombre_del_script>.py
 # python -B minigames/3.0_core_prototypes/orbital_siege.py
 ```
 
+### Opción C: El Editor Interactivo de Tareas y Hojas de Cálculo (`tasks.py`)
+Para inspeccionar, editar, ordenar y agregar prototipos o recursos procedurales sin riesgo de corromper delimitadores CSV:
+```bash
+python -B tasks.py
+```
+- **Cambio de Catálogo en Caliente**: Alterna entre `minigames.csv`, `SFXs.csv`, `BGMs.csv`, `models_3D.csv` y `sprites_2D.csv`.
+- **Columnas Técnicas Ocultas**: Mantiene `id` y `target_file` fuera de la vista para evitar errores humanos, generándolos fielmente al guardar.
+- **Selector Modal de Patrones**: Asigna patrones de diseño directamente desde `rules/patterns.md` con búsqueda en vivo.
+
+### Opción D: El Visualizador Interactivo de Recursos Procedurales (`assets/audio/asset_viewer.py`)
+Para inspeccionar, escuchar, probar y experimentar con todos los recursos 100% procedurales del repositorio sin necesidad de abrir un minijuego:
+```bash
+python -B assets/audio/asset_viewer.py
+```
+- **4 Pestañas Especializadas por Tipo de Recurso**:
+  - **Modelos 3D** (`assets/models_3D/`): Cámara orbital interactiva con ratón, reproducción/pausa de animaciones de marcha, parada/reinicio a 0.0s, velocidad, escala, rotación yaw, rejilla de suelo, modo alámbrico y paletas intercambiables (Default, Stealth, Cyberpunk, Desert).
+  - **Sprites 2D** (`assets/sprites_2D/`): Lienzo interactivo con paneo y zoom, reproducción/pausa de animaciones vectoriales, dial de ángulo direccional ($0^\circ \dots 360^\circ$ / radianes), cuadrícula de transparencia (damero) y paletas intercambiables (Default, Neon, Crimson, Emerald).
+  - **Efectos de Sonido SFX** (`assets/audio/SFX/`): Disparo instantáneo con `[Espacio]`, parada con `[S]`, modo bucle, barras de volumen y tono (pitch), osciloscopio en tiempo real con forma de onda PCM y cabezal de reproducción animado.
+  - **Música BGM** (`assets/audio/BGM/`): Reproductor de audio en streaming con Play, Pausa, Reanudar, Parar, barra de tiempo interactiva (scrubber), volumen, tempo/tono, indicador de pulso de compás (BPM) y ecualizador gráfico animado de 24 bandas con medidores de picos.
+- **Descubrimiento Dinámico en Memoria**: Alimentado directamente por `assets/audio/asset_loader.py`. Pulsa **`[F5]`** para reescanear el disco y detectar nuevos recursos al instante.
+- **Fragmentos de Código para Minijuegos**: El panel inspector derecho muestra la llamada exacta en Python para importar y usar cualquier modelo, sprite o sonido en tus proyectos.
+- **Prueba de Integridad Automatizada**: Ejecuta `python -B assets/audio/asset_viewer.py --smoke-test` para verificar las 4 pestañas y el streaming de audio en modo headless.
+
 ---
 
 ## 🎮 Controles Globales (Teclado, Ratón y Mando)
@@ -728,6 +765,8 @@ Game_Mechanics_Library/
 │   ├── models_3D/             #    Modelos 3D por primitivas (.gitkeep)
 │   ├── sprites_2D/            #    Sprites 2D por primitivas geométricas animadas (.gitkeep)
 │   └── audio/                 #    Sintetizadores de audio procedural en memoria RAM
+│       ├── asset_loader.py    #    Universal dynamic asset discovery registry & loader
+│       ├── asset_viewer.py    #    🎨 Visualizador e inspector interactivo de recursos (3D, 2D, SFX, BGM)
 │       ├── synth_sfx.py       #    Registro dinámico y SoundLibrary de carga selectiva en RAM
 │       ├── SFX/               #    Efectos de sonido procedurales por categoría
 │       │   ├── combat/        #       SFX de combate y armas (.gitkeep)

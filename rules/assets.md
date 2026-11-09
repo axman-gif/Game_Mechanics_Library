@@ -364,6 +364,7 @@ When an AI craftsman subagent is assigned to build an asset:
 2. **C++ Transferability**: Plain classes with explicit `__init__`, fixed arrays, explicit loops, zero decorators, zero generators, zero lambdas, zero magic dunders.
 3. **Canonical Directories & Files**:
    - `assets/audio/asset_loader.py` for dynamic discovery dictionary registries (`models_3D`, `sprites_2D`, `audio`, `sfx`, `bgm`)
+   - `assets/audio/asset_viewer.py` for the interactive 4-tab graphical workbench & live asset audition viewer (`python -B assets/audio/asset_viewer.py`)
    - `assets/audio/synth_sfx.py` for procedural audio synthesis engine & `SoundLibrary`
    - `assets/audio/SFX/<category>/` for dedicated modular sound effects
    - `assets/audio/BGM/<vibe>/` for algorithmic background music tracks categorized by emotional vibe

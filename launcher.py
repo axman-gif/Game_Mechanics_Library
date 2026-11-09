@@ -406,6 +406,28 @@ class PatternHubLauncher:
         if self.music_enabled:
             self.music.resume()
 
+    def launch_asset_viewer(self):
+        viewer_path = os.path.join(ROOT_DIR, "assets", "audio", "asset_viewer.py")
+        if not os.path.exists(viewer_path):
+            self.status_banner = "asset_viewer.py not found."
+            self.status_color = RED
+            return
+        if self.music_enabled:
+            self.music.pause()
+        env = os.environ.copy()
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
+        cmd = [sys.executable, "-B", viewer_path]
+        try:
+            subprocess.run(cmd, cwd=ROOT_DIR, env=env, check=False)
+            self.status_banner = "Closed Asset Viewer cleanly."
+            self.status_color = COLOR_ACCENT
+        except Exception as exc:
+            self.status_banner = f"Asset Viewer error: {exc}"
+            self.status_color = RED
+        ui_settings.reload_from_disk()
+        if self.music_enabled:
+            self.music.resume()
+
     def update(self):
         dt = min(get_frame_time(), 0.05)
         self.anim_timer += dt
@@ -422,6 +444,9 @@ class PatternHubLauncher:
 
         if is_key_pressed(KEY_R) and not self.category_dropdown_open:
             self.rescan()
+
+        if is_key_pressed(KEY_V) and not self.category_dropdown_open:
+            self.launch_asset_viewer()
 
         if self.pad_nav_cooldown > 0.0:
             self.pad_nav_cooldown -= dt
@@ -781,7 +806,7 @@ class PatternHubLauncher:
         draw_rectangle(0, SCREEN_HEIGHT - 54, SCREEN_WIDTH, 54, COLOR_PANEL)
         draw_line(0, SCREEN_HEIGHT - 54, SCREEN_WIDTH, SCREEN_HEIGHT - 54, COLOR_PANEL_BORDER)
         draw_text(
-            "[L-Stick/Arrows] Select Script   [Q/E or LB/RB] Section Filter   [Enter/A] Launch   [S/X] Smoke-Test   [Ctrl +/-] Font   [F11] Fullscreen",
+            "[L-Stick/Arrows] Select Script   [Q/E or LB/RB] Section Filter   [Enter/A] Launch   [V] Asset Viewer   [S/X] Smoke-Test   [Ctrl +/-] Font   [F11] Fullscreen",
             24, SCREEN_HEIGHT - 44, 13, WHITE
         )
         draw_text(self.status_banner, 24, SCREEN_HEIGHT - 22, 13, self.status_color)
