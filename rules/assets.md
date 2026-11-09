@@ -76,11 +76,21 @@ Specifications, templates, and tracking are decomposed into three dedicated rule
 
 ### 🔒 Mandatory Asset Prerequisite Verification Gate (Upstream Pipeline)
 Procedural visual models, 2D sprites, sound effects, and music are strictly **upstream dependencies** for all minigames:
-1. **Lightweight Headless Inspection**: When a user requests a minigame, the Lead Orchestrator runs a Python script parsing strictly `id`, `status`, and `description` from all `tasks/*.csv` files (via `python -B tasks.py --check-prerequisites <minigame_id>`).
-2. **Quality Preservation Rule**: If **even a single (1) asset** required by the minigame is missing or pending (`status == pending`):
-   - The Orchestrator **halts craftsman invocation** for that minigame.
-   - The Orchestrator explains to the user which assets are missing and how withholding the craftsman preserves the library's code quality and visual/audio polish (preventing inlined waveforms, ad-hoc primitive drawings, or broken placeholders under **Rule 10**).
-3. **Specification Injection**: Once all required assets exist (`status == done`), the Orchestrator injects the exact asset signatures (`draw_<name>_3d`, `draw_<name>_2d`, `SFXS = [...]`, `BGMS = [...]`) into the subagent craftsman prompt.
+1. **Explicit Function Name Requisites**: Every minigame declares its asset dependencies in `tasks/minigames.csv` (`requisites` column, aliased as `requirements`) via concrete procedural generator **`function_name`** identifiers:
+   - 2D Sprites: `draw_*_2d` from `tasks/sprites_2D.csv` (strictly 2D minigames).
+   - 3D Models: `draw_*_3d` from `tasks/models_3D.csv` (strictly 3D minigames).
+   - SFX: `create_*_sfx` from `tasks/SFXs.csv`.
+   - BGM: `create_*_bgm` or `generate_*_track` from `tasks/BGMs.csv`.
+2. **Auto-Computed `buildable` Status**: The `buildable` column in `tasks/minigames.csv` is read-only and automatically computed by `tasks.py`. It is `"yes"` only if all declared requisites have `status == "done"` on disk; otherwise `"no"`.
+3. **Headless Quality Inspection**: When a user requests a minigame, the Lead Orchestrator evaluates prerequisites via:
+   ```bash
+   python -B tasks.py --check-prerequisites <minigame_id_or_title>
+   ```
+   (or alias `python -B tasks.py --check-requirements <minigame_id_or_title>`), which matches tokens by both `id` and `function_name`.
+4. **Quality Preservation Halt**: If **even a single (1) asset** required by the minigame is missing or pending (`status == pending`, resulting in `buildable == no`):
+   - The Orchestrator **halts engineer invocation** for that minigame.
+   - The Orchestrator explains to the user which assets are missing and how withholding the engineer preserves the library's code quality and visual/audio polish (preventing inlined waveforms, ad-hoc primitive drawings, or broken placeholders under **Rule 10**).
+5. **Specification Injection**: Once all required assets exist (`status == done` and `buildable == yes`), the Orchestrator injects the exact asset signatures (`draw_<name>_3d`, `draw_<name>_2d`, `SFXS = [...]`, `BGMS = [...]`) into the subagent engineer prompt.
 
 ---
 

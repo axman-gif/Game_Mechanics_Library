@@ -101,6 +101,7 @@ DEFAULT_COL_WIDTHS: Dict[str, int] = {
     "status": 120,
     "buildable": 100,
     "requisites": 240,
+    "requirements": 240,
     "type": 95,
     "category": 130,
     "vibe": 120,
@@ -184,7 +185,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             return [os.path.join(tasks_dir, "models_3D.csv")]
         elif c_lower in ("sprites_2d", "sprites2d", "sprites", "sprite"):
             return [os.path.join(tasks_dir, "sprites_2D.csv")]
-        elif c_lower in ("minigames", "minigame", "games", "game"):
+        elif c_lower in ("minigames", "minigame", "games", "game", "requisites", "requirements"):
             return [os.path.join(tasks_dir, "minigames.csv")]
         else:
             clean = cat_name if cat_name.endswith(".csv") else f"{cat_name}.csv"
@@ -204,6 +205,9 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             target_paths = resolve_csv_paths(cat_arg)
         else:
             target_paths = [os.path.join(tasks_dir, c) for c in CANONICAL_CATALOGS]
+
+        if len(target_paths) > 1 and any("minigames" in os.path.basename(p).lower() for p in target_paths):
+            target_paths = sorted(target_paths, key=lambda p: 1 if "minigames" in os.path.basename(p).lower() else 0)
 
         total_tasks = 0
         total_done = 0
@@ -237,6 +241,11 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                                 aid = (ar.get("id") or "").strip().lower()
                                 ast = (ar.get("status") or "").strip().lower()
                                 afunc = (ar.get("function_name") or "").strip().lower()
+                                target_f = (ar.get("target_file") or "").strip()
+                                if target_f:
+                                    fp = target_f if os.path.isabs(target_f) else os.path.join(repo_root, target_f)
+                                    if os.path.isfile(os.path.normpath(fp)):
+                                        ast = "done"
                                 if aid:
                                     asset_statuses[aid] = ast
                                 if afunc:
@@ -265,13 +274,13 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
 
                 # Sync buildable status for minigames
                 if is_minigames and "buildable" in fieldnames:
-                    req_str = (r.get("requisites") or "").strip()
+                    req_str = (r.get("requisites") or r.get("requirements") or "").strip()
                     if req_str:
                         req_ids = [rid.strip().lower() for rid in req_str.split(",") if rid.strip()]
                         all_ready = len(req_ids) > 0 and all(asset_statuses.get(rid) == "done" for rid in req_ids)
                         expected_buildable = "yes" if all_ready else "no"
                     else:
-                        expected_buildable = (r.get("buildable") or "no").strip().lower()
+                        expected_buildable = "no"
 
                     if (r.get("buildable") or "").strip().lower() != expected_buildable:
                         r["buildable"] = expected_buildable
@@ -310,6 +319,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
         vibe_filter = None
         difficulty_filter = None
         buildable_filter = None
+        requisites_filter = None
         limit_val = None
 
         if "--section" in args:
@@ -328,6 +338,11 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             b_idx = args.index("--buildable")
             if b_idx + 1 < len(args):
                 buildable_filter = args[b_idx + 1].lower().strip()
+        if "--requisites" in args or "--requirements" in args:
+            rq_flag = "--requisites" if "--requisites" in args else "--requirements"
+            rq_idx = args.index(rq_flag)
+            if rq_idx + 1 < len(args):
+                requisites_filter = args[rq_idx + 1].lower().strip()
         if "--type" in args:
             t_idx = args.index("--type")
             if t_idx + 1 < len(args):
@@ -376,6 +391,10 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                             continue
                     if buildable_filter and r.get("buildable", "").lower().strip() != buildable_filter:
                         continue
+                    if requisites_filter:
+                        r_req_val = (r.get("requisites") or r.get("requirements") or "").lower()
+                        if requisites_filter not in r_req_val:
+                            continue
                     if type_filter and r.get("type", "").upper() != type_filter:
                         continue
                     if vibe_filter and r.get("vibe", "").lower() != vibe_filter:
@@ -394,7 +413,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                         r_dim = r.get("dimension", "")
                         r_pat = r.get("patterns", "")
                         r_bld = r.get("buildable", "no")
-                        r_req = r.get("requisites", "")
+                        r_req = r.get("requisites") or r.get("requirements") or ""
                         req_str = f" | reqs: {r_req}" if r_req else ""
                         if r_diff:
                             print(f"{r_id} | {r_diff} | {r_sec} | {r_title} | {r_dim} | {r_file} | buildable: {r_bld} | {r_status}{req_str}")
@@ -431,10 +450,11 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
     if "--get" in args:
         idx = args.index("--get")
         if idx + 2 >= len(args):
-            print("[ERROR] Usage: python -B tasks.py --get <catalog> <id_or_file>")
+            print("[ERROR] Usage: python -B tasks.py --get <catalog> <id_or_file> [field]")
             return True
         cat_arg = args[idx + 1]
         target_key = args[idx + 2]
+        field_arg = args[idx + 3].lower().strip() if (idx + 3 < len(args) and not args[idx + 3].startswith("--")) else None
         paths = resolve_csv_paths(cat_arg)
         found = False
         for path in paths:
@@ -445,8 +465,19 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                 for r in reader:
                     if r.get("id") == target_key or r.get("target_file") == target_key or r.get("target_file", "").endswith(target_key):
                         found = True
-                        for k, v in r.items():
-                            print(f"{k}: {v}")
+                        if field_arg:
+                            if field_arg in ("requirements", "requisites"):
+                                val = r.get("requisites") or r.get("requirements") or ""
+                                print(f"{field_arg}: {val}")
+                            elif field_arg in r:
+                                print(f"{field_arg}: {r[field_arg]}")
+                            else:
+                                print(f"[NOT FOUND] Field '{field_arg}' not found in record.")
+                        else:
+                            for k, v in r.items():
+                                print(f"{k}: {v}")
+                            if "requisites" in r and "requirements" not in r:
+                                print(f"requirements: {r['requisites']} (alias for requisites)")
                         break
             if found:
                 break
@@ -509,7 +540,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             with open(path, "r", encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
-                    for k in ("id", "function_name", "concept_name", "title", "target_file", "vibe"):
+                    for k in ("id", "function_name", "concept_name", "title", "target_file", "vibe", "requisites", "requirements"):
                         if target_name in r.get(k, "").lower():
                             matches.append(f"{r.get('id')} | {r.get(k)} | {r.get('target_file')}")
                             break
@@ -558,8 +589,9 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
         print(f"[Total descriptions: {count}]")
         return True
 
-    if "--check-prerequisites" in args or "--check-assets" in args:
-        flag = "--check-prerequisites" if "--check-prerequisites" in args else "--check-assets"
+    check_flags = ("--check-prerequisites", "--check-requirements", "--check-requisites", "--check-assets")
+    if any(f in args for f in check_flags):
+        flag = next(f for f in check_flags if f in args)
         idx = args.index(flag)
         if idx + 1 >= len(args):
             print(f"[ERROR] Usage: python -B tasks.py {flag} <minigame_id_or_title>")
@@ -589,7 +621,8 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                         "patterns": r.get("patterns", ""),
                         "status": r.get("status", ""),
                         "buildable": r.get("buildable", "no"),
-                        "requisites": r.get("requisites", ""),
+                        "requisites": r.get("requisites") or r.get("requirements") or "",
+                        "requirements": r.get("requisites") or r.get("requirements") or "",
                         "description": r.get("description", ""),
                     }
                     break
@@ -598,7 +631,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
             print(f"[NOT FOUND] Minigame matching '{query}' not found in tasks/minigames.csv")
             return True
 
-        req_str = (target_mg.get("requisites") or "").strip()
+        req_str = (target_mg.get("requisites") or target_mg.get("requirements") or "").strip()
 
         print(f"================================================================================")
         print(f"ASSET PREREQUISITE CHECK FOR: {target_mg['title']} ({target_mg['id']})")
@@ -758,6 +791,11 @@ class TasksEditor:
         for fname in self.csv_files:
             self._load_csv_file(fname)
 
+        # Initial recalculation of buildable status for minigames
+        self._recompute_minigames_buildable()
+        for d in self.file_data.values():
+            d["is_dirty"] = False
+
         # Table selection and scroll
         self.selected_row_idx = 0
         self.selected_col_idx = 0
@@ -904,11 +942,87 @@ class TasksEditor:
                 matching.append(i)
         return matching
 
+    def _recompute_minigames_buildable(self, row_idx: Optional[int] = None):
+        """Scans asset catalogs (SFXs, BGMs, models_3D, sprites_2D) and updates the 'buildable'
+        status ('yes' or 'no') for minigames based on whether all declared requisites are 'done'.
+        """
+        mg_fname = None
+        for fn in self.file_data:
+            if "minigames" in fn.lower():
+                mg_fname = fn
+                break
+        if not mg_fname or mg_fname not in self.file_data:
+            return
+
+        mg_data = self.file_data[mg_fname]
+        rows = mg_data.get("rows", [])
+        if not rows:
+            return
+
+        # Build lookup dictionary of asset statuses by both id and function_name
+        asset_statuses: Dict[str, str] = {}
+        for asset_cat in ("SFXs.csv", "BGMs.csv", "models_3D.csv", "sprites_2D.csv"):
+            matching_key = next((k for k in self.file_data if k.lower() == asset_cat.lower()), None)
+            if matching_key and "rows" in self.file_data[matching_key]:
+                for ar in self.file_data[matching_key]["rows"]:
+                    aid = (ar.get("id") or "").strip().lower()
+                    ast = (ar.get("status") or "").strip().lower()
+                    afunc = (ar.get("function_name") or "").strip().lower()
+                    target_f = (ar.get("target_file") or "").strip()
+                    if target_f:
+                        fp = target_f if os.path.isabs(target_f) else os.path.join(self.repo_root, target_f)
+                        if os.path.isfile(os.path.normpath(fp)):
+                            ast = "done"
+                    if aid:
+                        asset_statuses[aid] = ast
+                    if afunc:
+                        asset_statuses[afunc] = ast
+            else:
+                ac_path = os.path.join(self.tasks_dir, asset_cat)
+                if os.path.exists(ac_path):
+                    with open(ac_path, "r", encoding="utf-8-sig") as af:
+                        for ar in csv.DictReader(af):
+                            aid = (ar.get("id") or "").strip().lower()
+                            ast = (ar.get("status") or "").strip().lower()
+                            afunc = (ar.get("function_name") or "").strip().lower()
+                            target_f = (ar.get("target_file") or "").strip()
+                            if target_f:
+                                fp = target_f if os.path.isabs(target_f) else os.path.join(self.repo_root, target_f)
+                                if os.path.isfile(os.path.normpath(fp)):
+                                    ast = "done"
+                            if aid:
+                                asset_statuses[aid] = ast
+                            if afunc:
+                                asset_statuses[afunc] = ast
+
+        target_indices = [row_idx] if (row_idx is not None and 0 <= row_idx < len(rows)) else range(len(rows))
+        any_changed = False
+
+        for idx in target_indices:
+            r = rows[idx]
+            req_str = (r.get("requisites") or r.get("requirements") or "").strip()
+            if req_str:
+                req_tokens = [t.strip().lower() for t in req_str.split(",") if t.strip()]
+                all_ready = len(req_tokens) > 0 and all(asset_statuses.get(t) == "done" for t in req_tokens)
+                expected_buildable = "yes" if all_ready else "no"
+            else:
+                expected_buildable = "no"
+
+            cur_buildable = (r.get("buildable") or "").strip().lower()
+            if cur_buildable != expected_buildable:
+                r["buildable"] = expected_buildable
+                any_changed = True
+
+        if any_changed:
+            mg_data["is_dirty"] = True
+
     def save_active_file(self):
         """Saves current active CSV back to tasks/ with exact schema and UTF-8 encoding."""
         fname = self.get_current_fname()
         if not fname:
             return
+        if "minigames" in fname.lower():
+            self._recompute_minigames_buildable()
         data = self.get_current_data()
         path = os.path.join(self.tasks_dir, fname)
 
@@ -1254,13 +1368,10 @@ class TasksEditor:
             self.active_modal = "enum_select"
 
         elif col_name == "buildable":
-            self.enum_options = ["yes", "no"]
-            self.enum_target_row = actual_row_idx
-            self.enum_target_col = col_name
-            self.enum_selected_idx = 0
-            if current_val in self.enum_options:
-                self.enum_selected_idx = self.enum_options.index(current_val)
-            self.active_modal = "enum_select"
+            self.status_banner = "Column 'buildable' is auto-computed from asset requisites and cannot be manually edited."
+            self.status_color = COLOR_ACCENT_GOLD
+            self.status_timer = 3.5
+            return
 
         elif col_name == "difficulty":
             self.enum_options = [
@@ -1335,6 +1446,8 @@ class TasksEditor:
             if old_val != self.edit_buffer:
                 data["rows"][self.edit_row_target][self.edit_col_name] = self.edit_buffer
                 data["is_dirty"] = True
+                if self.edit_col_name in ("requisites", "requirements"):
+                    self._recompute_minigames_buildable(self.edit_row_target)
                 self.status_banner = f"Updated '{self.edit_col_name}'."
                 self.status_color = COLOR_ACCENT
                 self.status_timer = 2.5
@@ -1369,6 +1482,8 @@ class TasksEditor:
                 if old_val != val:
                     data["rows"][self.enum_target_row][self.enum_target_col] = val
                     data["is_dirty"] = True
+                    if self.enum_target_col == "status":
+                        self._recompute_minigames_buildable()
                     self.status_banner = f"Set {self.enum_target_col} to '{val}'."
                     self.status_color = COLOR_ACCENT
                     self.status_timer = 2.5

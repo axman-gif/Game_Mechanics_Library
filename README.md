@@ -466,33 +466,37 @@ python -B tasks.py
 ```
 - **Guaranteed Schema Safety**: Columns `id` and `target_file` are protected and auto-generated, while column schema is immutable.
 - **Pattern Verification**: Pick verified patterns straight from `rules/patterns.md` with zero typographical errors.
+- **Auto-Computed `buildable` Column**: In `tasks/minigames.csv`, the `buildable` column is strictly read-only and automatically evaluated from asset readiness (`yes` only when all requisites are `done`, otherwise `no`). Manual GUI editing is locked with an informative banner.
+- **Asset Requisites Mapping (`requisites` / `requirements`)**: Minigame dependencies are declared via comma-separated procedural asset `function_name` tokens matching dimensions strictly (`draw_*_2d` for 2D, `draw_*_3d` for 3D, `create_*_sfx`, `create_*_bgm`). Editing requisites updates `buildable` in real-time.
 - **Desktop Spreadsheet Fallback**: You can also open `tasks/*.csv` in LibreOffice Calc, Excel, or Google Sheets with UTF-8 BOM encoding.
 - **Alphanumeric explicit identifiers**: Keys like `mg_orbital_siege` and `"sec_3_0"` prevent Excel from auto-converting numbers into dates or truncated decimals.
 - **Universal compatibility**: All text fields are RFC 4180 quoted and saved in UTF-8. The Python scripts automatically detect and accept both comma (`,`) and semicolon (`;`) separators as well as Windows Excel BOM headers.
-- **Status column**: Strictly binary `pending` (target file absent from disk) and `done` (target file present on disk). Statuses are automatically synchronized across all 5 catalogs via `python -B tasks.py --sync-statuses`.
+- **Status column**: Strictly binary `pending` (target file absent from disk) and `done` (target file present on disk). Statuses and minigame buildable states are automatically synchronized across all 5 catalogs via `python -B tasks.py --sync-statuses`.
 
 ### ⚡ Automated Status Synchronization, Quality Gate & Fast CLI Queries
-Subagents do not parse massive markdown catalogs, and craftsmen subagents never edit CSV task statuses manually. Instead, the Lead Orchestrator queries tasks using compact CLI calls (<50 tokens) and enforces an upfront **Asset Prerequisite Verification Gate** before assembling any minigame:
+Subagents do not parse massive markdown catalogs, and engineer subagents never edit CSV task statuses manually. Instead, the Lead Orchestrator queries tasks using compact CLI calls (<50 tokens) and enforces an upfront **Asset Prerequisite Verification Gate** before assembling any minigame:
 
 ```bash
-# 1. Synchronize disk presence across all task catalogs automatically:
+# 1. Synchronize disk presence and buildable readiness across all task catalogs automatically:
 python -B tasks.py --sync-statuses
 
-# 2. Query minigames by difficulty tier:
+# 2. Query minigames by difficulty tier, buildable state, or asset requirement:
 python -B tasks.py --list minigames --difficulty beginner
+python -B tasks.py --list minigames --buildable yes
+python -B tasks.py --list minigames --requirements laser
 
 # 3. Query the next pending task in a specific section:
 python -B tasks.py --list minigames --section 3.2 --status pending --limit 1
 
-# 4. Check asset prerequisites for a minigame (parses strictly id, status, description):
+# 4. Check asset prerequisites for a minigame (supports --check-prerequisites or --check-requirements):
 python -B tasks.py --check-prerequisites mg_301_orbital_siege
 
 # 5. Read task summaries (id, status, description) across all catalogs:
 python -B tasks.py --descriptions
 ```
 
-- **Mandatory Quality Preservation Gate**: Whenever a user requests building minigames, the Orchestrator checks all asset catalogs (`SFXs.csv`, `BGMs.csv`, `models_3D.csv`, `sprites_2D.csv`) by reading strictly `id`, `status`, and `description`. If **even a single (1) required asset is missing or pending**, the Orchestrator halts craftsman invocation for that minigame, explains to the user which assets are missing, and details how withholding the craftsman preserves library quality (preventing inlined wave synthesizers, ad-hoc primitive drawings, or silent placeholders under Rule 10).
-- **Craftsman Specification Injection**: Once all required visual and audio assets exist on disk (`status == done`), the Orchestrator spawns the craftsman subagent and injects exact asset contracts (`draw_<name>_3d`, `draw_<name>_2d`, `SFXS = [...]`, `BGMS = [...]`) into the subagent prompt.
+- **Mandatory Quality Preservation Gate**: Whenever a user requests building minigames, the Orchestrator checks all asset catalogs (`SFXs.csv`, `BGMs.csv`, `models_3D.csv`, `sprites_2D.csv`) resolving requisites by `id` and `function_name`. If **even a single (1) required asset is missing or pending** (`buildable == no`), the Orchestrator halts engineer invocation for that minigame, explains to the user which assets are missing, and details how withholding the engineer preserves library quality (preventing inlined wave synthesizers, ad-hoc primitive drawings, or silent placeholders under Rule 10).
+- **Engineer Specification Injection**: Once all required visual and audio assets exist on disk (`status == done` and `buildable == yes`), the Orchestrator spawns the engineer subagent and injects exact asset contracts (`draw_<name>_3d`, `draw_<name>_2d`, `SFXS = [...]`, `BGMS = [...]`) into the subagent prompt.
 
 ---
 ---
@@ -718,18 +722,25 @@ Para que el aprendizaje sea ágil, modular y libre de sobrecarga cognitiva o dis
 Los subagentes no leen catálogos masivos en Markdown ni editan estados manualmente. En su lugar, el Orquestador Principal ejecuta consultas CLI compactas (<50 tokens) y evalúa los prerrequisitos de activos antes de construir cualquier minijuego:
 
 ```bash
-# 1. Sincronizar presencia de archivos en disco automáticamente:
+# 1. Sincronizar presencia de archivos en disco y estados buildable automáticamente:
 python -B tasks.py --sync-statuses
 
-# 2. Comprobar prerrequisitos de activos para un minijuego (lee estrictamente id, status y description):
+# 2. Consultar minijuegos por dificultad, disponibilidad o requerimiento de activo:
+python -B tasks.py --list minigames --difficulty beginner
+python -B tasks.py --list minigames --buildable yes
+python -B tasks.py --list minigames --requirements laser
+
+# 3. Comprobar prerrequisitos de activos para un minijuego (admite --check-prerequisites o --check-requirements):
 python -B tasks.py --check-prerequisites mg_301_orbital_siege
 
-# 3. Leer resúmenes de tareas (id, status, description) en todos los catálogos:
+# 4. Leer resúmenes de tareas (id, status, description) en todos los catálogos:
 python -B tasks.py --descriptions
 ```
 
-- **Filtro Estricto de Calidad**: Si falta incluso un solo ($1$) activo requerido (modelo 3D, sprite 2D, SFX o BGM), el Orquestador **detiene la invocación del subagente artesano**, explica al usuario qué activos faltan y cómo esta pausa preserva la calidad y modularidad del minijuego (Regla 10: Cero activos improvisados o incrustados en la lógica).
-- **Inyección de Especificaciones**: Cuando todos los activos están listos (`status == done`), el Orquestador inyecta las especificaciones exactas (`draw_<name>_2d/3d`, `SFXS = [...]`, `BGMS = [...]`) directamente en el subagente artesano.
+- **Columna `buildable` Autocalculada**: En `tasks/minigames.csv`, la columna `buildable` es de solo lectura y se calcula automáticamente en tiempo real (`yes` si todos los activos requeridos están en estado `done`, de lo contrario `no`). La edición manual en la interfaz gráfica está bloqueada con un aviso explicativo.
+- **Mapeo de Requisitos (`requisites` / `requirements`)**: Cada minijuego declara sus dependencias usando el nombre exacto de la función procedural (`function_name`), respetando estrictamente la dimensión (sprites 2D para juegos 2D, modelos 3D para juegos 3D, y efectos de sonido / música en RAM).
+- **Filtro Estricto de Calidad**: Si falta incluso un solo ($1$) activo requerido (modelo 3D, sprite 2D, SFX o BGM, lo que mantiene `buildable == no`), el Orquestador **detiene la invocación del subagente ingeniero**, explica al usuario qué activos faltan y cómo esta pausa preserva la calidad y modularidad del minijuego (Regla 10: Cero activos improvisados o incrustados en la lógica).
+- **Inyección de Especificaciones**: Cuando todos los activos están listos (`status == done` y `buildable == yes`), el Orquestador inyecta las especificaciones exactas (`draw_<name>_2d/3d`, `SFXS = [...]`, `BGMS = [...]`) directamente en el subagente ingeniero.
 
 ---
 ---

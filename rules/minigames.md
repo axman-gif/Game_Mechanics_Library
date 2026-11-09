@@ -50,17 +50,35 @@ To preserve subagent context budgets and prevent code bloat while ensuring deep 
 ### 1.5 Lead Orchestrator Asset Prerequisite Verification Gate & Quality Invariant
 Minigames in this repository are strictly decoupled consumers of the procedural visual and audio asset library. They do not define local art or waveforms. To preserve this architectural purity:
 
-1. **Pre-Flight Inspection Script (Strictly `id`, `status`, `description`)**:
-   Whenever a user requests 1 or a batch of minigames, the Lead Orchestrator runs a lightweight Python script (via `python -B tasks.py --check-prerequisites <minigame_id>` or `--descriptions`) that inspects strictly the `id`, `status`, and `description` columns across all catalogs (`minigames.csv`, `models_3D.csv`, `sprites_2D.csv`, `SFXs.csv`, `BGMs.csv`).
-2. **Missing Asset Gate (Quality Preservation)**:
-   If **even a single (1) asset** (3D model, 2D sprite, SFX, or BGM) needed by a minigame is missing or pending (`status == pending`):
-   - The Lead Orchestrator **MUST NOT** invoke the subagent craftsman for that minigame.
-   - The Orchestrator halts/skips craftsman invocation and reports to the user:
-     a) The exact list of missing assets (catalog, ID, and description).
-     b) Why withholding the craftsman preserves the pedagogical quality and visual/audio standards of the minigame (preventing inlined procedural sound synthesizers, monolithic primitive geometry hacks, and silent/invisible placeholders, strictly adhering to **Rule 10**).
+1. **Explicit Asset Requisites Mapping (`requisites` Column)**:
+   - Every minigame in `tasks/minigames.csv` explicitly declares its required procedural visual and audio dependencies in the `requisites` column (aliased transparently as `requirements` in all CLI queries and filters).
+   - Requisites are declared as comma-separated asset **`function_name`** identifiers (e.g. `draw_tri_rotor_drone_2d, draw_sentry_turret_2d, create_laser_sfx, create_orbital_dogfight_bgm`), matching dimension strictly (2D sprites `draw_*_2d` from `tasks/sprites_2D.csv` for 2D games, 3D models `draw_*_3d` from `tasks/models_3D.csv` for 3D games).
+   - Audio cues are referenced via `create_*_sfx` from `tasks/SFXs.csv` and `create_*_bgm` / `generate_*_track` from `tasks/BGMs.csv`.
+
+2. **Auto-Computed `buildable` Status Column**:
+   - The `buildable` column in `tasks/minigames.csv` is **strictly read-only** and auto-computed by `tasks.py`. It is locked against direct manual modification in the `tasks.py` spreadsheet GUI (displaying an informative notification banner).
+   - Dynamic evaluation rule:
+     * If `requisites` contains one or more asset identifiers and **all** referenced assets have `status == "done"`, `buildable` is automatically evaluated as `"yes"`.
+     * If any requisite is missing or pending (`status == "pending"`), or if `requisites` is empty, `buildable` is evaluated as `"no"`.
+   - Real-time recalculation: `buildable` updates instantaneously in `tasks.py` whenever `requisites` (or `requirements`) is edited, whenever an asset status is toggled, upon saving `tasks/minigames.csv`, and during automated disk sync (`python -B tasks.py --sync-statuses`).
+
+3. **Pre-Flight Inspection CLI (`--check-prerequisites` / `--check-requirements`)**:
+   Whenever a user requests 1 or a batch of minigames, the Lead Orchestrator runs:
+   ```bash
+   python -B tasks.py --check-prerequisites <minigame_id_or_title>
+   ```
+   (or the alias `python -B tasks.py --check-requirements <minigame_id_or_title>`). This CLI command resolves requisites by both `id` and `function_name` across `SFXs.csv`, `BGMs.csv`, `models_3D.csv`, and `sprites_2D.csv`.
+
+4. **Missing Asset Gate (Quality Preservation)**:
+   If **even a single (1) asset** (3D model, 2D sprite, SFX, or BGM) needed by a minigame is missing or pending (`status == pending`, resulting in `buildable == no`):
+   - The Lead Orchestrator **MUST NOT** invoke the subagent engineer for that minigame.
+   - The Orchestrator halts/skips engineer invocation and reports to the user:
+     a) The exact list of missing assets (catalog, ID, function_name, and description).
+     b) Why withholding the engineer preserves the pedagogical quality and visual/audio standards of the minigame (preventing inlined procedural sound synthesizers, monolithic primitive geometry hacks, and silent/invisible placeholders, strictly adhering to **Rule 10**).
      c) Instructions to build the missing assets first before assembling the minigame.
-3. **Ready Minigames & Specification Injection**:
-   When all required assets are verified on disk (`status == done`), the Orchestrator proceeds to spawn an isolated subagent craftsman (1 craftsman per minigame), injecting the exact asset contracts into the subagent prompt:
+
+5. **Ready Minigames & Specification Injection**:
+   When all required assets are verified on disk (`status == done` and `buildable == yes`), the Orchestrator proceeds to spawn an isolated subagent engineer (1 engineer per minigame), injecting the exact asset contracts into the subagent prompt:
    - Visual model/sprite drawing signatures: `draw_<name>_3d` or `draw_<name>_2d` with palette keys.
    - Audio cue declarations: `SFXS = [...]` and `BGMS = [...]`.
    - Unified discovery import: `from assets.audio.asset_loader import *`.
