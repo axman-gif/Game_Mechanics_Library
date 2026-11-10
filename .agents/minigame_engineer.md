@@ -17,7 +17,7 @@ Your mission is to construct single-file educational minigames and design patter
 
 ## Non-Negotiable Operating Invariants
 
-1. **Assets-Only Rule (Rule 10)**: Minigames MUST use strictly existing procedural assets from `assets/` (imported via `from assets.audio.asset_loader import *`). Never inline procedural sound synthesizers or draw ad-hoc complex entity models that belong in the modular asset catalog.
+1. **Assets-Only Rule (Rule 10)**: Minigames MUST use strictly existing procedural assets from `assets/` (imported via `from assets.asset_loader import *`). Never inline procedural sound synthesizers or draw ad-hoc complex entity models that belong in the modular asset catalog.
 2. **Zero Root Test Scripts**: Under NO circumstances may you create benchmark scripts, stress tests, or scratch files in the workspace root (e.g. NEVER write `tests_stress_*.py`).
 3. **Zero CSV Token Waste**: Do NOT read, search, or edit `tasks/*.csv` or `rules/*.md`. All required specifications and metadata are directly injected into your task prompt by the Lead Orchestrator.
 4. **Tool Restrictions**: Use ONLY `write_file`, `edit_file`, `read_file`, and `run_command` (for `audit_minigame.py`). Never attempt to spawn subagents, perform web searches, or pause for interactive questions.

@@ -11,7 +11,7 @@ The graphics and audio are intentionally built using **procedural primitives** (
 1. **Catalog Taxonomy**: Review `rules/minigames.md` for guidelines and `tasks/minigames.csv` for task status:
    - **Section 3.0**: Core Multi-Pattern Prototypes (combining 4+ patterns).
    - **Sections 3.1–3.7**: Extended Single-Pattern Labs (3.1 Menus/UI, 3.2 Combat/Weapons, 3.3 Enemies/AI, 3.4 Progression/Economy, 3.5 World/Exploration, 3.6 Movement/Camera, 3.7 Puzzle/Stealth).
-2. **Procedural Assets**: Consult `tasks/SFXs.csv`, `tasks/BGMs.csv`, `tasks/models_3D.csv`, and `tasks/sprites_2D.csv` via headless CLI (`python -B tasks.py --list`). Discovery and selective loading are handled dynamically by `assets/audio/asset_loader.py` and `assets/audio/synth_sfx.py`. **NEVER duplicate existing assets.**
+2. **Procedural Assets**: Consult `tasks/SFXs.csv`, `tasks/BGMs.csv`, `tasks/models_3D.csv`, and `tasks/sprites_2D.csv` via headless CLI (`python -B tasks.py --list`). Discovery and selective loading are handled dynamically by `assets/asset_loader.py` and `assets/audio/synth_sfx.py`. **NEVER duplicate existing assets.**
 3. **Interactive Tasks Editor (`tasks.py`)**: All tracking spreadsheets in `tasks/` are inspected, edited, and maintained via `python -B tasks.py`.
 4. **Existing Utilities & Math**: Review `rules/utils.md` to reuse non-native collision routines, spatial hash grids (`SpatialGrid2D`/`3D`), steering/pathfinding algorithms (A*, BFS, seek, lead intercept), math dampening, and the global UI settings bar (`utils/ui_settings.py`). **NEVER rewrite these utilities.**
 5. **Game Design Patterns**: Consult `rules/patterns.md` to document demonstrated patterns. Subagents are encouraged to adapt or invent novel patterns and register them into `rules/patterns.md`.
@@ -43,9 +43,9 @@ Batches of 1 to 8 files are executed via the **Lean 1+N Swarm Architecture**:
 1. **Agent Topology**: Strictly **1 Lead Orchestrator + $N$ isolated Engineers ($N \le 8$)**.
    - **Lead Orchestrator (Depth 0)**: The primary session. Inspects tasks via `tasks.py`, verifies prerequisites, estimates compute, spawns engineers concurrently, and synchronizes status upon completion.
    - **Engineers (Depth 1)**: Isolated, specialized subagents defined in `.agents/`:
-     - `.agents/audio_engineer.md` for SFX (`assets/audio/SFX/`) and BGM (`assets/audio/BGM/`).
-     - `.agents/model_engineer.md` for 3D primitive models (`assets/models_3D/`).
-     - `.agents/sprite_engineer.md` for 2D vector sprites (`assets/sprites_2D/`).
+     - `.agents/audio_engineer.md` for SFX (`assets/audio/SFX/<category>/`) and BGM (`assets/audio/BGM/<vibe>/`).
+     - `.agents/model_engineer.md` for 3D primitive models (`assets/models_3D/<category>/`).
+     - `.agents/sprite_engineer.md` for 2D vector sprites (`assets/sprites_2D/<category>/`).
      - `.agents/minigame_engineer.md` for minigames (`minigames/3.x_*/`).
    - **Invocation Patterns**: The Orchestrator invokes engineers using `invoke_subagent(TypeName="self", Role="<Engineer Role>", Prompt=...)` or registers them via `define_subagent` using the system prompts in `.agents/*_engineer.md`.
 2. **Deterministic Token & Compute Estimation**:
@@ -93,7 +93,7 @@ Batches of 1 to 8 files are executed via the **Lean 1+N Swarm Architecture**:
 - Every minigame must import in this exact order:
   ```python
   from pyray import *
-  from assets.audio.asset_loader import *
+  from assets.asset_loader import *
   from utils import *
   ```
 - Importing `from utils import *` enables the **Global Top-Bar Settings Dropdowns** (`Font`, `Font Size [Ctrl +/-]`, and `Window Size / Fullscreen [F11]`). Keep HUD elements clear of `x = 450..980, y = 14..48`.
@@ -154,7 +154,7 @@ Every minigame and the launcher MUST support Gamepad input simultaneously alongs
 - Launcher discovery is verified via `python -B launcher.py --smoke-test`.
 
 ### Rule 10: Assets-Only Minigames (Zero Inlined or Fabricated Assets)
-- Minigames MUST use ONLY procedural visual and audio assets that already exist in `assets/` (imported via `from assets.audio.asset_loader import *`).
+- Minigames MUST use ONLY procedural visual and audio assets that already exist in `assets/` (imported via `from assets.asset_loader import *`).
 - Asset dependencies are declared explicitly in `tasks/minigames.csv` (`requisites` column).
 - Orchestrator verifies prerequisites before invoking engineer (`python -B tasks.py --check-prerequisites <id>`).
 - If any required asset is missing or pending, engineer invocation is halted.
@@ -200,9 +200,11 @@ Every minigame and the launcher MUST support Gamepad input simultaneously alongs
 │   └── utils.md               <-- Utilities catalog (collisions, grids, AI, math, UI)
 ├── tasks/                     <-- Tracking spreadsheets (minigames, SFXs, BGMs, models_3D, sprites_2D)
 ├── assets/                    <-- Reusable procedural visual and audio assets
-│   ├── models_3D/             <-- 3D procedural primitive models
-│   ├── sprites_2D/            <-- 2D procedural vector sprites
-│   └── audio/                 <-- In-memory SFX and BGM synthesizers & loader registry
+│   ├── asset_loader.py        <-- Central dynamic loader & dictionary registries
+│   ├── asset_viewer.py        <-- Interactive 4-tab procedural workbench & viewer
+│   ├── models_3D/             <-- 3D procedural primitive models (categorized subfolders)
+│   ├── sprites_2D/            <-- 2D procedural vector sprites (categorized subfolders)
+│   └── audio/                 <-- In-memory SFX and BGM synthesizers
 ├── utils/                     <-- Non-native utilities (collisions, grids, AI pursuit, math, UI, gamepad)
 └── minigames/                 <-- Categorized single-file minigames & pattern labs (3.0 to 3.7)
 ```

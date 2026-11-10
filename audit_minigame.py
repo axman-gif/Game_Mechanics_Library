@@ -16,7 +16,6 @@ sys.dont_write_bytecode = True
 REQUIRED_STRINGS = [
     "sys.dont_write_bytecode = True",
     "from pyray import *",
-    "from assets.audio.asset_loader import *",
     "from utils import *",
     "BLOCK 1: CORE PATTERN IMPLEMENTATION",
     "BLOCK 2: WORLD SIMULATION & ENTITIES",
@@ -67,6 +66,9 @@ def main():
 
     # 1. Check mandatory AGENTS.md structural requirements
     missing = []
+    has_asset_loader = ("from assets.asset_loader import *" in source) or ("from assets.audio.asset_loader import *" in source)
+    if not has_asset_loader:
+        missing.append("from assets.asset_loader import *")
     for req in REQUIRED_STRINGS:
         if req not in source:
             missing.append(req)

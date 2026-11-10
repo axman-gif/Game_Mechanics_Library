@@ -2,6 +2,7 @@
 =============================================================================
 
 This document defines the architectural standards, procedural primitive construction rules, animation interfaces, and a copy-pasteable **code template** for all 3D procedural models.
+All 3D models are organized into dedicated category subfolders within `assets/models_3D/<category>/` (`beast/`, `drone/`, `environment_prop/`, `humanoid/`, and `turret_boss/`).
 
 All 3D model task tracking, primitive specifications, and progress statuses are maintained in the companion spreadsheet:
 👉 [**`tasks/models_3D.csv`**](../tasks/models_3D.csv)
@@ -47,7 +48,7 @@ Related documentation guides:
    - Every model file must define an explicit dictionary constant named `DEFAULT_<NAME>_PALETTE` mapping semantic parts to Raylib `Color` structs. Secondary theme palettes (e.g. `DESERT_<NAME>_PALETTE`, `STEALTH_<NAME>_PALETTE`) can also be provided.
    - **Replace Magic Numbers with Named Constants**: All dimensional proportions (e.g. `LEG_LENGTH`, `ARM_LENGTH`, `TORSO_HEIGHT`, `HEAD_RADIUS`, `BODY_RADIUS`) must be defined as named module-level constants rather than hardcoded magic literals. This makes the geometric anatomy immediately obvious and translates 1-to-1 to C++ `static const float` parameters.
 
-5. **Default Destination Directory**: All 3D procedural models are strictly located in `assets/models_3D/`.
+5. **Default Destination Directory**: All 3D procedural models are strictly located in their designated category subfolder within `assets/models_3D/<category>/` (`assets/models_3D/beast/`, `assets/models_3D/drone/`, `assets/models_3D/environment_prop/`, `assets/models_3D/humanoid/`, `assets/models_3D/turret_boss/`).
 
 6. **3D Camera Context**: All 3D model drawing routines must execute inside `begin_mode_3d(camera)` ... `end_mode_3d()`. HUD and screen-space text projections must occur outside 3D mode.
 
@@ -58,7 +59,7 @@ Related documentation guides:
    - **Readability Criterion**: Every file must be understandable by reading it top to bottom, without having to jump to other files; clarity and pedagogical completeness always win over line count.
 
 8. **Standalone Previewer & Automated `--smoke-test`**:
-   Every 3D model module must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/models_3D/<model_file>.py` opens an interactive 3D Orbit Viewer (`ModelViewerApp`) with mouse drag orbit, zoom, play/pause, and palette swapping. When invoked with `--smoke-test`, it renders 3 frames headlessly and exits cleanly with code `0`.
+   Every 3D model module must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/models_3D/<category>/<model_file>.py` opens an interactive 3D Orbit Viewer (`ModelViewerApp`) with mouse drag orbit, zoom, play/pause, and palette swapping. When invoked with `--smoke-test`, it renders 3 frames headlessly and exits cleanly with code `0`.
 
 9. **Assets-Only Minigames Rule & Orchestrator Prerequisite Gate**:
    Minigames must use only assets that ALREADY exist inside the `assets/` package.
@@ -78,7 +79,7 @@ Every craftsman subagent creating a 3D model must follow this exact 6-part anato
 Exo-Knight Heavy Armored Unit - 3D Procedural Primitive Model
 ============================================================
 Category         : humanoid
-Target File      : assets/models_3D/exo_knight.py
+Target File      : assets/models_3D/humanoid/exo_knight.py
 Primitives Used  : Spheres (pauldrons, helmet, joints), Cubes (chestplate, gauntlets), Cylinders (limbs, sword)
 Animation Loop   : Walking stride gait, arm counter-swing, breathing chest rise, idle weapon bob
 
@@ -110,7 +111,7 @@ import math
 sys.dont_write_bytecode = True
 
 # Add repository root to search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
 # Mandatory Raylib and utility imports
 from pyray import *
@@ -481,7 +482,7 @@ Minigames can import 3D procedural models using either key-based loading via `mo
 
 **Key-Based Loader (Standard minigame pattern)**:
 ```python
-from assets.audio.asset_loader import models_3D, load_model_3d
+from assets.asset_loader import models_3D, load_model_3d
 
 # Load drawing function and default palette by key:
 draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE = load_model_3d("exo_knight")
@@ -499,7 +500,7 @@ end_mode_3d()
 
 **Granular Import (For isolated prototypes)**:
 ```python
-from assets.models_3D.exo_knight import draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE
+from assets.models_3D.humanoid.exo_knight import draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE
 
 # Inside Minigame draw():
 begin_mode_3d(self.camera)
@@ -515,20 +516,20 @@ end_mode_3d()
 
 ### 3.2 Assets-Only Minigames Rule
 **CRITICAL INVARIANT**: Minigames MUST use only models, sprites, and audio synthesizers that ALREADY exist inside the `assets/` package.
-- If a minigame specification references a 3D model that does not yet exist in `assets/models_3D/`, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**, and report the missing asset dependency to the orchestrator or user.
-- Minigames may **NEVER** embed ad-hoc procedural mesh builders or inline 3D drawing routines inside `minigames/` files (unless the lab specifically teaches a mesh-generation design pattern like Marching Cubes or Procedural Terrain). All reusable entities belong in `assets/models_3D/`.
+- If a minigame specification references a 3D model that does not yet exist in `assets/models_3D/<category>/`, **THE AGENT MUST STOP IMMEDIATELY WITHOUT TOUCHING OR CREATING ANY CODE**, and report the missing asset dependency to the orchestrator or user.
+- Minigames may **NEVER** embed ad-hoc procedural mesh builders or inline 3D drawing routines inside `minigames/` files (unless the lab specifically teaches a mesh-generation design pattern like Marching Cubes or Procedural Terrain). All reusable entities belong in `assets/models_3D/<category>/`.
 
 ---
 
 ## 4. 3D Model Categorization Overview
 
-All planned models in [`tasks/models_3D.csv`](../tasks/models_3D.csv) are categorized across 5 architectural classes:
+All planned models in [`tasks/models_3D.csv`](../tasks/models_3D.csv) are categorized across 5 architectural classes, each stored in its dedicated subfolder under `assets/models_3D/`:
 
-- **Characters & Humanoids**: Bipedal soldiers, exo-knights, cyber ninjas, industrial miners, psionic cultists, and riot vanguards.
-- **Beasts & Quadruped Organisms**: Four-legged predators, armored pangolins, sabertooth prowlers, arachnid stalkers, sand wyrms, and spore bulls.
-- **Drones & Airborne Constructs**: Hovering recon drones, tri-rotor hexacopters, stealth flying wings, kinetic dropships, and nanite carriers.
-- **Turrets, Bosses & Heavy Armor**: Fortified base turrets, orbital defense railcannons, core guardians, siege juggernauts, and flak sentries.
-- **Environment Props & Interactive Structures**: Power conduit relays, airlock blast gates, mineral refining drills, monolith gateways, and supply crates.
+- **Characters & Humanoids** (`assets/models_3D/humanoid/`): Bipedal soldiers, exo-knights, cyber ninjas, industrial miners, psionic cultists, and riot vanguards.
+- **Beasts & Quadruped Organisms** (`assets/models_3D/beast/`): Four-legged predators, armored pangolins, sabertooth prowlers, arachnid stalkers, sand wyrms, and spore bulls.
+- **Drones & Airborne Constructs** (`assets/models_3D/drone/`): Hovering recon drones, tri-rotor hexacopters, stealth flying wings, kinetic dropships, and nanite carriers.
+- **Turrets, Bosses & Heavy Armor** (`assets/models_3D/turret_boss/`): Fortified base turrets, orbital defense railcannons, core guardians, siege juggernauts, and flak sentries.
+- **Environment Props & Interactive Structures** (`assets/models_3D/environment_prop/`): Power conduit relays, airlock blast gates, mineral refining drills, monolith gateways, and supply crates.
 
 ---
 
@@ -539,7 +540,7 @@ Task tracking and lifecycle management for all 3D models are maintained exclusiv
 ### 5.1 Token-Saving Decoupled Architecture
 - **Craftsman subagents NEVER read or parse CSV files into context.** Reading full tracking spreadsheets burns 4,000 to 8,000 tokens per turn. Instead, the Lead Orchestrator queries task specifications and injects the target row fields (`target_file`, `concept_name`, `primitives_used`, `animation_features`, `palette_keys`, `description`) directly into the subagent dispatch prompt.
 - **Binary task status model**: Strictly binary `pending` (file absent from disk) and `done` (file present on disk). Statuses are automatically synchronized across catalogs via `python -B tasks.py --sync-statuses`.
-- **Package Registration**: Upon building and verifying a 3D model, the file is automatically discovered dynamically by `assets/audio/asset_loader.py` into the `models_3D` dictionary.
+- **Package Registration**: Upon building and verifying a 3D model, the file is automatically discovered dynamically by `assets/asset_loader.py` into the `models_3D` dictionary.
 
 ### 5.2 Orchestrator Headless CLI Queries (<50ms, <50 tokens)
 The Orchestrator queries tasks using the headless `tasks.py` CLI:

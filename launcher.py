@@ -30,9 +30,12 @@ from typing import List, Dict
 # 3. Mandatory Raylib & modular imports
 from pyray import *
 try:
-    from assets.audio.asset_loader import *
+    from assets.asset_loader import *
 except Exception:
-    pass
+    try:
+        from assets.audio.asset_loader import *
+    except Exception:
+        pass
 from utils import *
 
 # Resilient Audio Asset Fallbacks (prevents crashes when assets/ is being rebuilt)
@@ -407,7 +410,9 @@ class PatternHubLauncher:
             self.music.resume()
 
     def launch_asset_viewer(self):
-        viewer_path = os.path.join(ROOT_DIR, "assets", "audio", "asset_viewer.py")
+        viewer_path = os.path.join(ROOT_DIR, "assets", "asset_viewer.py")
+        if not os.path.exists(viewer_path):
+            viewer_path = os.path.join(ROOT_DIR, "assets", "audio", "asset_viewer.py")
         if not os.path.exists(viewer_path):
             self.status_banner = "asset_viewer.py not found."
             self.status_color = RED

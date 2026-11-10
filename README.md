@@ -161,19 +161,19 @@ python -B tasks.py
 - **Pattern Selector Modal**: Select patterns directly from `rules/patterns.md` via a searchable multi-select checklist.
 - **Safe Row Editing**: Insert rows above or below, duplicate rows, and sort alphanumerically with guaranteed schema immutability.
 
-### Option D: The Interactive Procedural Asset Viewer & Workbench (`assets/audio/asset_viewer.py`)
+### Option D: The Interactive Procedural Asset Viewer & Workbench (`assets/asset_viewer.py`)
 To inspect, preview, audition, and test all 100% procedural assets across the repository without launching a full minigame:
 ```bash
-python -B assets/audio/asset_viewer.py
+python -B assets/asset_viewer.py
 ```
 - **4 Specialized Asset Tabs**:
-  - **3D Models** (`assets/models_3D/`): Interactive 3D orbit camera, play/pause walking animations, stop/reset timer, speed, scale, yaw rotation slider, floor grid, wireframe toggle, and swappable semantic color palettes (Default, Stealth, Cyberpunk, Desert).
-  - **2D Sprites** (`assets/sprites_2D/`): 2D zoom & pan canvas, play/pause procedural vector animations, facing angle dial/slider ($0^\circ \dots 360^\circ$ / radians), transparency checkerboard grid, scale, and swappable palettes (Default, Neon, Crimson, Emerald).
+  - **3D Models** (`assets/models_3D/<category>/`): Interactive 3D orbit camera, play/pause walking animations, stop/reset timer, speed, scale, yaw rotation slider, floor grid, wireframe toggle, and swappable semantic color palettes (Default, Stealth, Cyberpunk, Desert). Organized into category subfolders (`beast/`, `drone/`, `environment_prop/`, `humanoid/`, `turret_boss/`).
+  - **2D Sprites** (`assets/sprites_2D/<category>/`): 2D zoom & pan canvas, play/pause procedural vector animations, facing angle dial/slider ($0^\circ \dots 360^\circ$ / radians), transparency checkerboard grid, scale, and swappable palettes (Default, Neon, Crimson, Emerald). Organized into category subfolders (`crawler_automaton/`, `projectile_vfx/`, `side_scroller/`, `swarm_floating/`, `top_down/`).
   - **SFX Sounds** (`assets/audio/SFX/`): One-shot trigger with `[Space]`, stop with `[S]`, loop toggle, volume & pitch sliders, real-time PCM oscilloscope waveform display with scanning playhead, and synthesis telemetry.
   - **BGM Tracks** (`assets/audio/BGM/`): Streaming music player with Play, Pause, Resume, Stop, draggable progress scrubber, volume & pitch/tempo sliders, tempo beat pulse flash indicator, and dynamic 24-band animated graphic equalizer / spectrum visualizer.
-- **Live In-Memory Discovery**: Powered directly by `assets/audio/asset_loader.py`. Press **`[F5]`** at any time to dynamically rescan disk files and discover newly created assets without restarting.
+- **Live In-Memory Discovery**: Powered directly by `assets/asset_loader.py`. Press **`[F5]`** at any time to dynamically rescan disk files and discover newly created assets without restarting.
 - **Ready-to-Use Minigame Code**: The right inspector panel shows the exact Python code snippet to import and use any selected asset in your minigames.
-- **Automated Smoke Test**: Run `python -B assets/audio/asset_viewer.py --smoke-test` to verify all 4 tabs and audio streaming headlessly in CI/CD.
+- **Automated Smoke Test**: Run `python -B assets/asset_viewer.py --smoke-test` to verify all 4 tabs and audio streaming headlessly in CI/CD.
 
 ---
 
@@ -456,8 +456,8 @@ To maintain lightweight, token-efficient documentation and provide an intuitive 
 | [**`tasks/minigames.csv`**](tasks/minigames.csv) | All standalone prototypes across Sections 3.0 to 3.7 with difficulty ratings, patterns, and binary status | **106 prototypes** |
 | [**`tasks/SFXs.csv`**](tasks/SFXs.csv) | Procedural SFX synthesizers across 6 modular categories | **73 SFX items** |
 | [**`tasks/BGMs.csv`**](tasks/BGMs.csv) | Algorithmic streaming BGM tracks categorized by emotional vibe | **18 BGM tracks** |
-| [**`tasks/models_3D.csv`**](tasks/models_3D.csv) | 3D procedural primitive models with primitives, animation, and palette keys | **29 models** |
-| [**`tasks/sprites_2D.csv`**](tasks/sprites_2D.csv) | 2D procedural vector sprites with primitives, animation, and palette keys | **29 sprites** |
+| [**`tasks/models_3D.csv`**](tasks/models_3D.csv) | 3D procedural primitive models with primitives, animation, and palette keys (5 category subfolders) | **50 models** |
+| [**`tasks/sprites_2D.csv`**](tasks/sprites_2D.csv) | 2D procedural vector sprites with primitives, animation, and palette keys (5 category subfolders) | **49 sprites** |
 
 ### 🛠️ How Humans Can Edit the CSV Files
 To avoid unintentional formatting mistakes or character encoding changes when editing catalogs, use our built-in graphical editor:
@@ -618,19 +618,19 @@ python -B tasks.py
 - **Columnas Técnicas Ocultas**: Mantiene `id` y `target_file` fuera de la vista para evitar errores humanos, generándolos fielmente al guardar.
 - **Selector Modal de Patrones**: Asigna patrones de diseño directamente desde `rules/patterns.md` con búsqueda en vivo.
 
-### Opción D: El Visualizador Interactivo de Recursos Procedurales (`assets/audio/asset_viewer.py`)
+### Opción D: El Visualizador Interactivo de Recursos Procedurales (`assets/asset_viewer.py`)
 Para inspeccionar, escuchar, probar y experimentar con todos los recursos 100% procedurales del repositorio sin necesidad de abrir un minijuego:
 ```bash
-python -B assets/audio/asset_viewer.py
+python -B assets/asset_viewer.py
 ```
 - **4 Pestañas Especializadas por Tipo de Recurso**:
-  - **Modelos 3D** (`assets/models_3D/`): Cámara orbital interactiva con ratón, reproducción/pausa de animaciones de marcha, parada/reinicio a 0.0s, velocidad, escala, rotación yaw, rejilla de suelo, modo alámbrico y paletas intercambiables (Default, Stealth, Cyberpunk, Desert).
-  - **Sprites 2D** (`assets/sprites_2D/`): Lienzo interactivo con paneo y zoom, reproducción/pausa de animaciones vectoriales, dial de ángulo direccional ($0^\circ \dots 360^\circ$ / radianes), cuadrícula de transparencia (damero) y paletas intercambiables (Default, Neon, Crimson, Emerald).
+  - **Modelos 3D** (`assets/models_3D/<categoría>/`): Cámara orbital interactiva con ratón, reproducción/pausa de animaciones de marcha, parada/reinicio a 0.0s, velocidad, escala, rotación yaw, rejilla de suelo, modo alámbrico y paletas intercambiables (Default, Stealth, Cyberpunk, Desert). Organizados en subcarpetas por categoría (`beast/`, `drone/`, `environment_prop/`, `humanoid/`, `turret_boss/`).
+  - **Sprites 2D** (`assets/sprites_2D/<categoría>/`): Lienzo interactivo con paneo y zoom, reproducción/pausa de animaciones vectoriales, dial de ángulo direccional ($0^\circ \dots 360^\circ$ / radianes), cuadrícula de transparencia (damero) y paletas intercambiables (Default, Neon, Crimson, Emerald). Organizados en subcarpetas por categoría (`crawler_automaton/`, `projectile_vfx/`, `side_scroller/`, `swarm_floating/`, `top_down/`).
   - **Efectos de Sonido SFX** (`assets/audio/SFX/`): Disparo instantáneo con `[Espacio]`, parada con `[S]`, modo bucle, barras de volumen y tono (pitch), osciloscopio en tiempo real con forma de onda PCM y cabezal de reproducción animado.
   - **Música BGM** (`assets/audio/BGM/`): Reproductor de audio en streaming con Play, Pausa, Reanudar, Parar, barra de tiempo interactiva (scrubber), volumen, tempo/tono, indicador de pulso de compás (BPM) y ecualizador gráfico animado de 24 bandas con medidores de picos.
-- **Descubrimiento Dinámico en Memoria**: Alimentado directamente por `assets/audio/asset_loader.py`. Pulsa **`[F5]`** para reescanear el disco y detectar nuevos recursos al instante.
+- **Descubrimiento Dinámico en Memoria**: Alimentado directamente por `assets/asset_loader.py`. Pulsa **`[F5]`** para reescanear el disco y detectar nuevos recursos al instante.
 - **Fragmentos de Código para Minijuegos**: El panel inspector derecho muestra la llamada exacta en Python para importar y usar cualquier modelo, sprite o sonido en tus proyectos.
-- **Prueba de Integridad Automatizada**: Ejecuta `python -B assets/audio/asset_viewer.py --smoke-test` para verificar las 4 pestañas y el streaming de audio en modo headless.
+- **Prueba de Integridad Automatizada**: Ejecuta `python -B assets/asset_viewer.py --smoke-test` para verificar las 4 pestañas y el streaming de audio en modo headless.
 
 ---
 
@@ -759,8 +759,8 @@ Game_Mechanics_Library/
 │   ├── minigames.csv          #    106 prototipos planificados y construidos (Secciones 3.0 a 3.7)
 │   ├── SFXs.csv               #    73 sintetizadores SFX procedurales (6 categorías)
 │   ├── BGMs.csv               #    18 pistas BGM algorítmicas (12 vibras emocionales)
-│   ├── models_3D.csv          #    29 modelos procedurales 3D
-│   └── sprites_2D.csv         #    29 sprites vectoriales 2D
+│   ├── models_3D.csv          #    50 modelos procedurales 3D (5 categorías)
+│   └── sprites_2D.csv         #    49 sprites vectoriales 2D (5 categorías)
 ├── requirements.txt           # 📦 Única dependencia del proyecto: raylib (pyray)
 ├── rules/                     # 📜 Guías arquitectónicas, catálogos y patrones
 │   ├── patterns.md            # 📚 Enciclopedia teórica de patrones de diseño de videojuegos
@@ -772,12 +772,21 @@ Game_Mechanics_Library/
 │   └── utils.md               # 🧮 Documentación de colisiones no-nativas, rejillas y matemáticas
 │
 ├── assets/                    # 🎨 Biblioteca de recursos matemáticos (¡Cero archivos externos!)
-│   ├── __init__.py            #    Exportador central y registro de recursos procedurales
-│   ├── models_3D/             #    Modelos 3D por primitivas (.gitkeep)
-│   ├── sprites_2D/            #    Sprites 2D por primitivas geométricas animadas (.gitkeep)
+│   ├── asset_loader.py        #    Universal dynamic asset discovery registry & loader
+│   ├── asset_viewer.py        #    🎨 Visualizador e inspector interactivo de recursos (3D, 2D, SFX, BGM)
+│   ├── models_3D/             #    Modelos 3D por primitivas organizados por categoría
+│   │   ├── beast/             #       Criaturas y cuadrúpedos (.gitkeep, modelos)
+│   │   ├── drone/             #       Drones y constructos aéreos (.gitkeep)
+│   │   ├── environment_prop/  #       Props interactivos y estructuras (.gitkeep)
+│   │   ├── humanoid/          #       Soldados bípedos y personajes (.gitkeep)
+│   │   └── turret_boss/       #       Torretas y blindados pesados (.gitkeep)
+│   ├── sprites_2D/            #    Sprites 2D por primitivas geométricas organizados por categoría
+│   │   ├── crawler_automaton/ #       Autómatas y orugas mecánicas (.gitkeep)
+│   │   ├── projectile_vfx/    #       Proyectiles, VFX y retículas (.gitkeep)
+│   │   ├── side_scroller/     #       Entidades de plataformas laterales (.gitkeep)
+│   │   ├── swarm_floating/    #       Enjambres y organismos flotantes (.gitkeep)
+│   │   └── top_down/          #       Actores y soldados cenitales (.gitkeep)
 │   └── audio/                 #    Sintetizadores de audio procedural en memoria RAM
-│       ├── asset_loader.py    #    Universal dynamic asset discovery registry & loader
-│       ├── asset_viewer.py    #    🎨 Visualizador e inspector interactivo de recursos (3D, 2D, SFX, BGM)
 │       ├── synth_sfx.py       #    Registro dinámico y SoundLibrary de carga selectiva en RAM
 │       ├── SFX/               #    Efectos de sonido procedurales por categoría
 │       │   ├── combat/        #       SFX de combate y armas (.gitkeep)

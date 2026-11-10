@@ -81,7 +81,7 @@ Minigames in this repository are strictly decoupled consumers of the procedural 
    When all required assets are verified on disk (`status == done` and `buildable == yes`), the Orchestrator proceeds to spawn an isolated subagent engineer (1 engineer per minigame), injecting the exact asset contracts into the subagent prompt:
    - Visual model/sprite drawing signatures: `draw_<name>_3d` or `draw_<name>_2d` with palette keys.
    - Audio cue declarations: `SFXS = [...]` and `BGMS = [...]`.
-   - Unified discovery import: `from assets.audio.asset_loader import *`.
+   - Unified discovery import: `from assets.asset_loader import *`.
 
 ---
 
@@ -152,7 +152,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 # 3. Mandatory Raylib, Asset, and Utility imports in exact order
 from pyray import *
-from assets.audio.asset_loader import *
+from assets.asset_loader import *
 from utils import *
 
 SCREEN_WIDTH = 1280
@@ -433,11 +433,11 @@ Minigames import procedural assets and utilities using clean, standardized inter
 ```python
 # Canonical import pattern at the top of every minigame
 from pyray import *
-from assets.audio.asset_loader import *
+from assets.asset_loader import *
 from utils import *
 ```
 
-### 3.3 3D Models (`assets/models_3D/`)
+### 3.3 3D Models (`assets/models_3D/<category>/`)
 3D procedural models follow a canonical function signature ([`rules/models_3D.md`](models_3D.md)):
 ```python
 draw_<name>_3d(position: Vector3, rotation_y: float = 0.0, anim_timer: float = 0.0, scale: float = 1.0, palette: dict = None) -> None
@@ -451,7 +451,7 @@ draw_<name>_3d(position: Vector3, rotation_y: float = 0.0, anim_timer: float = 0
   draw_scout_ship_3d(ship_pos, rotation_y=player.heading_deg, anim_timer=world.time, scale=1.2)
   ```
 
-### 3.4 2D Sprites (`assets/sprites_2D/`)
+### 3.4 2D Sprites (`assets/sprites_2D/<category>/`)
 2D procedural sprites follow a canonical function signature ([`rules/sprites_2D.md`](sprites_2D.md)):
 ```python
 draw_<name>_2d(position: Vector2, facing_angle_rad: float = 0.0, anim_timer: float = 0.0, scale: float = 1.0, palette: dict = None) -> None
@@ -471,11 +471,11 @@ Audio is managed through `SoundLibrary` (`assets/audio/synth_sfx.py`), which dyn
 #### 1. Importing the Audio Subsystem:
 ```python
 from pyray import *
-from assets.audio.asset_loader import *   # Automatically exports models_3D, sprites_2D, audio, sfx, bgm, SoundLibrary
+from assets.asset_loader import *   # Automatically exports models_3D, sprites_2D, audio, sfx, bgm, SoundLibrary
 from utils import *
 
 # Or via granular import:
-# from assets.audio.asset_loader import models_3D, sprites_2D, audio, sfx, bgm, SoundLibrary
+# from assets.asset_loader import models_3D, sprites_2D, audio, sfx, bgm, SoundLibrary
 ```
 
 #### 2. Declaring Required Audio Lists:

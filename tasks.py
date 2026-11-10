@@ -731,7 +731,7 @@ def handle_headless_cli(repo_root: str, args: List[str]) -> bool:
                 for cname, it in ready_assets:
                     print(f"  - {cname}: {it['id']} -> {it.get('func') or it.get('concept', '')}")
             else:
-                print("  No external assets required. Use verified assets from assets/audio/asset_loader.py.")
+                print("  No external assets required. Use verified assets from assets/asset_loader.py.")
             print("================================================================================")
 
         return True
@@ -1206,7 +1206,7 @@ class TasksEditor:
             new_row["category"] = cat
             new_row["concept_name"] = f"Model {suffix}"
             new_row["function_name"] = f"draw_model_{suffix}_3d"
-            new_row["target_file"] = f"assets/models_3D/model_{suffix}.py"
+            new_row["target_file"] = f"assets/models_3D/{cat}/model_{suffix}.py"
             new_row["primitives_used"] = "Spheres, Cylinders, Cubes"
             new_row["animation_features"] = "Procedural walk bobbing"
             new_row["palette_keys"] = "armor, joints, visor"
@@ -1222,7 +1222,7 @@ class TasksEditor:
             new_row["category"] = cat
             new_row["concept_name"] = f"Sprite {suffix}"
             new_row["function_name"] = f"draw_sprite_{suffix}_2d"
-            new_row["target_file"] = f"assets/sprites_2D/sprite_{suffix}.py"
+            new_row["target_file"] = f"assets/sprites_2D/{cat}/sprite_{suffix}.py"
             new_row["primitives_used"] = "Circles, Rectangles, Lines"
             new_row["animation_features"] = "Breathing squash and stretch"
             new_row["palette_keys"] = "body, outline, core"

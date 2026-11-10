@@ -67,10 +67,10 @@ Specifications, templates, and tracking are decomposed into three dedicated rule
 
 | Asset Kind | Architectural Rules & Template | Tracking Spreadsheet | Planned Items | Default Destination |
 | :--- | :--- | :--- | :---: | :--- |
-| **Procedural Sound Effects (SFX)** | [**`rules/audio.md`**](audio.md) | [**`tasks/SFXs.csv`**](../tasks/SFXs.csv) | See [`tasks/SFXs.csv`](../tasks/SFXs.csv) (73 SFX) | `assets/audio/synth_sfx.py`<br>`assets/audio/SFX/` |
-| **Background Music (BGM)** | [**`rules/audio.md`**](audio.md) | [**`tasks/BGMs.csv`**](../tasks/BGMs.csv) | See [`tasks/BGMs.csv`](../tasks/BGMs.csv) (18 BGM) | `assets/audio/synth_sfx.py`<br>`assets/audio/BGM/` |
-| **3D Procedural Models** | [**`rules/models_3D.md`**](models_3D.md) | [**`tasks/models_3D.csv`**](../tasks/models_3D.csv) | See [`tasks/models_3D.csv`](../tasks/models_3D.csv) (29 models) | `assets/models_3D/` |
-| **2D Procedural Sprites** | [**`rules/sprites_2D.md`**](sprites_2D.md) | [**`tasks/sprites_2D.csv`**](../tasks/sprites_2D.csv) | See [`tasks/sprites_2D.csv`](../tasks/sprites_2D.csv) (29 sprites) | `assets/sprites_2D/` |
+| **Procedural Sound Effects (SFX)** | [**`rules/audio.md`**](audio.md) | [**`tasks/SFXs.csv`**](../tasks/SFXs.csv) | See [`tasks/SFXs.csv`](../tasks/SFXs.csv) (73 SFX) | `assets/audio/synth_sfx.py`<br>`assets/audio/SFX/<category>/` |
+| **Background Music (BGM)** | [**`rules/audio.md`**](audio.md) | [**`tasks/BGMs.csv`**](../tasks/BGMs.csv) | See [`tasks/BGMs.csv`](../tasks/BGMs.csv) (18 BGM) | `assets/audio/synth_sfx.py`<br>`assets/audio/BGM/<vibe>/` |
+| **3D Procedural Models** | [**`rules/models_3D.md`**](models_3D.md) | [**`tasks/models_3D.csv`**](../tasks/models_3D.csv) | See [`tasks/models_3D.csv`](../tasks/models_3D.csv) (50 models) | `assets/models_3D/<category>/` |
+| **2D Procedural Sprites** | [**`rules/sprites_2D.md`**](sprites_2D.md) | [**`tasks/sprites_2D.csv`**](../tasks/sprites_2D.csv) | See [`tasks/sprites_2D.csv`](../tasks/sprites_2D.csv) (49 sprites) | `assets/sprites_2D/<category>/` |
 
 *(Note: Link targets resolve from this document's folder: rulebooks use `audio.md`, `models_3D.md`, `sprites_2D.md`, while spreadsheets use `../tasks/<catalog>.csv`.)*
 
@@ -174,7 +174,7 @@ draw_cylinder(pos, 0.8, 0.8, 1.8, 16, color)
 
 To maintain strict modular decoupling across the repository:
 
-> **Minigames inside `minigames/` MUST consume ONLY procedural assets that already exist in `assets/` and are discovered via `assets/audio/asset_loader.py`.**
+> **Minigames inside `minigames/` MUST consume ONLY procedural assets that already exist in `assets/` and are discovered via `assets/asset_loader.py`.**
 
 - **No Ad-Hoc Inline Assets**: Minigame scripts must never draw complex multi-part custom entities directly in their world blocks, nor synthesize ad-hoc audio waves locally.
 - **Missing Asset Protocol**: If a minigame design requires a visual model, 2D sprite, SFX, or BGM track that does not yet exist in `assets/`:
@@ -213,7 +213,7 @@ import struct as py_struct  # Aliased to prevent collision with pyray.struct
 sys.dont_write_bytecode = True
 
 # 2. Add repository root to search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
 # 3. Mandatory Raylib and utility imports
 from pyray import *
@@ -237,7 +237,7 @@ Minigames inside `minigames/` can import assets using the central asset loader d
 
 ### Bulk Import via Central Asset Loader (Recommended for Minigames):
 ```python
-from assets.audio.asset_loader import *
+from assets.asset_loader import *
 # Exposes dictionary registries: models_3D, sprites_2D, audio, sfx, bgm
 # and dynamic loaders: import_asset_by_key, load_model_3d, load_sprite_2d
 ```
@@ -258,10 +258,10 @@ BGMS = ["synth_pulse"]
 ### Granular Direct Import:
 ```python
 # 3D Models
-from assets.models_3D.exo_knight import draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE
+from assets.models_3D.humanoid.exo_knight import draw_exo_knight_3d, DEFAULT_EXO_KNIGHT_PALETTE
 
 # 2D Sprites
-from assets.sprites_2D.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
+from assets.sprites_2D.top_down.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
 
 # Audio Subsystem (Selective In-RAM Loading)
 from assets.audio.synth_sfx import SoundLibrary, SFX_REGISTRY, BGM_REGISTRY
@@ -364,7 +364,7 @@ When an AI craftsman subagent is assigned to build an asset:
      ```bash
      python -B tasks.py --sync-statuses
      ```
-   - Newly built assets are automatically discovered dynamically by `assets/audio/asset_loader.py`.
+   - Newly built assets are automatically discovered dynamically by `assets/asset_loader.py`.
 
 ---
 
@@ -373,13 +373,13 @@ When an AI craftsman subagent is assigned to build an asset:
 1. **Zero External Media Files**: No `.png`, `.jpg`, `.bmp`, `.wav`, `.mp3`, `.ogg`, `.obj`, or `.fbx` files.
 2. **C++ Transferability**: Plain classes with explicit `__init__`, fixed arrays, explicit loops, zero decorators, zero generators, zero lambdas, zero magic dunders.
 3. **Canonical Directories & Files**:
-   - `assets/audio/asset_loader.py` for dynamic discovery dictionary registries (`models_3D`, `sprites_2D`, `audio`, `sfx`, `bgm`)
-   - `assets/audio/asset_viewer.py` for the interactive 4-tab graphical workbench & live asset audition viewer (`python -B assets/audio/asset_viewer.py`)
+   - `assets/asset_loader.py` for dynamic discovery dictionary registries (`models_3D`, `sprites_2D`, `audio`, `sfx`, `bgm`)
+   - `assets/asset_viewer.py` for the interactive 4-tab graphical workbench & live asset audition viewer (`python -B assets/asset_viewer.py`)
    - `assets/audio/synth_sfx.py` for procedural audio synthesis engine & `SoundLibrary`
    - `assets/audio/SFX/<category>/` for dedicated modular sound effects
    - `assets/audio/BGM/<vibe>/` for algorithmic background music tracks categorized by emotional vibe
-   - `assets/models_3D/` for 3D primitive models
-   - `assets/sprites_2D/` for 2D primitive sprites
+   - `assets/models_3D/<category>/` for 3D primitive models categorized by class (`beast/`, `drone/`, `environment_prop/`, `humanoid/`, `turret_boss/`)
+   - `assets/sprites_2D/<category>/` for 2D primitive sprites categorized by class (`crawler_automaton/`, `projectile_vfx/`, `side_scroller/`, `swarm_floating/`, `top_down/`)
 4. **Unified Asset Contract**:
    - 3D models: `draw_<name>_3d(pos, rotation_y=0.0, anim_timer=0.0, scale=1.0, palette=None)` with `rotation_y` in **degrees**.
    - 2D sprites: `draw_<name>_2d(pos, facing_angle_rad=0.0, anim_timer=0.0, scale=1.0, palette=None)` with `facing_angle_rad` in **radians**.

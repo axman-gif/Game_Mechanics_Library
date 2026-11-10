@@ -2,6 +2,7 @@
 =============================================================================
 
 This document defines the architectural standards, vector primitive rendering rules, procedural animation interfaces, and a copy-pasteable **code template** for all 2D procedural sprites.
+All 2D sprites are organized into dedicated category subfolders within `assets/sprites_2D/<category>/` (`crawler_automaton/`, `projectile_vfx/`, `side_scroller/`, `swarm_floating/`, and `top_down/`).
 
 All 2D sprite task tracking, vector specifications, and progress statuses are maintained in the companion spreadsheet:
 👉 [**`tasks/sprites_2D.csv`**](../tasks/sprites_2D.csv) (29 planned sprites: 4 base sprites and 25 specialized sprites)
@@ -39,7 +40,7 @@ def draw_<name>_2d(
 4. **Color Palettes & Named Geometric Constants**:
    - Every sprite must expose an explicit default dictionary constant named `DEFAULT_<NAME>_PALETTE` mapping semantic parts (`body`, `armor`, `accent`, `outline`, `eye`, `weapon`) to Raylib `Color` instances.
    - **No Magic Numbers**: Body dimensions, limb offsets, radii, and weapon coordinates must be declared as uppercase named constants (e.g., `BASE_RADIUS`, `SHOULDER_RADIUS`, `WEAPON_WIDTH`) rather than hardcoded inline numbers.
-5. **Default Destination Directory**: All 2D procedural sprites are strictly located in `assets/sprites_2D/`.
+5. **Default Destination Directory**: All 2D procedural sprites are strictly located in their designated category subfolder within `assets/sprites_2D/<category>/` (`assets/sprites_2D/crawler_automaton/`, `assets/sprites_2D/projectile_vfx/`, `assets/sprites_2D/side_scroller/`, `assets/sprites_2D/swarm_floating/`, `assets/sprites_2D/top_down/`).
 6. **2D Rendering Order & Explicit Int Casting**:
    All coordinates and dimensions passed to non-vector pixel draw routines (`draw_line`, `draw_circle`, `draw_rectangle`, `draw_text`) must be explicitly cast to `int` (`int(x)`, `int(y)`) to satisfy Raylib CFFI type contracts and prevent float truncation issues. Vector routines (`draw_circle_v`, `draw_rectangle_pro`) take `Vector2`.
 7. **Line Limits & Readability Criterion**:
@@ -48,7 +49,7 @@ def draw_<name>_2d(
    - **Token Guidance, Not Padding**: Line limits are practical guidance for token control. **Never pad a file** to artificially reach the floor. **Never compress code or drop comments** to squeeze under the ceiling.
    - **Readability Criterion**: A file must be understandable reading top to bottom, without jumping back and forth to other files. **Clarity always wins over line count.**
 8. **Standalone Previewer & Automated `--smoke-test`**:
-   Every sprite file must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/sprites_2D/<file>.py` launches an interactive preview application (`SpritePreviewApp`). Running with `--smoke-test` renders 3 frames headlessly and exits with code `0`.
+   Every sprite file must be standalone executable (`if __name__ == "__main__":`). Running `python -B assets/sprites_2D/<category>/<file>.py` launches an interactive preview application (`SpritePreviewApp`). Running with `--smoke-test` renders 3 frames headlessly and exits with code `0`.
 9. **Assets-Only Minigames Rule & Orchestrator Prerequisite Gate**:
    Minigames must use only assets that ALREADY exist inside the `assets/` package.
    - **Lead Orchestrator Prerequisite Check**: Before spawning a 2D minigame craftsman, the Orchestrator runs a Python script reading strictly `id`, `status`, and `description` from `tasks/sprites_2D.csv`.
@@ -66,7 +67,7 @@ Every craftsman subagent creating a 2D sprite must follow this exact 6-part anat
 Tactical Spec-Ops Operator - 2D Procedural Vector Sprite
 ========================================================
 Category         : top_down
-Target File      : assets/sprites_2D/tactical_ops.py
+Target File      : assets/sprites_2D/top_down/tactical_ops.py
 Primitives Used  : Circles (helmet, hands, shoulders), Rectangles (torso vest, weapon), Lines (laser sight)
 Animation Loop   : Walking shoulder-sway, weapon recoil pulse, tactical laser pulsation, breathing squash
 
@@ -100,7 +101,7 @@ import math
 sys.dont_write_bytecode = True
 
 # 2. Add repository root to search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
 # 3. Mandatory Raylib and utility imports
 from pyray import *
@@ -433,11 +434,11 @@ Minigames can import procedural sprites using either key-based loaders or granul
 
 ```python
 # Option A: Key-Based Loader via asset_loader (Standard minigame pattern)
-from assets.audio.asset_loader import sprites_2D, load_sprite_2d
+from assets.asset_loader import sprites_2D, load_sprite_2d
 draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE = load_sprite_2d("tactical_ops")
 
 # Option B: Granular Import (Explicit dependency tracking)
-from assets.sprites_2D.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
+from assets.sprites_2D.top_down.tactical_ops import draw_tactical_ops_2d, DEFAULT_TACTICAL_OPS_PALETTE
 ```
 
 ### 3.2 Invocation Inside Minigame Draw Loop
@@ -458,20 +459,20 @@ draw_tactical_ops_2d(
 
 ### 3.3 Mandatory Rule: Assets-Only Minigames
 
-Minigames must use **only assets that currently exist** in `assets/` (`assets/sprites_2D/`, `assets/models_3D/`, `assets/audio/SFX/<category>/`, `assets/audio/BGM/<vibe>/`).
+Minigames must use **only assets that currently exist** in `assets/` (`assets/sprites_2D/<category>/`, `assets/models_3D/<category>/`, `assets/audio/SFX/<category>/`, `assets/audio/BGM/<vibe>/`).
 - Subagents and developers must **never** create inline placeholder art/primitives or fabricate mock asset files inside minigame code.
 - If a minigame task references a 2D sprite that has not yet been implemented, the agent must **STOP IMMEDIATELY, report the missing asset to the orchestrator/user, and request that the asset be created first** before writing the minigame.
 ---
 
 ## 4. 2D Sprite Categorization Overview
 
-All 29 sprites in [`tasks/sprites_2D.csv`](../tasks/sprites_2D.csv) are categorized across 5 architectural classes:
+All planned sprites in [`tasks/sprites_2D.csv`](../tasks/sprites_2D.csv) are categorized across 5 architectural classes, each stored in its dedicated subfolder under `assets/sprites_2D/`:
 
-- **Top-Down Actors & Humanoids** (6 sprites): Top-down soldiers, spec-ops operators, riot enforcers, battle mages, flamethrower pyros, and ghillie infiltrators.
-- **Side-Scrolling Entities** (6 sprites): Platformer knights, deformable slime blobs, steampunk automatons, gargoyle sentries, and wheel raiders.
-- **Swarms & Floating Organisms** (6 sprites): Airborne drones, abyssal jellyfish, micro-nanite swarms, beholder eyes, plasma wisps, and cyber mosquitoes.
-- **Mechanical Crawlers & Automatons** (6 sprites): Insectoid crawlers, mine-layer bots, clockwork centipedes, tread dozers, sentry turrets, and hover-hoppers.
-- **Projectile VFX & HUD Reticle Sprites** (5 sprites): Railgun shockcones, thermal plasma bursts, smart-lock missile reticles, EMP lightning arcs, and grenade trajectory pips.
+- **Top-Down Actors & Humanoids** (`assets/sprites_2D/top_down/`): Top-down soldiers, spec-ops operators, riot enforcers, battle mages, flamethrower pyros, and ghillie infiltrators.
+- **Side-Scrolling Entities** (`assets/sprites_2D/side_scroller/`): Platformer knights, deformable slime blobs, steampunk automatons, gargoyle sentries, and wheel raiders.
+- **Swarms & Floating Organisms** (`assets/sprites_2D/swarm_floating/`): Airborne drones, abyssal jellyfish, micro-nanite swarms, beholder eyes, plasma wisps, and cyber mosquitoes.
+- **Mechanical Crawlers & Automatons** (`assets/sprites_2D/crawler_automaton/`): Insectoid crawlers, mine-layer bots, clockwork centipedes, tread dozers, sentry turrets, and hover-hoppers.
+- **Projectile VFX & HUD Reticle Sprites** (`assets/sprites_2D/projectile_vfx/`): Railgun shockcones, thermal plasma bursts, smart-lock missile reticles, EMP lightning arcs, and grenade trajectory pips.
 
 ---
 
